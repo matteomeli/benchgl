@@ -1,0 +1,256 @@
+<html>
+<head>
+<title>BenchGL Engine - Example 8</title>
+<link rel="stylesheet" href="../css/core.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="benchgl.js"></script>
+
+<script type="text/javascript">
+
+	function Example8() {
+		this.engine = BenchGL.getInstance();
+	};
+	
+	Example8.prototype.load = function() {
+		var alphaShader = [
+			"#ifdef GL_ES",
+			"precision highp float;",
+			"#endif",
+			
+			"uniform float u_alpha;",
+			
+			"uniform bool u_useTexture0;",
+			"uniform sampler2D tex0;",
+			
+			"varying vec4 v_color;",
+			"varying vec2 v_texcoord;",
+			"varying vec3 v_lightFactor;",
+			
+			"void main(void) {",
+			"	vec4 fColor;",
+			
+			" if (!u_useTexture0) {",
+			"		fColor = vec4(v_color.rgb * v_lightFactor, v_color.a);",
+			" } else {",
+			"		fColor = vec4(texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t)).rgb * v_lightFactor, u_alpha);",
+			" }",
+			
+			"	gl_FragColor = fColor;",
+			"}"
+		].join("\n");
+		this.engine.setFragmentShader(alphaShader);
+		
+		this.cube = this.engine.cube();
+		this.speedX = 3.0;
+		this.speedY = -3.0;
+		this.rotX = 0.0;
+		this.rotY = 0.0;
+		this.transZ = 0.0;
+		
+		this.engine.createTextures({
+			'glass': {
+	  		path	: 'resources/',
+	  		src		: 'glass.gif'
+	  	}	
+		});
+		
+		this.engine.useTexturing(true);
+		this.engine.useLighting(true);
+		
+		var ambientColor = [
+			parseFloat(document.getElementById("ambientR").value),
+    	parseFloat(document.getElementById("ambientG").value),
+    	parseFloat(document.getElementById("ambientB").value)
+		];
+		
+    var lightDirection = [
+			parseFloat(document.getElementById("lightDirectionX").value),
+    	parseFloat(document.getElementById("lightDirectionY").value),
+    	parseFloat(document.getElementById("lightDirectionZ").value)
+		];
+				
+    var directionalColor = [
+			parseFloat(document.getElementById("directionalR").value),
+    	parseFloat(document.getElementById("directionalG").value),
+    	parseFloat(document.getElementById("directionalB").value)
+		];
+		
+		this.engine.setAmbientColor(ambientColor);
+		this.engine.setLightingDirection(lightDirection);
+		this.engine.setDirectionalColor(directionalColor);
+		
+		this.blending = document.getElementById("blending").checked;
+		this.alpha = document.getElementById("alpha").value;
+	};
+	
+	Example8.prototype.update = function(dt) {
+    if (this.ui.keysDown[38]) {
+      // Up Arrow
+      this.transZ += (1.5 * dt) / 1000.0;
+    }
+    if (this.ui.keysDown[40]) {
+      // Down Arrow
+      this.transZ -= (1.5 * dt) / 1000.0;
+    }
+    if (this.ui.keysDown[65]) {
+    	// A key
+    	this.speedY -= 1.0;
+    }
+    if (this.ui.keysDown[68]) {
+    	// D key
+    	this.speedY += 1.0;
+    }
+    if (this.ui.keysDown[83]) {
+    	// S key
+    	this.speedX += 1.0;
+    }
+    if (this.ui.keysDown[87]) {
+    	// W key
+    	this.speedX -= 1.0;
+    }
+		
+		this.rotX += (this.speedX * dt) / 1000.0;
+		this.rotY += (this.speedY * dt) / 1000.0;
+		
+		var lighting = document.getElementById("lighting").checked;
+		this.engine.useLighting(lighting);
+		
+		if (lighting) {
+			var ambientColor = [
+				parseFloat(document.getElementById("ambientR").value),
+	    	parseFloat(document.getElementById("ambientG").value),
+	    	parseFloat(document.getElementById("ambientB").value)
+			];
+			
+	    var lightDirection = [
+				parseFloat(document.getElementById("lightDirectionX").value),
+	    	parseFloat(document.getElementById("lightDirectionY").value),
+	    	parseFloat(document.getElementById("lightDirectionZ").value)
+			];
+					
+	    var directionalColor = [
+				parseFloat(document.getElementById("directionalR").value),
+	    	parseFloat(document.getElementById("directionalG").value),
+	    	parseFloat(document.getElementById("directionalB").value)
+			];
+			
+			this.engine.setAmbientColor(ambientColor);
+			this.engine.setLightingDirection(lightDirection);
+			this.engine.setDirectionalColor(directionalColor);
+		}
+		
+		this.blending = document.getElementById("blending").checked;
+		this.alpha = document.getElementById("alpha").value;
+		
+		this.print();
+		return true;
+	};
+	
+	Example8.prototype.draw = function() {
+		this.engine.background();
+		
+		this.engine.matrixMode(BGL_PROJECTION);
+		this.engine.loadIdentity();
+		this.engine.perspective(45.0, this.ui.width/this.ui.height, 0.1, 100.0);
+		
+		this.engine.matrixMode(BGL_VIEW);
+		this.engine.loadIdentity();
+		this.engine.lookAt([0.0, 0.0, 7.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+		
+		this.engine.matrixMode(BGL_MODEL);
+		this.engine.loadIdentity();
+		
+		this.engine.pushMatrix();
+		this.engine.translate([0.0, 0.0, this.transZ]);
+		this.engine.rotate(this.rotX, [1.0, 0.0, 0.0]);
+		this.engine.rotate(this.rotY, [0.0, 1.0, 0.0]);
+		this.engine.setTextures('glass');
+		if (this.blending) {
+			this.engine.useAlphaBlending(true);
+		} else {
+			this.engine.useAlphaBlending(false);
+		}
+		this.engine.render(this.cube);
+		this.engine.popMatrix();
+	};
+	
+	Example8.prototype.start = function() {
+		this.engine.start('example-canvas', 60.0, this);
+	};
+	
+	Example8.prototype.print = function() {
+		var fpsd = document.getElementById('fps');
+		var fps = this.engine.fps();
+		fpsd.innerHTML = fps + ' fps';
+	};
+
+	function init() {
+		(new Example8()).start();
+	};
+
+</script>
+
+</head>
+
+<body onload="init();">
+	<div id="container" class="screen">
+  	<canvas id="example-canvas" width="800" height="600"></canvas>
+  	<br/>
+	  <div id="fps" class="counter">0 Fps</div>
+		<br>
+		<input type="checkbox" id="blending" checked /> Use blending<br/>
+		Alpha level <input type="text" id="alpha" value="0.5" /><br/>
+		<input type="checkbox" id="lighting" checked /> Use lighting<br/>
+    <h2>Directional light:</h2>
+    <table style="border: 0; padding: 10px;">
+        <tr>
+            <td>
+                <b>Direction:</b>
+            </td>
+            <td>
+                X: <input type="text" id="lightDirectionX" value="-0.25" />
+            </td>
+            <td>
+                Y: <input type="text" id="lightDirectionY" value="-0.25" />
+            </td>
+            <td>
+                Z: <input type="text" id="lightDirectionZ" value="-1.0" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <b>Colour:</b>
+            </td>
+            <td>
+                R: <input type="text" id="directionalR" value="0.8" />
+            </td>
+            <td>
+                G: <input type="text" id="directionalG" value="0.8" />
+            </td>
+            <td>
+                B: <input type="text" id="directionalB" value="0.8" />
+            </td>
+        </tr>
+    </table>
+		<h2>Ambient light:</h2>
+    <table style="border: 0; padding: 10px;">
+        <tr>
+            <td>
+                <b>Colour:</b>
+            </td>
+            <td>
+                R: <input type="text" id="ambientR" value="0.2" />
+            </td>
+            <td>
+                G: <input type="text" id="ambientG" value="0.2" />
+            </td>
+            <td>
+                B: <input type="text" id="ambientB" value="0.2" />
+            </td>
+        </tr>
+    </table>
+  </div>
+</body>
+
+</html>

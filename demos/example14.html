@@ -1,0 +1,207 @@
+<html>
+<head>
+<title>BenchGL Engine - Example 14</title>
+<link rel="stylesheet" href="../css/core.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="benchgl.js"></script>
+
+<script type="text/javascript">
+
+	function Example14() {
+		this.engine = BenchGL.getInstance();
+	};
+	
+	Example14.prototype.load = function() {
+		this.model = this.engine.loadModel(BGL_MODEL_JSON, {
+			url		: 'models/Teapot.json'
+		});
+		this.modelRot = 0.0;
+		
+		this.engine.createProgramFromShadersURL('fragment-lighting', 'shaders/fragment-lighting.vertex', 'shaders/fragment-lighting.fragment');
+		this.engine.useProgram('fragment-lighting');
+		
+		this.engine.createTextures({
+			'metal'	: {
+	  		path	: 'resources/',
+	  		src		: 'metal.jpg'
+	  	}
+		});
+		
+		this.engine.useTexturing(true);
+		this.engine.useLighting(true);
+		
+		var ambientColor = [
+			parseFloat(document.getElementById("ambientR").value),
+    	parseFloat(document.getElementById("ambientG").value),
+    	parseFloat(document.getElementById("ambientB").value)
+		];
+		
+    var lightPosition = [
+			parseFloat(document.getElementById("lightPositionX").value),
+    	parseFloat(document.getElementById("lightPositionY").value),
+    	parseFloat(document.getElementById("lightPositionZ").value)
+		];
+				
+    var lightColor = [
+			parseFloat(document.getElementById("lightR").value),
+    	parseFloat(document.getElementById("lightG").value),
+    	parseFloat(document.getElementById("lightB").value)
+		];
+		
+		this.engine.setAmbientColor(ambientColor);
+		this.engine.setDirectionalColor([0.0, 0.0, 0.0]);
+		this.engine.createLight('light0', {
+			position 	: lightPosition,
+			diffuse		: lightColor
+		});
+		this.engine.setLight('light0', true);
+	};
+	
+	Example14.prototype.update = function(dt) {
+		this.modelRot += (30 * dt) / 1000.0;
+		
+		var lighting = document.getElementById("lighting").checked;
+		this.engine.useLighting(lighting);
+		
+		if (lighting) {
+			var ambientColor = [
+				parseFloat(document.getElementById("ambientR").value),
+	    	parseFloat(document.getElementById("ambientG").value),
+	    	parseFloat(document.getElementById("ambientB").value)
+			];
+			
+	    var lightPosition = [
+				parseFloat(document.getElementById("lightPositionX").value),
+	    	parseFloat(document.getElementById("lightPositionY").value),
+	    	parseFloat(document.getElementById("lightPositionZ").value)
+			];
+					
+	    var lightColor = [
+				parseFloat(document.getElementById("lightR").value),
+	    	parseFloat(document.getElementById("lightG").value),
+	    	parseFloat(document.getElementById("lightB").value)
+			];
+			
+			this.engine.setAmbientColor(ambientColor);
+			this.engine.setLight('light0', {
+				position 	: lightPosition,
+				diffuse		: lightColor
+			});
+		}
+		
+		this.print();
+		return true;
+	};
+	
+	Example14.prototype.draw = function(gl) {
+		this.engine.background();
+		
+		this.engine.matrixMode(BGL_PROJECTION);
+		this.engine.loadIdentity();
+		this.engine.perspective(45.0, this.ui.width/this.ui.height, 0.1, 1000.0);
+		
+		this.engine.matrixMode(BGL_VIEW);
+		this.engine.loadIdentity();
+		this.engine.lookAt([0.0, 0.0, 40.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+		
+		this.engine.matrixMode(BGL_MODEL);
+		this.engine.loadIdentity();
+		
+		this.engine.pushMatrix();
+		this.engine.rotate(23.5, [1.0, 0.0, -1.0]);
+		this.engine.rotate(this.modelRot, [0.0, 1.0, 0.0]);
+		this.engine.setTextures('metal');
+		this.engine.render(this.model);
+		this.engine.popMatrix();
+	};
+	
+	Example14.prototype.start = function() {
+		this.engine.start('example-canvas', 60.0, this);
+	};
+	
+	Example14.prototype.print = function() {
+		var fpsd = document.getElementById('fps');
+		var fps = this.engine.fps();
+		fpsd.innerHTML = fps + ' fps';
+	};
+
+	function init() {
+		(new Example14()).start();
+	};
+
+</script>
+
+</head>
+
+<body onload="init();">
+	<div id="container" class="screen">
+  	<canvas id="example-canvas" width="800" height="600"></canvas>
+  	<br/>
+	  <div id="fps" class="counter">0 Fps</div>
+		<br>
+		<div class="options">
+		<input type="checkbox" id="lighting" checked /> Use lighting<br/>
+		
+		<h2>Material:</h2>
+		
+		<table style="border: 0; padding: 10px;">
+		<tr>
+		<td><b>Shininess:</b>
+		<td><input type="text" id="shininess" value="32.0" />
+		</tr>
+		</table>
+
+    <h2>Point light:</h2>
+	    <table style="border: 0; padding: 10px;">
+	        <tr>
+	            <td>
+	                <b>Position:</b>
+	            </td>
+	            <td>
+	                X: <input type="text" id="lightPositionX" value="-10.0" />
+	            </td>
+	            <td>
+	                Y: <input type="text" id="lightPositionY" value="4.0" />
+	            </td>
+	            <td>
+	                Z: <input type="text" id="lightPositionZ" value="20.0" />
+	            </td>
+	        </tr>
+	        <tr>
+	            <td>
+	                <b>Colour:</b>
+	            </td>
+	            <td>
+	                R: <input type="text" id="lightR" value="0.8" />
+	            </td>
+	            <td>
+	                G: <input type="text" id="lightG" value="0.8" />
+	            </td>
+	            <td>
+	                B: <input type="text" id="lightB" value="0.8" />
+	            </td>
+	        </tr>
+	    </table>
+			<h2>Ambient light:</h2>
+	    <table style="border: 0; padding: 10px;">
+	        <tr>
+	            <td>
+	                <b>Colour:</b>
+	            </td>
+	            <td>
+	                R: <input type="text" id="ambientR" value="0.2" />
+	            </td>
+	            <td>
+	                G: <input type="text" id="ambientG" value="0.2" />
+	            </td>
+	            <td>
+	                B: <input type="text" id="ambientB" value="0.2" />
+	            </td>
+	        </tr>
+	    </table>
+		</div>
+  </div>
+</body>
+
+</html>

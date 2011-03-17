@@ -1,0 +1,125 @@
+<html>
+<head>
+<title>BenchGL Engine - Example 3</title>
+<link rel="stylesheet" href="../css/core.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="benchgl.js"></script>
+
+<script type="text/javascript">
+
+	function Example4() {
+		this.engine = BenchGL.getInstance();
+	};
+	
+	Example4.prototype.load = function() {
+		this.pyramid = this.engine.pyramid({
+			color : [
+				1.0, 0.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				0.0, 1.0, 0.0, 1.0
+			] 
+		});
+		this.cube = this.engine.cube({ 
+			color : [
+				1.0, 0.0, 0.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				1.0, 1.0, 0.0, 1.0,
+				1.0, 1.0, 0.0, 1.0,
+				1.0, 1.0, 0.0, 1.0,
+				1.0, 1.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				1.0, 0.5, 0.5, 1.0,
+				1.0, 0.5, 0.5, 1.0,
+				1.0, 0.5, 0.5, 1.0,
+				1.0, 0.5, 0.5, 1.0,
+				1.0, 0.0, 1.0, 1.0,
+				1.0, 0.0, 1.0, 1.0,
+				1.0, 0.0, 1.0, 1.0,
+				1.0, 0.0, 1.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+				0.0, 0.0, 1.0, 1.0,
+			] 
+		});
+		
+		this.rPyramid = 0.0;
+		this.rCube = 0.0;
+	};
+	
+	Example4.prototype.update = function(dt) {
+		this.rPyramid += (90 * dt) / 1000.0;
+		this.rCube -= (75 * dt) / 1000.0;
+		this.print();
+		return true;
+	};
+	
+	Example4.prototype.draw = function() {
+		this.engine.background();
+		
+		this.engine.matrixMode(BGL_PROJECTION);
+		this.engine.loadIdentity();
+		this.engine.perspective(45.0, this.ui.width/this.ui.height, 0.1, 100.0);
+		
+		this.engine.matrixMode(BGL_VIEW);
+		this.engine.loadIdentity();
+		this.engine.lookAt([0.0, 0.0, 7.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+		
+		this.engine.matrixMode(BGL_MODEL);
+		this.engine.loadIdentity();
+		
+		this.engine.pushMatrix();
+		this.engine.translate([-1.5, 0.0, 0.0]);
+		this.engine.rotate(this.rPyramid, [0.0, 1.0, 0.0]);
+		this.engine.render(this.pyramid);
+		this.engine.popMatrix();
+		
+		this.engine.pushMatrix();
+		this.engine.translate([1.5, 0.0, 0.0]);
+		this.engine.rotate(this.rCube, [1.0, 1.0, 1.0]);
+		this.engine.render(this.cube);
+		this.engine.popMatrix();
+	};
+	
+	Example4.prototype.start = function() {
+		this.engine.start('example-canvas', 60.0, this);
+	};
+	
+	Example4.prototype.print = function() {
+		var fpsd = document.getElementById('fps');
+		var fps = this.engine.fps();
+		fpsd.innerHTML = fps + ' fps';
+	};
+
+	function init() {
+		(new Example4()).start();
+	};
+
+</script>
+
+</head>
+
+<body onload="init();">
+	<div id="container" class="screen">
+  	<canvas id="example-canvas" width="800" height="600"></canvas>
+  	<br/>
+	  <div id="fps" class="counter">0 Fps</div>
+  </div>
+</body>
+
+</html>

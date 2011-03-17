@@ -1,0 +1,215 @@
+<!-- Do NOT put any DOCTYPE here unless you want problems in IEs. -->
+<html>
+<head>
+  <!-- The following line defines content type and utf-8 as character set. -->
+  <!-- If you want your application to work flawlessly with various local -->
+  <!-- characters, just make ALL strings, on the page, json and database utf-8. -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+ 
+  <!-- Ext relies on its default css so include it here. -->
+  <!-- This must come BEFORE javascript includes! -->
+  <link rel="stylesheet" type="text/css" href="lib/ext/resources/css/ext-all.css">
+ 
+  <!-- Include here your own css files if you have them. -->
+	<link rel="stylesheet" type="text/css" href="css/core.css">
+
+  <!-- First of javascript includes must be an adapter... -->
+  <script type="text/javascript" src="lib/ext/adapter/ext/ext-base.js"></script>
+ 
+  <!-- ...then you need the Ext itself, either debug or production version. -->
+  <script type="text/javascript" src="lib/ext/ext-all.js"></script>
+ 
+  <!-- Include here your extended classes if you have some. -->
+  <script type="text/javascript" src="lib/ext/examples/ux/Portal.js"></script>
+  <script type="text/javascript" src="lib/ext/examples/ux/PortalColumn.js"></script>
+  <script type="text/javascript" src="lib/ext/examples/ux/Portlet.js"></script>
+ 
+  <!-- Include here you application javascript file if you have it. -->
+  <script type="text/javascript" src="lib/engine/math.js"></script>
+	<script type="text/javascript" src="lib/engine/space.js"></script>
+	<script type="text/javascript" src="lib/engine/canvas.js"></script>
+	<script type="text/javascript" src="lib/engine/shader.js"></script>
+	<script type="text/javascript" src="lib/engine/mesh.js"></script>
+	<script type="text/javascript" src="lib/engine/renderer.js"></script>
+ 
+  <!-- Set a title for the page (id is not necessary). -->
+  <title id="page-title">Web Rendering Project</title>
+ 
+  <!-- You can have onReady function here or in your application file. -->
+  <!-- If you have it in your application file delete the whole -->
+  <!-- following script tag as we must have only one onReady. -->
+  <script type="text/javascript">
+ 
+  // Path to the blank image must point to a valid location on your server
+  Ext.BLANK_IMAGE_URL = 'lib/ext/resources/images/default/s.gif';
+  
+  // Application's helper functions and variables
+  var xRot = 0.0;
+
+	function drawCall(obj) {
+		xRot += 1.0;
+		if (xRot > 360.0)
+			xRot -= 360.0;
+		obj.draw();
+	};
+	
+	function vsrc() {
+		var src = "";
+  	src += "attribute vec3 a_position;\n";
+  	src += "uniform mat4 u_modelViewMatrix;\n";
+  	src += "uniform mat4 u_projectionMatrix;\n";
+ 		src += "void main(void) {\n";
+    src += " gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1.0);\n"
+  	src += "}\n";
+		return src;
+	};
+	
+	function psrc() {
+		var src = "";
+		src += "#ifdef GL_ES\n";
+  	src += "precision highp float;\n";
+  	src += "#endif\n";
+ 		src += "void main(void) {\n";
+    src += " gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n";
+  	src += "}\n";		
+		return src
+	};
+  
+  /**
+   * Creates a Test Application.
+   * @class Represent a test application for the engine.
+   */
+  function TestApplication() {
+		this.manager = new CanvasManager("canvas0", this);
+		//this.program = ShaderProgram.Default(this.manager.gl);
+		this.program = new ShaderProgram(this.manager.gl, vsrc(), psrc());
+		this.transform = new TransformStack();
+		this.renderer = new MeshRenderer(this.program);
+	};
+  
+  TestApplication.prototype = {
+		init: function() {
+			var gl = this.manager.gl;
+			gl.clearColor(0.0, 0.0, 0.0, 1.0);
+			gl.clearDepth(1.0);
+			gl.enable(gl.DEPTH_TEST);
+			gl.depthFunc(gl.LEQUAL);
+		},
+		
+		setupMesh: function() {
+			this.mesh = new Mesh(this.manager.gl);
+			var vertices = [
+         0.0,  1.0,  0.0,
+        -1.0, -1.0,  0.0,
+         1.0, -1.0,  0.0
+    	];
+    	this.mesh.addVertexAttribute("a_position", 3, false, new Float32Array(vertices));
+		},
+		
+		draw: function() {
+			var gl = this.manager.gl;
+			
+			gl.viewport(0, 0, this.ui.height, this.ui.width);
+			
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			
+			this.transform.projection.loadIdentity();
+			this.transform.projection.perspective(45, this.ui.width/this.ui.height, 0.1, 100.0);
+			
+			this.transform.view.loadIdentity();
+			
+			this.transform.model.loadIdentity();
+			this.transform.model.push();
+			this.transform.model.translate(0.0, 0.0, -7.0);
+			this.transform.model.rotate(xRot, 1.0, 0.0, 0.0);
+			
+			// Draw a triangle mesh
+			this.renderer.render(this.mesh, gl.TRIANGLES, 0, 3, 
+				{ 
+					u_modelViewMatrix : this.transform.modelViewMatrix.flatten(),
+					u_projectionMatrix : this.transform.projectionMatrix.flatten()
+				},
+				null
+			);
+			
+			this.transform.model.pop();
+			this.transform.reset();
+		},
+		
+		start: function() {
+			myself = this;
+			setInterval('drawCall(myself)', 15);
+		}
+	};
+ 
+  // Main application entry point
+  Ext.onReady(function() {
+  	// Builds the UI
+		var viewport = new Ext.Viewport({
+      layout:'border',
+      items:[{
+        region:'north',
+        id:'north-panel',
+        split:true,
+        margins:'5 5 5 5',
+				html: '<h1>DiaShader</h1>'
+      },{
+      	xtype:'portal',
+        region:'center',
+        margins:'0 5 5 5',
+        layout:'column',
+        autoScroll:true,
+        items:[{
+          columnWidth:.50,
+          baseCls:'x-plain',
+          bodyStyle:'padding: 5',
+          items:[{
+            title: 'Preview',
+            collapsible: true,
+            style:'padding:5px 10px 5px 10px',
+            html: '<canvas id="canvas0" style="border: none;" width="500" height="500"></canvas>',
+          },{
+          	title: 'Log',
+          	collapsible: true,
+          	style:'padding:5px 10px 5px 10px',
+          	html: '<div class="widget-content"><textarea id="vertex_shader_source" style="width: 100%;" rows="10" spellcheck="false">Logging stuff here...</textarea></div>',
+        	}]
+				},{
+        	columnWidth:.50,
+        	baseCls:'x-plain',
+        	bodyStyle:'padding: 5px',
+        	items:	[{
+            title: 'Vertex Shader Source',
+            style:'padding:5px 10px 5px 10px',
+            html: '<div class="widget-content"><textarea id="vertex_shader_source" style="width: 100%;" rows="10" spellcheck="false"></textarea></div>'
+        	},{
+            title: 'Pixel Shader Source',
+            style:'padding:5px 10px 5px 10px',
+            html: '<div class="widget-content"><textarea id="pixel_shader_source" style="width: 100%;" rows="10" spellcheck="false"></textarea><br><br><input type="button" id="validate_program" value="Valida" onclick="" /> &nbsp; <input type="button" id="apply_program" value="Applica" onclick="" /></div>'
+        	},{
+            title: 'Model Loader',
+            style:'padding:5px 10px 5px 10px',
+            html: '<div class="widget-content"><p>Input Mesh:<input type="text" id="model_file_path" size="40" value="" spellcheck="false">&nbsp;<input type="button" id="model_file_load" value="Carica" onclick=""></p>'
+        	}]
+        }]
+      }]
+    });
+    
+    // Cranks up the engine
+   	var app = new TestApplication();
+		app.init();
+		app.setupMesh();
+		app.start();
+  });
+	</script>
+ 
+<!-- Close the head -->  
+</head>
+ 
+<!-- You can leave the body empty in many cases, or you write your content in it. -->
+<body>
+<script type="text/javascript" src="lib/ext/examples/shared/examples.js"></script>
+</body>
+ 
+<!-- Close html tag at last -->
+</html>
