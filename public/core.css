@@ -1,0 +1,106 @@
+/* @override http://webrendering.local/trunk/public/core.css */
+
+body {
+	margin: 0;
+	text-align: center;
+	color: #7f7f7f;
+	background-color: #e0ffd2;
+	font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+	font-size: 76%;
+}
+
+a {
+	color: #74a1ff;
+}
+
+a:hover {
+	color: #5376bb;
+}
+
+#main {
+	width: 80em;
+	margin: 0px auto;
+	padding: 0;
+	background-color: #ffffff;
+	border-bottom: solid 1px #b7b7b7;
+	border-left: solid 1px #b7b7b7;
+	border-right: solid 1px #b7b7b7;
+	text-align: left;
+}
+
+#menu {
+	padding: 10px;
+	overflow:  hidden;
+	text-align: right;
+}
+
+#menu ul {
+	float: right;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	font-size: large;
+}
+
+#menu ul li
+{
+	float: left;
+	margin-right: 0.5em;
+}
+
+.nav {
+	padding-left: 0.5em;
+	border-left: 1px solid #767b7e;
+}
+
+#menu ul a {
+	text-decoration: none;
+}
+
+#header {
+	clear: both;
+	overflow: hidden;
+	padding: 10px;
+	background-color: #ffc86c;
+}
+
+#logo {
+	float: left;
+	width: 50%;
+	text-align: center;
+}
+
+#description {
+	float: right;
+	width: 50%;
+	text-align: center;
+	padding: 6em 0em;
+}
+
+#content {
+	padding: 10px;
+	overflow: hidden;
+}
+
+#glance {
+	float: left;
+	width: 50%;
+}
+
+#examples {
+	float: right;
+	width: 50%;
+}
+
+#footer {
+	padding: 10px;
+	text-align: center;
+	font-style: italic;
+	font-size: x-small;
+}
+
+#small-logo {
+	padding: 1.5em 0;
+	background: white url(bench40.gif) no-repeat 41em 0em;
+	font-weight: bold;
+}
