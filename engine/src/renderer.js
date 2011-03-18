@@ -6,7 +6,7 @@
 
 // Max actives constants
 const BGL_MAX_LIGHTS = 4;
-const BGL_MAX_TEXTURES = 8;
+const BGL_MAX_TEXTURES = 1;
 
 
 /**
@@ -234,10 +234,7 @@ Renderer.prototype.setupLights = function() {
 			this._uniforms['u_lightColor'+(i+1)] = light.diffuse.rgb;
 			this._uniforms['u_lightSpecularColor'+(i+1)] = light.specular.rgb;
 		}
-	}	
-	
-	this._uniforms['u_shininess'] = 32;
-	this._uniforms['u_alpha'] = 0.5;
+	}
 };
 
 Renderer.prototype.setupLight = function(i) {
@@ -274,10 +271,10 @@ Renderer.prototype.setupEffects = function() {
 	this._uniforms['u_fogFar'] = this._fogFar;
 	this._uniforms['u_fogColor'] = this._fogColor.rgb;
 	
-	// Other effects
+	// TODO: Other effects
 };
 
-Renderer.prototype.setupCustomUniforms = function(uniforms) {
+Renderer.prototype.setupUniforms = function(uniforms) {
 	// Binds custom uniforms
 	if (uniforms) {
 		for (var c in uniforms) {
@@ -291,7 +288,7 @@ Renderer.prototype.setupCustomUniforms = function(uniforms) {
  * @param {ShaderProgram} program The shader program in the current rendering state.
  * @param {Model} mesh The mesh to render.
  */
-Renderer.prototype.render = function(model) {
+Renderer.prototype.render = function(model, uniforms) {
 	var prg = this.program.current;
 	var mode = this._renderingMode;
 	
@@ -301,7 +298,8 @@ Renderer.prototype.render = function(model) {
 	this.setupTextures();
 	this.setupMaterial();
 	this.setupEffects();
-	//this.setupCustomUniforms(model.uniforms);
+	this.setupUniforms(model.uniforms);
+	this.setupUniforms(uniforms);
 	
 	// Bind the current program
 	prg.bind();

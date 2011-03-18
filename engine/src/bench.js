@@ -47,6 +47,8 @@ var BenchGL = (function() {
 	 * @param handler A reference to the client application object.
 	 */
 	Bench.prototype.start = function(canvasID, updateRate, handler) {
+		this.log('Starting BenchGL engine (version 1.0)!');
+		
 		// The engine is now running
 		this._running = true;
 		
@@ -69,12 +71,16 @@ var BenchGL = (function() {
 		this._debug = true;
 		
 		// Load application data
+		this.log('Loading application data...');
 		this._canvas.load();
+		this.log('Done...');
 		
 		// Start a drawing loop if requested
 		if (updateRate) {
+			this.log('Starting drawing loop...');
 			this._canvas.startDrawingLoop(updateRate);
 		} else {
+			this.log('Requesting a drawing...');
 			this._canvas.requestDraw();
 		}
 	};
@@ -347,18 +353,18 @@ var BenchGL = (function() {
 	 * Renders a Model.
 	 * @param {Model} model The model to render.
 	 */
-	Bench.prototype.render = function(model) {
-		this._renderer.render(model);
+	Bench.prototype.render = function(model, uniforms) {
+		this._renderer.render(model, uniforms);
 	};
 	
 	Bench.prototype.loadModel = function(type, options) {
 		var model = null;
 		switch (type) {
 			case BGL_MODEL_JSON:
-				model = Model.fromJSON(this.gl, options);
+				model = ModelFactory.getInstance().loadFromJSON(this.gl, options);
 				break;
 			case BGL_MODEL_OBJ:
-				model = Model.fromOBJ(this.gl, options);
+				model = ModelFactory.getInstance().loadFromOBJInBackground(this.gl, options);
 				break;
 			default:
 				// Error format not supported
@@ -367,28 +373,32 @@ var BenchGL = (function() {
 		return model;
 	};
 	
+	Bench.prototype.loadModels = function(objs) {
+		return ModelFactory.getInstance().loadFromOBJsInBackground(this.gl, objs);
+  };
+	
 	Bench.prototype.triangle = function(options) {
-		return new Model.Triangle(this.gl, options);
+		return ModelFactory.getInstance().createTriangle(this.gl, options);
 	};
 	
 	Bench.prototype.rectangle = function(options) {
-		return new Model.Rectangle(this.gl, options);
+		return ModelFactory.getInstance().createRectangle(this.gl, options);
 	};
 	
 	Bench.prototype.circle = function(options) {
-		return new Model.Circle(this.gl, options);
+		return ModelFactory.getInstance().createCircle(this.gl, options);
 	};
 	
 	Bench.prototype.cube = function(options) {
-		return new Model.Cube(this.gl, options);
+		return ModelFactory.getInstance().createCube(this.gl, options);
 	};
 	
 	Bench.prototype.pyramid = function(options) {
-		return new Model.Pyramid(this.gl, options);
+		return ModelFactory.getInstance().createPyramid(this.gl, options);
 	};
 	
 	Bench.prototype.sphere = function(options) {
-		return new Model.Sphere(this.gl, options);
+		return ModelFactory.getInstance().createSphere(this.gl, options);
 	};
 	
 	return new function() {

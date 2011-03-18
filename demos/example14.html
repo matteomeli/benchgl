@@ -49,6 +49,9 @@
     	parseFloat(document.getElementById("lightB").value)
 		];
 		
+		var shininess = parseFloat(document.getElementById("shininess").value);
+		this.model.setUniform('u_shininess', shininess);
+		
 		this.engine.setAmbientColor(ambientColor);
 		this.engine.setDirectionalColor([0.0, 0.0, 0.0]);
 		this.engine.createLight('light0', {
@@ -82,6 +85,9 @@
 	    	parseFloat(document.getElementById("lightG").value),
 	    	parseFloat(document.getElementById("lightB").value)
 			];
+			
+			var shininess = parseFloat(document.getElementById("shininess").value);
+			this.model.setUniform('u_shininess', shininess);
 			
 			this.engine.setAmbientColor(ambientColor);
 			this.engine.setLight('light0', {
