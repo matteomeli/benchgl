@@ -169,6 +169,7 @@
 		if (this.blending) {
 			this.engine.useAlphaBlending(true);
 		} else {
+			this.alpha = 1.0;
 			this.engine.useAlphaBlending(false);
 		}
 		this.engine.render(this.cube, { u_alpha : this.alpha });

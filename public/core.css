@@ -9,12 +9,16 @@ body {
 	font-size: 76%;
 }
 
+h2 {
+	color: #09ca66;
+}
+
 a {
-	color: #74a1ff;
+	color: #09ca66;
 }
 
 a:hover {
-	color: #5376bb;
+	color: #044824;
 }
 
 #main {
@@ -61,20 +65,19 @@ a:hover {
 	clear: both;
 	overflow: hidden;
 	padding: 10px;
-	background-color: #ffc86c;
+	background-color: #044824;
 }
 
 #logo {
 	float: left;
-	width: 50%;
-	text-align: center;
+	padding: 2em 8em;
 }
 
 #description {
 	float: right;
-	width: 50%;
-	text-align: center;
-	padding: 6em 0em;
+	width: 45%;
+	padding: 3em 5em 3em 5em;
+	color: #ffffff;
 }
 
 #content {
@@ -99,8 +102,37 @@ a:hover {
 	font-size: x-small;
 }
 
-#small-logo {
-	padding: 1.5em 0;
-	background: white url(bench40.gif) no-repeat 41em 0em;
+.title {
+	font-size: x-large;
 	font-weight: bold;
+}
+
+.subtitle {
+	font-size: larger;
+	font-style: italic;
+}
+
+.gallery ul {
+	overflow: hidden;
+	list-style: none;
+	margin: 1em 6em;
+	padding: 0;
+}
+
+.gallery ul li {
+	width: 15em;
+	display: block;
+	float: left;
+	border: 1px solid #EEE;
+	margin: 0.3em;
+	padding: 0.4em;
+}
+
+.gallery ul li img {
+	margin: 1em 3em;
+}
+
+.example-title {
+	height: 3em;
+	text-align: center;
 }
