@@ -24,8 +24,12 @@ function Model(gl, options) {
 		vertices		: [],
 		normals			: [],
 		texcoords		: [],
-		primitives	:	{},
-		indices			: {},
+		primitives	:	{
+			triangles : gl.TRIANGLES
+		},
+		indices			: {
+			triangles : []
+		},
 		color				: [1.0, 1.0, 1.0, 1.0],
 		uniforms		: {
 			u_shininess	: 0.1

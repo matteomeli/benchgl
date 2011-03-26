@@ -440,6 +440,10 @@ var ModelFactory = (function() {
 		});			
 	};
 	
+	Factory.prototype.createModel = function(gl, options) {
+		return new Model(gl, options);
+	};
+	
 	Factory.prototype.loadFromJSON = function(gl, options) {
 		var model = new Model(gl);
 		

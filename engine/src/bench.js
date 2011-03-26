@@ -357,6 +357,10 @@ var BenchGL = (function() {
 		this._renderer.render(model, uniforms);
 	};
 	
+	Bench.prototype.createModel = function(options) {
+		return ModelFactory.getInstance().createModel(this.gl, options);
+	};
+	
 	Bench.prototype.loadModel = function(type, options) {
 		var model = null;
 		switch (type) {
