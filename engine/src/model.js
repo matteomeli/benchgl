@@ -21,6 +21,7 @@ function Model(gl, options) {
 	var options = options || {};
 	var defaultOptions = {
 		dynamic 		: true,
+		ucolor			: false, 
 		vertices		: [],
 		normals			: [],
 		texcoords		: [],
@@ -32,7 +33,8 @@ function Model(gl, options) {
 		},
 		color				: [1.0, 1.0, 1.0, 1.0],
 		uniforms		: {
-			u_shininess	: 0.1
+			u_shininess	: 0.1,
+			u_color			: [1.0, 1.0, 1.0, 1.0]
 		}
 	};
 	
@@ -49,10 +51,14 @@ function Model(gl, options) {
 	this._primitives = options.primitives;
 	this._indices = options.indices;
 	this._uniforms = options.uniforms;
+	this._ucolor = options.ucolor;
 	
 	this._pending = [];
 	
-	this.normalizeColor();
+	if (!this._ucolor) {
+		this.normalizeColor();
+	}
+	
 	this.buildMesh();
 };
 
@@ -72,7 +78,7 @@ Model.prototype.buildMesh = function() {
 	if (this._texcoords.length > 0)
 		mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
 	
-	if (this._color.length > 0)
+	if (this._color.length > 0 && !this._ucolor)
 		mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
 	
 	for (var i in this._primitives) {
@@ -245,9 +251,11 @@ Model.prototype.updateMesh = function() {
 		
   	switch (update) {
   		case BGL_UPDATE_VERTEX:
-  			this.normalizeColor();
   			this._mesh.addAttribute('a_position', 3, false, new Float32Array(this._vertices));
-				this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+  			if (!this._ucolor) {
+  				this.normalizeColor();
+					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+				}
 				break;
   		case BGL_UPDATE_NORMAL:
 				this._mesh.addAttribute('a_normal', 3, false, new Float32Array(this._normals));
@@ -256,8 +264,10 @@ Model.prototype.updateMesh = function() {
   			this._mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
 				break;
   		case BGL_UPDATE_COLOR:
-  			this.normalizeColor();
-				this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+  			if (!this._ucolor) {
+  				this.normalizeColor();
+					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+				}
 				break;
   		case BGL_UPDATE_INDEX:
   				for (var i in this._primitives) {

@@ -503,14 +503,14 @@ function MarchingCubes() {
 	};
 };
 
-MarchingCubes.prototype.compute = function(size, step, time, isolevel, sampler) {
+MarchingCubes.prototype.compute = function(start, size, limit, step, time, isolevel, sampler) {
 	var vertices = [],
       normals = [],
 			partial;
 			
 	for (var i = 0; i < size; i++) {
 		for (var j = 0; j < size; j++) {
-			for (var k = 0; k < size; k++) {
+			for (var k = start; k < limit; k++) {
 				partial = this.polygonize(i * step, j * step, k * step, time, step, isolevel, sampler);
 				if (partial) {
 					vertices = vertices.concat(partial.vertices);
@@ -525,3 +525,19 @@ MarchingCubes.prototype.compute = function(size, step, time, isolevel, sampler) 
 		normals   : normals
 	};
 };
+
+onmessage = function(e) {
+  var data = e.data,
+  		start = data.start,
+      size = data.size,
+      step = data.step,
+			limit = data.limit,
+      time = data.time,
+      isolevel = data.isolevel,
+      body = data.body,
+      sampler = new Function('x, y, z, t', body),
+  		result = new MarchingCubes().compute(start, size, limit, step, time, isolevel, sampler);
+  		
+  postMessage(result);
+};
+

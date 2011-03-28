@@ -42,6 +42,8 @@ function CanvasManager(canvasID) {
 	
 	var canvas = document.getElementById(canvasID);
 	if (!canvas) throw new Error("Canvas not found.");
+	
+	//canvas.contentEditable = true;
 
 	var gl = getWebGLContext(canvasID);
 	if (!gl) throw new Error("Can't initialize WebGL context.");
@@ -75,6 +77,8 @@ function CanvasManager(canvasID) {
 	this._canvas.addEventListener("mousedown", function(e) { myself.mousedown(e); }, false);
 	this._canvas.addEventListener("mouseup", function(e) { myself.mouseup(e); }, false);
 	this._canvas.addEventListener("mousemove", function(e) { myself.mousemove(e); }, false);
+	this._canvas.addEventListener("mousewheel",      function(e) { myself.mousewheel  (e); }, false);
+	this._canvas.addEventListener("DOMMouseScroll",  function(e) { myself.mousewheel  (e); }, false);
 };
 
 /**
@@ -266,5 +270,46 @@ CanvasManager.prototype.mousemove = function(e) {
 		var dy = this._ui.mouseDelta['y'];
 		if (this._handler.mousemove(dx, dy) != false)
 			this.requestDraw();
+	}		
+};
+
+CanvasManager.prototype.mousewheel = function(e) {
+	var x = e.clientX;
+	var y = this._ui.height - e.clientY - 1;
+	this._ui.mouseLastPos['x'] = this._ui.mousePos['x'];
+	this._ui.mouseLastPos['y'] = this._ui.mousePos['y'];
+	this._ui.mousePos['x'] = x;
+	this._ui.mousePos['y'] = y;
+	this._ui.mouseDelta['x'] = 0;
+	this._ui.mouseDelta['y'] = 0;		
+	if (this._handler.mousewheel) {
+		var dx = this._ui.mouseDelta['x'];
+		var dy = this._ui.mouseDelta['y'];
+		var delta = 0;
+		if (!e) /* For IE. */ {
+			e = window.event;
+		}
+		if (e.wheelDelta) /* IE/Opera. */ {
+			delta = e.wheelDelta / 120;
+			/* In Opera 9, delta differs in sign as compared to IE.
+			 */
+			if (window.opera) {
+				delta = -delta;
+			}
+		}
+		else if (e.detail) /** Mozilla case. */ {
+			/** In Mozilla, sign of delta is different than in IE.
+			 * Also, delta is multiple of 3.
+			 */
+			delta = -e.detail / 3;
+		}
+		/* If delta is nonzero, handle it.
+		 * Basically, delta is now positive if wheel was scrolled up,
+		 * and negative, if wheel was scrolled down.
+		 */
+		if (delta) {
+			if (this._handler.mousewheel(delta, dx, dy) != false)
+				this.requestDraw();
+		}
 	}		
 };

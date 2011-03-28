@@ -18,17 +18,17 @@ WorkerGroup.prototype.map = function(mapper) {
 };
 
 WorkerGroup.prototype.reduce = function(reducer, callback, base) {
-	var result = base,
+	var total = base,
 			l = this.workers.length,
 			message = function(e) {
 				l--;
-				if (result === "undefined") {
-					result = e.data;
+				if (total === "undefined") {
+					total = e.data;
 				} else {
-					reducer(result, e.data);
+					reducer(total, e.data);
 				}
 				if (l==0) {
-					callback(result);
+					callback(total);
 				}
 			};
 	

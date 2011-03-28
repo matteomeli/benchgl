@@ -641,7 +641,8 @@ var ModelFactory = (function() {
 		
 		workers.reduce(function(result, data) {
 			result.push(data);
-		}, function(result) {
+		}, 
+		function(result) {
 			var i = 0;
 			for (var r in result) {
 				var model = models[i++];
