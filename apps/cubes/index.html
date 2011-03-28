@@ -1,126 +1,151 @@
 <html>
-<head>
-<title>BenchGL Engine - Marching Cubes</title>
-<link rel="stylesheet" href="cubes.css" type="text/css" />
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <head>
+    <title>BenchGL Engine - Marching Cubes</title>
+    <link rel="stylesheet" href="cubes.css" type="text/css" />
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
-<script type="text/javascript" src="benchgl.js"></script>
-<script type="text/javascript" src="cubes.js"></script>
+    <script type="text/javascript" src="benchgl.js"></script>
+    <script type="text/javascript" src="marchingcubes.js"></script>
 
-<script type="text/javascript">
-	function MarchingCubesExample() {
-		this.engine = BenchGL.getInstance();
-		
-		var myself = this;
-		
-		this.isolevel = 48.0;
-		this.time = 0.0;
-		
-		this.sampler = function(x, y, z) {
-			var result = 0.0,
-					height = 20.0 * (myself.time + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
-			height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
-			result = (height - z) * 50.0;
-			return result;
-		}
-	};
-	
-	MarchingCubesExample.prototype.load = function() {
-		this.engine.createProgramFromShadersURL('color', 
-			'../../demos/shaders/color.vertex', 
-			'../../demos/shaders/color.fragment');
-		this.engine.useProgram('color');
-		
-		var result = new MarchingCubes().compute(1.0, 0.1, this.isolevel, this.sampler);
-		this.model = this.engine.createModel(result);
-		
-		this.rotX = 0.0;
-		this.rotY = 0.0;
-		
-		this.engine.useLighting(true);
-	};
-	
-	MarchingCubesExample.prototype.mousedown = function(e, x, y) {
-		if (e.button == 0)
-			this.mouseDown = true;
-	};
-	
-	MarchingCubesExample.prototype.mouseup = function(e, x, y) {
-		if (e.button == 0)
-			this.mouseDown = false;
-	};
-	
-	MarchingCubesExample.prototype.mousemove = function(dx, dy) {
-		if (!this.mouseDown) return;
-		this.rotX += dy/2;
-		this.rotY += dx/2;
-	}
-	
-	MarchingCubesExample.prototype.update = function(dt) {
-		this.isolevel = parseFloat(document.getElementById('isolevel').value);
-		
-		//this.time += 0.025;
-		//var result = new MarchingCubes().compute(3.0, 0.1, this.isolevel, this.sampler);
-		//this.model.setVertices(result.vertices);
-		//this.model.setNormals(result.normals);
-		
-		this.print();
-		return true;
-	};
-	
-	MarchingCubesExample.prototype.draw = function() {
-		this.engine.background();
-		
-		this.engine.matrixMode(BGL_PROJECTION);
-		this.engine.loadIdentity();
-		this.engine.perspective(45.0, this.ui.width/this.ui.height, 0.1, 100.0);
-		
-		this.engine.matrixMode(BGL_VIEW);
-		this.engine.loadIdentity();
-		this.engine.lookAt([0.0, 0.0, 2.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
-		
-		this.engine.matrixMode(BGL_MODEL);
-		this.engine.loadIdentity();
-		
-		this.engine.pushMatrix();
-		this.engine.rotate(-this.rotX, [1.0, 0.0, 0.0]);
-		this.engine.rotate(this.rotY, [0.0, 1.0, 0.0]);
-		this.engine.translate([-0.5, -0.5, 0.0]);
-		this.engine.render(this.model);
-		this.engine.popMatrix();
-	};
-	
-	MarchingCubesExample.prototype.start = function() {
-		this.engine.start('example-canvas', 60.0, this);
-	};
-	
-	MarchingCubesExample.prototype.print = function() {
-		var fpsd = document.getElementById('fps');
-		var fps = this.engine.fps();
-		fpsd.innerHTML = fps + ' fps';
-	};
+    <script type="text/javascript">
 
-	function init() {
-		(new MarchingCubesExample()).start();
-	};
+function MarchingCubesExample() {
+  this.engine = BenchGL.getInstance();
+  
+  var myself = this;
+  
+	this.dataset_size = 8;
+	this.step = 1.0/this.dataset_size;	
+  this.isolevel = 48.0;
+  this.time = 0.0;
+  
+  this.sampler = function(x, y, z) {
+    var result = 0.0,
+    height = 20.0 * (myself.time + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+    height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
+    result = (height - z) * 50.0;
+    return result;
+  }
+};
 
-</script>
+MarchingCubesExample.prototype.load = function() {
+  this.engine.createProgramFromShadersURL('lighting-color', 
+					  '../../demos/shaders/lighting-notex-pf.vertex', 
+					  '../../demos/shaders/lighting-notex-pf.fragment');
+  this.engine.useProgram('lighting-color');
+  
+  this.model = this.engine.createModel();
+  
+  this.rotX = 0.0;
+  this.rotY = 0.0;
+  this.z = 0.0;
+  
+  this.engine.useLighting(true);
+};
 
-</head>
+MarchingCubesExample.prototype.mousedown = function(e, x, y) {
+  if (e.button == 0)
+    this.mouseDown = true;
+};
 
-<body onload="init();">
-	<div id="container" class="screen">
-  	<canvas id="example-canvas" width="800" height="600"></canvas>
-  	<br/>
-	  <div id="fps" class="counter">0 Fps</div>
-	  <br/>
-	  <table style="border: 0; padding: 10px;">
-		<tr>
-		<td><b>Isolevel:</b>
-		<td><input type="text" id="isolevel" value="48.0" />
-		</tr>
-		</table>
-  </div>
-</body>
+MarchingCubesExample.prototype.mouseup = function(e, x, y) {
+  if (e.button == 0)
+    this.mouseDown = false;
+};
+
+MarchingCubesExample.prototype.mousemove = function(dx, dy) {
+  if (!this.mouseDown) return;
+  this.rotX += dy/2;
+  this.rotY += dx/2;
+}
+
+MarchingCubesExample.prototype.update = function(dt) {
+  if (this.ui.keysDown[38]) {
+    this.z += (1.5 * dt) / 1000.0;
+  }
+  if (this.ui.keysDown[40]) {
+    this.z -= (1.5 * dt) / 1000.0;
+  }
+  if (this.ui.keysDown[39]) {
+    this.z += (100 * dt) / 1000.0;
+  }
+  if (this.ui.keysDown[37]) {
+    this.z -= (100 * dt) / 1000.0;
+  }
+  
+  this.isolevel = parseFloat(document.getElementById('isolevel').value);
+  
+  var result = new MarchingCubes().compute(this.dataset_size, this.step, this.isolevel, this.sampler);
+  this.model = this.engine.createModel(result);
+  
+  this.print();
+  return true;
+};
+
+MarchingCubesExample.prototype.draw = function() {
+  this.engine.background();
+  
+  this.engine.matrixMode(BGL_PROJECTION);
+  this.engine.loadIdentity();
+  this.engine.perspective(45.0, this.ui.width/this.ui.height, 0.1, 100.0);
+  
+  this.engine.matrixMode(BGL_VIEW);
+  this.engine.loadIdentity();
+  this.engine.lookAt([0.0, 0.0, 2.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+  
+  this.engine.matrixMode(BGL_MODEL);
+  this.engine.loadIdentity();
+	
+	
+  
+  this.engine.pushMatrix();
+  this.engine.translate([-0.5, -0.5, this.z]);
+  this.engine.rotate(-this.rotX, [1.0, 0.0, 0.0]);
+  this.engine.rotate(this.rotY, [0.0, 1.0, 0.0]);
+  this.engine.render(this.model);
+  this.engine.popMatrix();
+};
+
+MarchingCubesExample.prototype.start = function() {
+  this.engine.start('example-canvas', 60.0, this);
+};
+
+MarchingCubesExample.prototype.print = function() {
+  var fpsd = document.getElementById('fps');
+  var fps = this.engine.fps();
+  fpsd.innerHTML = fps + ' fps';
+};
+
+function init() {
+  (new MarchingCubesExample()).start();
+};
+
+function showValue(value) {
+	document.getElementById("range").innerHTML = value;
+}
+
+    </script>
+
+  </head>
+
+  <body onload="init();">
+    <div id="container" class="screen">
+      <canvas id="example-canvas" width="800" height="600"></canvas>
+      <br/>
+      <div id="fps" class="counter">0 Fps</div>
+      <br/>
+			<div class="controls">
+	      <table style="border: 0; padding: 10px;">
+					<tr>
+					  <td><b>Isolevel:</b></td>
+					  <td>
+					  	  <input id="isolevel" type="range" min="0" max="100" value="48" step="2" onchange="showValue(this.value)" />
+								<span id="range">48</span>
+						</td>
+					</tr>
+	      </table>
+			</div>
+    </div>
+  </body>
 
 </html>

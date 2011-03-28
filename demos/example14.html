@@ -18,7 +18,7 @@
 		});
 		this.modelRot = 0.0;
 		
-		this.engine.createProgramFromShadersURL('fragment-lighting', 'shaders/fragment-lighting.vertex', 'shaders/fragment-lighting.fragment');
+		this.engine.createProgramFromShadersURL('fragment-lighting', 'shaders/lighting-pf.vertex', 'shaders/lighting-pf.fragment');
 		this.engine.useProgram('fragment-lighting');
 		
 		this.engine.createTextures({
@@ -153,8 +153,8 @@
 		
 		<table style="border: 0; padding: 10px;">
 		<tr>
-		<td><b>Shininess:</b>
-		<td><input type="text" id="shininess" value="32.0" />
+		<td><b>Shininess:</b></td>
+		<td><input type="text" id="shininess" value="32.0" /></td>
 		</tr>
 		</table>
 

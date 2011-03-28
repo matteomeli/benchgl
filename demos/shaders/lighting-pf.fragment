@@ -90,7 +90,7 @@ void main(void) {
 		lightFactor = u_ambientColor + directionalFactor + diffuseLight + specularLight;
 	}
 	
-	vec4 fragmentColor = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 fragmentColor = v_color;
 	if (u_enableTexturing) {
 		if (u_useTexture0) {
 			fragmentColor = texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t));

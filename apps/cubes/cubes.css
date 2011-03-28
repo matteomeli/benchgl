@@ -1,0 +1,13 @@
+body {
+  font-size: small;
+}
+
+.screen {
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+}
+
+.controls {
+	border: solid 1px #a9a0a0;
+}
