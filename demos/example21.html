@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>BenchGL Engine - Example 21</title>
-<link rel="stylesheet" href="css/core.css" type="text/css" />
+<link rel="stylesheet" href="../public/example.css" type="text/css" />
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <script type="text/javascript" src="benchgl.js"></script>
@@ -15,10 +15,10 @@
 	Example21.prototype.load = function() {
 		this.models = this.engine.loadModels({
 			bunny		: {
-				url		: 'models/bunny.obj'
+				url		: '../models/bunny.obj'
 			},
 			gourd	: {
-				url		: 'models/gourd.obj'
+				url		: '../models/gourd.obj'
 			}
 		});
 		this.rotX = 0.0;
@@ -26,7 +26,8 @@
 		this.z = 0.0;
 		this.currentModel = 0;
 		
-		this.engine.createProgramFromShadersURL('color', 'shaders/color.vertex', 'shaders/color.fragment');
+		this.engine.createProgramFromShadersURL('color', 
+			'../shaders/color.vertex', '../shaders/color.fragment');
 		this.engine.useProgram('color');
 
 		this.engine.useLighting(true);

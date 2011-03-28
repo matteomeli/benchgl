@@ -101,8 +101,8 @@ MarchingCubesExample.prototype.load = function() {
 			
 	// Use a special shader
   this.engine.createProgramFromShadersURL('lighting-color', 
-					  '../../demos/shaders/surfaces.vertex', 
-					  '../../demos/shaders/surfaces.fragment');
+					  '../../shaders/surfaces.vertex', 
+					  '../../shaders/surfaces.fragment');
   this.engine.useProgram('lighting-color');
   
   // Set lighting

@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>BenchGL Engine - Example 14</title>
-<link rel="stylesheet" href="css/core.css" type="text/css" />
+<link rel="stylesheet" href="../public/example.css" type="text/css" />
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <script type="text/javascript" src="benchgl.js"></script>
@@ -14,16 +14,17 @@
 	
 	Example14.prototype.load = function() {
 		this.model = this.engine.loadModel(BGL_MODEL_JSON, {
-			url		: 'models/Teapot.json'
+			url		: '../models/Teapot.json'
 		});
 		this.modelRot = 0.0;
 		
-		this.engine.createProgramFromShadersURL('fragment-lighting', 'shaders/lighting-pf.vertex', 'shaders/lighting-pf.fragment');
+		this.engine.createProgramFromShadersURL('fragment-lighting', 
+			'../shaders/lighting-pf.vertex', '../shaders/lighting-pf.fragment');
 		this.engine.useProgram('fragment-lighting');
 		
 		this.engine.createTextures({
 			'metal'	: {
-	  		path	: 'resources/',
+	  		path	: '../resources/',
 	  		src		: 'metal.jpg'
 	  	}
 		});

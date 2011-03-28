@@ -1,0 +1,193 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform vec4 u_ambientColor;
+
+uniform vec4 u_lightPosition;
+uniform vec4 u_lightAmbient;
+uniform vec4 u_lightDiffuse;
+uniform vec4 u_lightSpecular;
+uniform vec3 u_spotDirection;
+uniform float u_spotCutoff;
+uniform float u_spotExponent;
+uniform float u_constantAtt;
+uniform float u_linearAtt;
+uniform float u_quadraticAtt;
+
+uniform vec4 u_matAmbient;
+uniform vec4 u_matDiffuse;
+uniform vec4 u_matSpecular;
+uniform vec4 u_matEmissive;
+uniform float u_matShininess;
+
+uniform bool u_useLighting;
+uniform bool u_useTexture;
+
+varying vec4 v_position;
+varying vec4 v_normal;
+//varying vec4 v_color;
+varying vec2 v_texcoord;
+
+uniform sampler2D tex0;
+
+void directionalLight(in vec3 lPos,
+							  			in vec4 lAmb,
+							  			in vec4 lDiff,
+							  			in vec4 lSpec,
+							  			in vec3 v,
+											in vec3 N,
+							  			in float shi,
+											inout vec4 amb,
+											inout vec4 diff,
+											inout vec4 spec)
+{
+	float nDotL;
+	float rDotE;
+	float pf;
+	vec3 L;
+	vec3 E;
+	vec3 R;
+	
+	L = normalize(-lPos);
+	E = normalize(-v);
+	R = normalize(-reflect(L, N));
+	
+	nDotL = max(0.0, dot(N, L));
+	rDotE = max(0.0, dot(R, E));
+	pf = pow(rDotE, shi);
+	
+	amb += lAmb;
+	diff += lDiff * nDotL;
+	if (pf > 0.0)
+		spec += lSpec * pf;
+}
+
+void pointLight(in vec3 lPos,
+							  in vec4 lAmb,
+							  in vec4 lDiff,
+							  in vec4 lSpec,
+							  in float cAtt,
+							  in float lAtt,
+							  in float qAtt,
+								in vec3 v,
+								in vec3 N,
+							  in float shi,
+								inout vec4 amb,
+								inout vec4 diff,
+								inout vec4 spec)
+{
+	float nDotL;
+	float rDotE;
+	float pf;
+	float d;
+	float att;
+	vec3 L;
+	vec3 E;
+	vec3 R;
+	
+	L = normalize(lPos - v);
+	E = normalize(-v);
+	R = normalize(-reflect(L, N));
+	
+	d = length(L);
+	att = 1.0 / (cAtt + lAtt*d + qAtt*d*d);
+	
+	nDotL = max(0.0, dot(N, L));
+	rDotE = max(0.0, dot(R, E));
+	pf = pow(rDotE, shi);
+	
+	amb += lAmb * att;
+	diff += lDiff * nDotL * att;
+	if (pf > 0.0)
+		spec += lSpec * pf * att;
+}
+
+void spotLight(in vec3 lPos,
+							 in vec4 lAmb,
+							 in vec4 lDiff,
+							 in vec4 lSpec,
+							 in vec3 sDir,
+							 in float sCoff,
+							 in float sExp,
+							 in float cAtt,
+							 in float lAtt,
+							 in float qAtt,
+							 in vec3 v,
+							 in vec3 N,
+							 in float shi,
+							 inout vec4 amb,
+							 inout vec4 diff,
+							 inout vec4 spec)
+{
+	float nDotL;
+	float sDot;
+	float sAtt;
+	float rDotE;
+	float pf;
+	float d;
+	float att;
+	vec3 L;
+	vec3 E;
+	vec3 R;
+	
+	L = normalize(lPos - v);
+	E = normalize(-v);
+	R = normalize(-reflect(L, N));
+	
+	d = length(L);
+	att = 1.0 / (cAtt + lAtt*d + qAtt*d*d);
+	
+	sDot = dot(-L, normalize(sDir));
+	
+	if (sDot < cos(radians(sCoff)))
+		sAtt = 0.0;
+	else
+		sAtt = pow(sDot, sExp);
+		
+	att *= sAtt;
+		
+	nDotL = max(0.0, dot(N, L));
+	rDotE = max(0.0, dot(R, E));
+	pf = pow(rDotE, shi);
+	
+	amb += lAmb * att;
+	diff += lDiff * nDotL * att;
+	if (pf > 0.0)
+		spec += lSpec * pf * att;
+}
+
+void main(void) {
+	vec4 color;
+  if (!u_useLighting) {
+    color = u_matDiffuse;
+  } else {
+		vec4 amb = vec4(0.0);
+		vec4 diff = vec4(0.0);
+		vec4 spec = vec4(0.0);
+		
+		if (u_lightPosition.w == 0.0)
+			directionalLight(u_lightPosition.xyz, u_lightAmbient, u_lightDiffuse, u_lightSpecular,
+											 v_position.xyz, v_normal.xyz, u_matShininess, amb, diff, spec);
+		else if (u_spotCutoff == 180.0)
+			pointLight(u_lightPosition.xyz, u_lightAmbient, u_lightDiffuse, u_lightSpecular,
+								 u_constantAtt, u_linearAtt, u_quadraticAtt,
+								 v_position.xyz, v_normal.xyz, u_matShininess, amb, diff, spec);
+		else
+			spotLight(u_lightPosition.xyz, u_lightAmbient, u_lightDiffuse, u_lightSpecular,
+								u_spotDirection, u_spotCutoff, u_spotExponent,
+								u_constantAtt, u_linearAtt, u_quadraticAtt,
+								v_position.xyz, v_normal.xyz, u_matShininess, amb, diff, spec);
+		
+		color = u_matEmissive + u_ambientColor * u_matAmbient + 
+						amb * u_matAmbient + 
+						diff * u_matDiffuse + 
+						spec * u_matSpecular; 
+  }
+
+	if (u_useTexture) {
+		color *= texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t));
+	}
+	
+  gl_FragColor = color;
+}
