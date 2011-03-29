@@ -10,7 +10,15 @@
     <script type="text/javascript">
     
 function MarchingCubesExample() {
-  var myself = this,
+	var $id = function(d) {
+    		return document.getElementById(d);
+  		},
+  		isolevel = $id('isolevel'),
+			colorR = $id('colorR'),
+			colorG = $id('colorG'),
+			colorB = $id('colorB'),
+  		sampler = $id('sampler'),
+  		animation = $id('animation'),
  	  	sampler1 = function(x, y, z, t) {
     		var result = 0.0;
     		var height = 20.0 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
@@ -18,87 +26,24 @@ function MarchingCubesExample() {
     		result = (height - z) * 50.0;
     		return result;
   		};
-  		
+  		  		
   this.engine = BenchGL.getInstance();
   
+  this.isolevel = isolevel;
+  this.colorR = colorR;
+  this.colorG = colorG;
+  this.colorB = colorB;
+  this.sampler = sampler;
+  this.animation = animation;
 	this.dataset_size = 32;
-	this.step = 1.0/this.dataset_size;	
-  this.isolevel = 48.0;
+	this.step = 1.0/this.dataset_size;
   this.time = 0.0;
-  this.color = [0.7, 0.4, 0.3, 1.0];
   this.samplers = [];  
   this.samplers.push(sampler1);
-  this.sampler = 0;
-  this.parallelization = 1;
-};
-
-MarchingCubesExample.prototype.compute = function() {
-	var size = this.dataset_size,
-			step = this.step,
-			time = this.time,
-			iso = this.isolevel,
-			sampler = this.samplers[this.sampler],
-			body = sampler.toString(),
-			color	= this.color,
-			jobSize = size / this.parallelization,
-			workers = new WorkerGroup('cubes-worker.js', this.parallelization),
-			myself = this;
-
-	workers.map(function(i) {
-		var config = {
-			start 		: i * jobSize,
-			size			:	size,
-			step			: step,
-			limit			: (i+1) * jobSize,
-			time			: time,
-			isolevel 	: iso,
-			body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
-		};
-		
-		return config;
-	});
-	
-	workers.reduce(function(total, partial) {
-		total.vertices = total.vertices.concat(partial.vertices);
-		total.normals = total.normals.concat(partial.normals);
-	}, 
-	function(result) {
-	  var modelOptions = {
-	  	ucolor		: true,
-	  	vertices 	: result.vertices,
-	  	normals 	: result.normals,
-	  	uniforms 	: {
-	  		u_shininess : 4.0,
-	  		u_color			: color
-	  	}
-	  };
-	  myself.model = myself.engine.createModel(modelOptions);	
-	}, {
-		vertices 	: [],
-		normals 	: []
-	});
-	
-	/*var result = new MarchingCubes().compute(size, step, iso, sampler);
-  this.model = this.engine.createModel({
-  	ucolor		: true,
-  	vertices 	: result.vertices,
-  	normals 	: result.normals,
-  	uniforms 	: {
-  		u_shininess : 4.0,
-  		u_color			: color
-  	}
-  });*/
+  this.parallelization = 8;
 };
 
 MarchingCubesExample.prototype.load = function() {
-	var size = this.dataset_size,
-			step = this.step,
-			time = this.time,
-			iso = this.isolevel,
-			sampler = this.samplers[this.sampler],
-			color	= this.color,
-			modelOptions;
-			
 	// Use a special shader
   this.engine.createProgramFromShadersURL('lighting-color', 
 					  '../../shaders/surfaces.vertex', 
@@ -116,16 +61,7 @@ MarchingCubesExample.prototype.load = function() {
 	this.engine.setLight('light0', true);
 	
 	// Compute the isosurface for the first time
-  modelOptions = new MarchingCubes().compute(size, step, time, iso, sampler);
-	this.model = this.engine.createModel({
-  	ucolor		: true,
-  	vertices 	: modelOptions.vertices,
-  	normals 	: modelOptions.normals,
-  	uniforms 	: {
-  		u_shininess : 4.0,
-  		u_color			: color
-  	}
-  });
+  this.compute();
 	
 	// Initialize user control variables
   this.rotX = 0.0;
@@ -172,24 +108,23 @@ MarchingCubesExample.prototype.handleKeys = function(dt) {
 };
 
 MarchingCubesExample.prototype.animate = function(dt) {
-	var isolevel = parseFloat(document.getElementById('isolevel').value),
-			color = [  	
-				parseFloat(document.getElementById("colorR").value),
-    		parseFloat(document.getElementById("colorG").value),
-    		parseFloat(document.getElementById("colorB").value),
-    		1.0
-  		],
-  		selected = parseInt(document.getElementById("samplers").value);
-  
-  if (this.isolevel != isolevel || this.sampler != selected ||
-  		this.color[0] != color[0] || this.color[1] != color[1] || this.color[2] != color[2]) {
-  		this.isolevel = isolevel;
-  		this.color = color;
-  		this.sampler = selected;
-  		
-  		this.compute();
-  		return true;
-  }
+	var update = this.animation.checked;
+
+	// Set model parameters from controls
+	if (this.model) {
+		this.model.uniforms.u_color = [+this.colorR.value, +this.colorG.value, +this.colorB.value, 1.0];
+	}
+	
+	if (update) {
+		this.time += 0.5 * dt / 1000.0;
+		if (this.time > 2) {
+			this.time = 0.0;
+		}
+		this.compute();
+		return true;
+	} else {
+		this.time = 0.0;
+	}
   
   return false;
 };
@@ -233,6 +168,68 @@ MarchingCubesExample.prototype.start = function() {
   this.engine.start('example-canvas', 60.0, this);
 };
 
+MarchingCubesExample.prototype.compute = function() {
+	var size = this.dataset_size,
+			step = this.step,
+			time = this.time,
+			iso = +this.isolevel.value,
+			sampler = this.samplers[this.sampler.value],
+			body = sampler.toString(),
+			color	= [+this.colorR.value, +this.colorG.value, +this.colorB.value, 1.0],
+			jobSize = size / this.parallelization,
+			workers = new WorkerGroup('cubes-worker.js', this.parallelization),
+			myself = this;
+
+	workers.map(function(i) {
+		var config = {
+			start 		: i * jobSize,
+			size			:	size,
+			step			: step,
+			limit			: (i+1) * jobSize,
+			time			: time,
+			isolevel 	: iso,
+			body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+		};
+		
+		return config;
+	});
+	
+	workers.reduce(function(total, partial) {
+		if (partial) {
+			total.vertices.push.apply(total.vertices, partial.vertices);
+			total.normals.push.apply(total.normals, partial.normals);
+		} else {
+			console.log('error!');
+		}
+	}, 
+	function(result) {
+	  var modelOptions = {
+	  	ucolor		: true,
+	  	vertices 	: result.vertices,
+	  	normals 	: result.normals,
+	  	uniforms 	: {
+	  		u_shininess : 4.0,
+	  		u_color			: color
+	  	}
+	  };
+	  myself.model = myself.engine.createModel(modelOptions);	
+	}, {
+		vertices 	: [],
+		normals 	: []
+	});
+	
+  /*modelOptions = new MarchingCubes().compute(size, step, time, iso, sampler);
+	this.model = this.engine.createModel({
+  	ucolor		: true,
+  	vertices 	: modelOptions.vertices,
+  	normals 	: modelOptions.normals,
+  	uniforms 	: {
+  		u_shininess : 4.0,
+  		u_color			: color
+  	}
+  });*/
+};
+
 function init() {
   (new MarchingCubesExample()).start();
 };
@@ -249,24 +246,75 @@ function init() {
       <br/>
 			<div class="controls">
 	      <table style="border: 0; padding: 10px; width: 100%">
+	      	<tr>
+	      		<td>
+	      			<b>Isolevel</b>
+	      		</td>
+	      		<td>
+	      			<b>Color</b>
+	      		</td>
+	      		<td>
+							<b>Sampler</b>
+	      		</td>
+	      		<td>
+							<b>Play</b>	      		
+	      		</td>
+	      	</tr>
 					<tr>
 					  <td valign="top">
-					  	<b>Isolevel</b><br/>
 					  	<input id="isolevel" type="range" min="0" max="100" value="48" step="2" />
 						</td>
 						<td valign="top">
-							<b>Color</b><br/>
-					  	<input id="colorR" type="range" min="0.0" max="1.0" value="0.7" step="0.1" />
-					  	<br/>
-					  	<input id="colorG" type="range" min="0.0" max="1.0" value="0.4" step="0.1" />
-					  	<br/>
-					  	<input id="colorB" type="range" min="0.0" max="1.0" value="0.3" step="0.1" />				
+							R 
+              <select id="colorR">
+                <option>0.0</option>
+                <option>0.1</option>
+                <option>0.2</option>
+                <option>0.3</option>
+                <option>0.4</option>
+                <option selected>0.5</option>
+                <option>0.6</option>
+                <option>0.7</option>
+                <option>0.8</option>
+                <option>0.9</option>
+                <option>1.0</option>
+              </select>
+              G 
+              <select id="colorG">
+                <option>0.0</option>
+                <option>0.1</option>
+                <option>0.2</option>
+                <option selected>0.3</option>
+                <option>0.4</option>
+                <option>0.5</option>
+                <option>0.6</option>
+                <option>0.7</option>
+                <option>0.8</option>
+                <option>0.9</option>
+                <option>1.0</option>
+              </select>
+              B
+              <select id="colorB">
+                <option>0.0</option>
+                <option>0.1</option>
+                <option>0.2</option>
+                <option>0.3</option>
+                <option>0.4</option>
+                <option>0.5</option>
+                <option>0.6</option>
+                <option>0.7</option>
+                <option selected>0.8</option>
+                <option>0.9</option>
+                <option>1.0</option>
+              </select>		
 						</td>
 						<td valign="top">
-							<b>Sampler</b><br/>
-							<select id="samplers">
+							<select id="sampler">
 								<option value="0" selected="true">Sampler 1</option>
 							</select>
+						</td>
+						<td valign="top">
+							<input type="checkbox" id="animation" /> Animate!<br/>
 						</td>
 					</tr>
 	      </table>

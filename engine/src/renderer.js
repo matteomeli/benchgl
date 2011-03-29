@@ -289,6 +289,8 @@ Renderer.prototype.setupUniforms = function(uniforms) {
  * @param {Model} mesh The mesh to render.
  */
 Renderer.prototype.render = function(model, uniforms) {
+	if (!model) return;
+	
 	var prg = this.program.current;
 	var mode = this._renderingMode;
 	

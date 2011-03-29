@@ -506,15 +506,15 @@ function MarchingCubes() {
 MarchingCubes.prototype.compute = function(size, step, time, isolevel, sampler) {
 	var vertices = [],
       normals = [],
-			partial;
+			result;
 			
 	for (var i = 0; i < size; i++) {
 		for (var j = 0; j < size; j++) {
 			for (var k = 0; k < size; k++) {
-				partial = this.polygonize(i * step, j * step, k * step, time, step, isolevel, sampler);
-				if (partial) {
-					vertices = vertices.concat(partial.vertices);
-					normals = normals.concat(partial.vertices);
+				result = this.polygonize(i * step, j * step, k * step, time, step, isolevel, sampler);
+				if (result) {
+					vertices.push.apply(vertices, result.vertices);
+					normals.push.apply(normals, result.normals);
 				}
 			}
 		}

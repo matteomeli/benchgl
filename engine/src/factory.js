@@ -599,7 +599,7 @@ var ModelFactory = (function() {
 	Factory.prototype.loadFromOBJInBackground = function(gl, options) {
 		var model = new Model(gl);
 		
-		var worker = new Worker('workers/loader1.js');
+		var worker = new Worker('../workers/loader1.js');
 		
 		worker.addEventListener('message', function(e) {
 			switch (e.data.type) {
@@ -633,7 +633,7 @@ var ModelFactory = (function() {
 			models.push(new Model(gl));
 		}
 		
-		var workers = new WorkerGroup('workers/loader2.js', l);
+		var workers = new WorkerGroup('../workers/loader2.js', l);
 		
 		workers.map(function(i) {
 			return objs[keys[i]];
@@ -643,6 +643,7 @@ var ModelFactory = (function() {
 			result.push(data);
 		}, 
 		function(result) {
+			console.log(result);
 			var i = 0;
 			for (var r in result) {
 				var model = models[i++];

@@ -1,4 +1,4 @@
-importScripts('../../engine/src/request.js');
+importScripts('../engine/src/request.js');
 
 self.addEventListener('message', function(e) {
 	//self.postMessage('Model URL: ' + e.data.url);
@@ -7,7 +7,7 @@ self.addEventListener('message', function(e) {
 	var options = e.data || {};
 	var url = "../" + options.url;
 	options.url = url;
-	//self.postMessage('Adjusting model url : ' + options.url);
+	self.postMessage('Adjusting model url : ' + options.url);
 	
 	var defaultOptions = {
 		async: false,

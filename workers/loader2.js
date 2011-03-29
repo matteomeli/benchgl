@@ -1,4 +1,4 @@
-importScripts('../../engine/src/request.js');
+importScripts('../engine/src/request.js');
 
 self.addEventListener('message', function(e) {
 	//self.postMessage('Model URL: ' + e.data.url);
