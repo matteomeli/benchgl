@@ -163,9 +163,9 @@ CanvasManager.prototype.load = function() {
  * Updates the drawing state by the frame elapsed time.
  */
 CanvasManager.prototype.update = function() {
+  var draw = false;
+	
 	this._timer.stop();
-
-	var draw = false;
 	if (this._handler.update) {
 		draw = this._handler.update(this._timer.elapsedTime);
 	}
@@ -191,8 +191,9 @@ CanvasManager.prototype.draw = function() {
  * @param e The event to process.
  */
 CanvasManager.prototype.keydown = function(e) {
+  var key = String.fromCharCode(e.keyCode);
+	
 	this._ui.keysDown[e.keyCode] = true;
-	var key = String.fromCharCode(e.keyCode);
 	if (this._handler.keydown) {
 		if (this._handler.keydown(e) != false)
 			this.requestDraw();
@@ -268,6 +269,7 @@ CanvasManager.prototype.mousemove = function(e) {
 	if (this._handler.mousemove) {
 		var dx = this._ui.mouseDelta['x'];
 		var dy = this._ui.mouseDelta['y'];
+		var r = this._handler.mousemove(dx, dy);
 		if (this._handler.mousemove(dx, dy) != false)
 			this.requestDraw();
 	}		

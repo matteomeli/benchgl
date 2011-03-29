@@ -3,13 +3,6 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-// Model update states constants
-const BGL_UPDATE_VERTEX = 0;
-const BGL_UPDATE_NORMAL = 1;
-const BGL_UPDATE_TCOORD = 2;
-const BGL_UPDATE_COLOR = 3;
-const BGL_UPDATE_INDEX = 4;
-
 /**
  * Creates a new Model.
  * @class Represents a geometric mesh.
@@ -21,7 +14,7 @@ function Model(gl, options) {
 	var options = options || {};
 	var defaultOptions = {
 		dynamic 		: true,
-		ucolor			: false, 
+		useMaterial : false, 
 		vertices		: [],
 		normals			: [],
 		texcoords		: [],
@@ -51,15 +44,15 @@ function Model(gl, options) {
 	this._primitives = options.primitives;
 	this._indices = options.indices;
 	this._uniforms = options.uniforms;
-	this._ucolor = options.ucolor;
+	this._useMaterial = options.useMaterial;
 	
-	this._pending = [];
-	
-	if (!this._ucolor) {
+	if (!this._useMaterial) {
 		this.normalizeColor();
 	}
 	
-	this.buildMesh();
+	if (this._dynamic) {
+  	this.buildMesh();
+  }
 };
 
 Model.prototype = {
@@ -78,7 +71,7 @@ Model.prototype.buildMesh = function() {
 	if (this._texcoords.length > 0)
 		mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
 	
-	if (this._color.length > 0 && !this._ucolor)
+	if (this._color.length > 0 && !this._useMafterial)
 		mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
 	
 	for (var i in this._primitives) {
@@ -100,8 +93,14 @@ Model.prototype.buildMesh = function() {
  */
 Model.prototype.setVertices = function(vertices) {
 	this._vertices = vertices;
-	this._pending.push(BGL_UPDATE_VERTEX);
-	if (this._dynamic) this.updateMesh();
+
+	if (this._dynamic) {
+  	this._mesh.addAttribute('a_position', 3, false, new Float32Array(this._vertices));
+  	if (!this._useMaterial) {
+  		this.normalizeColor();
+  		this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+  	}
+  }
 };
 
 /**
@@ -110,8 +109,10 @@ Model.prototype.setVertices = function(vertices) {
  */
 Model.prototype.setNormals = function(normals) {
 	this._normals = normals;
-	this._pending.push(BGL_UPDATE_NORMAL);
-	if (this._dynamic) this.updateMesh();
+
+	if (this._dynamic) {
+    this._mesh.addAttribute('a_normal', 3, false, new Float32Array(this._normals));		
+	}
 };
 
 /**
@@ -120,8 +121,10 @@ Model.prototype.setNormals = function(normals) {
  */
 Model.prototype.setTexcoords = function(texcoords) {
 	this._texcoords = texcoords;
-	this._pending.push(BGL_UPDATE_TCOORD);
-	if (this._dynamic) this.updateMesh();
+
+	if (this._dynamic) {
+    this._mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
+	}
 };
 
 /**
@@ -130,8 +133,13 @@ Model.prototype.setTexcoords = function(texcoords) {
  */
 Model.prototype.setColor = function(color) {
 	this._color = color;
-	this._pending.push(BGL_UPDATE_COLOR);
-	if (this._dynamic) this.updateMesh();
+
+  if (this._dynamic) {
+    if (!this._useMaterial) {
+      this.normalizeColor();
+      this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+    }
+  }
 };
 
 /**
@@ -143,12 +151,18 @@ Model.prototype.setColor = function(color) {
 Model.prototype.setIndices = function(name, primitives, indices) {
 	this._indices[name] = indices;
 	this._primitives[name] = primitives;
-	this._pending.push(BGL_UPDATE_INDEX);
-	if (this._dynamic) this.updateMesh();
-};
 
-Model.prototype.setUniforms = function(mapping) {
-	this._uniforms = mapping;
+	if (this._dynamic) {
+    for (var p in this._primitives) {
+      var primitives = this._primitives[p] || this.gl.TRIANGLES;
+      var indices = this._indices[p];
+      if (!indices || indices.length == 0) {
+        this._mesh.addFlatTopology(p, primitives, 0, this._vertices.length);
+      } else {
+        this._mesh.addIndexedTopology(p, primitives, new Uint16Array(indices));
+      }
+    }
+	}
 };
 
 /**
@@ -156,11 +170,13 @@ Model.prototype.setUniforms = function(mapping) {
  * @param {Number[]} vertices The vertices to add.
  */
 Model.prototype.addVertices = function(vertices) {
+	var newVertices = this._vertices;
+	
 	for (var i=0; i<vertices.length; i++) {
-		this._vertices.push(vertices[i]);
+		newVertices.push(vertices[i]);
 	}
-	this._pending.push(BGL_UPDATE_VERTEX);
-	if (this._dynamic) this.updateMesh();
+	
+	this.setVertices(newVertices);
 };
 
 /**
@@ -168,11 +184,13 @@ Model.prototype.addVertices = function(vertices) {
  * @param {Number[]} normal The normals to add.
  */
 Model.prototype.addNormals = function(normals) {
+  var newNormals = this._normals;
+	
 	for (var i=0; i<normals.length; i++) {
-		this._normals.push(normals[i]);
+		newNormals.push(normals[i]);
 	}
-	this._pending.push(BGL_UPDATE_NORMAL);
-	if (this._dynamic) this.updateMesh();
+	
+	this.setNormals(newNormals);
 };
 
 /**
@@ -180,23 +198,23 @@ Model.prototype.addNormals = function(normals) {
  * @param {Number[]} texcoords The texture coordinates to add.
  */
 Model.prototype.addTexcoords = function(texcoords) {
+	var newTexcoords = this._texcoords;
+	
 	for (var i=0; i<texcoords.length; i++) {
-		this._texcoords.push(texcoords[i]);
+		newTexcoords.push(texcoords[i]);
 	}
-	this._pending.push(BGL_UPDATE_TCOORD);
-	if (this._dynamic) this.updateMesh();
+	
+	this.setTexcoords(newTexcoords);
 };
 
 Model.prototype.addIndices = function(name, primitives, indices) {
-	if (!this._indices[name]) {
-  	this._indices[name] = [];
-  	this._primitives[name] = primitives;
-	}
+	var newIndices = this._indices[name] || [];
+	
 	for (var i=0; i<indices.length; i++) {
-		this._indices[name].push(indices[i]);
+		newIndices.push(indices[i]);
 	}
-	this._pendingChange = BGL_UPDATE_INDEX;
-	if (this._dynamic) this.updateMesh();
+
+  this.setIndices(name, primitives, newIndices);
 };
 
 Model.prototype.setUniform = function(name, value) {
@@ -241,60 +259,15 @@ Model.prototype.calculateCentroid = function() {
 };
 
 /**
- * Updates this Model reflecting its changes to the wrapped Mesh object.
- */
-Model.prototype.updateMesh = function() {
-	var updates = this._pending;
-			
-	while (updates.length) {
-		var update = updates.shift();
-		
-  	switch (update) {
-  		case BGL_UPDATE_VERTEX:
-  			this._mesh.addAttribute('a_position', 3, false, new Float32Array(this._vertices));
-  			if (!this._ucolor) {
-  				this.normalizeColor();
-					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
-				}
-				break;
-  		case BGL_UPDATE_NORMAL:
-				this._mesh.addAttribute('a_normal', 3, false, new Float32Array(this._normals));
-  			break;
-  		case BGL_UPDATE_TCOORD:
-  			this._mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
-				break;
-  		case BGL_UPDATE_COLOR:
-  			if (!this._ucolor) {
-  				this.normalizeColor();
-					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
-				}
-				break;
-  		case BGL_UPDATE_INDEX:
-  				for (var i in this._primitives) {
-						var primitives = this._primitives[i] || this.gl.TRIANGLES;
-						var indices = this._indices[i];
-						if (!indices || indices.length == 0) {
-							this._mesh.addFlatTopology(i, primitives, 0, this._vertices.length);
-						} else {
-							this._mesh.addIndexedTopology(i, primitives, new Uint16Array(indices));
-						}
-					}
-					break;
-  		default:
-  			break;
-  	}
-  }
-};
-
-/**
  * Renders this Model.
  * @param {Program} program The program in the current rendering state.
  * @param {String} primitives The primitives to render.
  */
 Model.prototype.render = function(program, primitives) {
-	if (!this._dynamic) this.updateMesh();
-	if (this._mesh) {
-		this._mesh.render(program, primitives);
-	}
+	if (!this._dynamic) {
+  	this.buildMesh();
+  }
+	
+	this._mesh.render(program, primitives);
 };
 

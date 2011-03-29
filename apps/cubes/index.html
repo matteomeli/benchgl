@@ -35,7 +35,7 @@ function MarchingCubesExample() {
   this.colorB = colorB;
   this.sampler = sampler;
   this.animation = animation;
-	this.dataset_size = 32;
+	this.dataset_size = 16;
 	this.step = 1.0/this.dataset_size;
   this.time = 0.0;
   this.samplers = [];  
@@ -61,6 +61,13 @@ MarchingCubesExample.prototype.load = function() {
 	this.engine.setLight('light0', true);
 	
 	// Compute the isosurface for the first time
+  this.model = this.engine.createModel({
+    useMaterial   : true,
+    uniforms  : {
+      u_shininess : 4.0,
+      u_color     : [+this.colorR.value, +this.colorG.value, +this.colorB.value, 1.0]
+    }			
+	}); 
   this.compute();
 	
 	// Initialize user control variables
@@ -82,10 +89,10 @@ MarchingCubesExample.prototype.mouseup = function(e, x, y) {
 };
 
 MarchingCubesExample.prototype.mousemove = function(dx, dy) {
-  if (!this.mouseDown) return;
-  
-  this.rotX += dy/2;
-  this.rotY += dx/2;
+  if (this.mouseDown) {
+  	this.rotX += dy / 2;
+  	this.rotY += dx / 2;
+  }
 };
 
 MarchingCubesExample.prototype.mousewheel = function(delta, dx, dy) {
@@ -202,22 +209,14 @@ MarchingCubesExample.prototype.compute = function() {
 			console.log('error!');
 		}
 	}, 
-	function(result) {
-	  var modelOptions = {
-	  	ucolor		: true,
-	  	vertices 	: result.vertices,
-	  	normals 	: result.normals,
-	  	uniforms 	: {
-	  		u_shininess : 4.0,
-	  		u_color			: color
-	  	}
-	  };
-	  myself.model = myself.engine.createModel(modelOptions);	
+	function(geometry) {
+	  myself.model.setVertices(geometry.vertices);
+		myself.model.setNormals(geometry.normals);
 	}, {
 		vertices 	: [],
 		normals 	: []
 	});
-	
+
   /*modelOptions = new MarchingCubes().compute(size, step, time, iso, sampler);
 	this.model = this.engine.createModel({
   	ucolor		: true,
