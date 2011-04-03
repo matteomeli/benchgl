@@ -3,93 +3,54 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-/**
- * Creates a new FreeMovementController.
- * @class Controls the movement of any free 
- * "movable" object with 6 degrees of freedom. 
- */
-function FreeMovementController() {
-	this.pos = new Vector([0.0, 0.0, 0.0]);
-	this.rgt = new Vector([1.0, 0.0, 0.0]);
-	this.upv = new Vector([0.0, 1.0, 0.0]);
-	this.dir = new Vector([0.0, 0.0, 1.0]);
-	this.vel = new Vector([0.0, 0.0, 0.0]);
-	this.rotX = this.rotY = this.rotZ = 0.0;
-	this.rollSpd = this.pitchSpd = this.yawSpd = 0.0;
-	this.quat = Quaternion.Identity();
-	//this.view = this.frame.getMatrix(); 
-};
-
-FreeMovementController.prototype = {
-	get position() { return this.pos; },
-	get right() { return this.rgt; },
-	get up() { return this.upv; },
-	get direction() { return this.dir; },
-	get velocity() { return this.vel; },
+(function () {
 	
-	set position(pos) { this.pos = pos; },
-	set right(rgt) { this.rgt = rgt; },
-	set up(upv) { this.upv = upv; },
-	set direction(dir) { this.dir = dir; },
+	var Vec3 = BenchGL.Vector3,
+			MatStack = BenchGL.MatrixStack,
+			TransStack = BenchGL.TransformationStack;
 	
-	set rotationSpeedX(sx) { this.rollSpd = sx; },
-	set rotationSpeedY(sy) { this.pitchSpd = sy; },
-	set rotationSpeedZ(sz) { this.yawSpd = sz; },
-	
-	addRotationSpeed: function(sx, sy, sz) {
-		this.rollSpd += sx;
-		this.pitchSpd += sy;
-		this.yawSpd += sz;
-	},
-	
-	setRotationSpeed: function(sx, sy, sz) {
-		this.rollSpd = sx;
-		this.pitchSpd = sy;
-		this.yawSpd = sz;	
-	},
-	
-	setRotation: function(rx, ry, rz) {
-		this.rotX = rx;
-		this.rotY = ry;
-		this.rotZ = rz;
-	},
-	
-	update: function(elapsedTime) {
-		// Calculate new rotation angles
-		this.rotX = this.rollSpd * elapsedTime;
-		this.rotY = this.pitchSpd * elapsedTime;
-		this.rotZ = this.yawSpeed * elapsedTime;
+	var Camera = function(options) {
+		var e = options.eye,
+				d = options.direction,
+				u = options.up,
+				fovy = options.fovy,
+				aspect = options.aspect,
+				near = options.near,
+				far = options.far;
 		
-		// Update velocity vector and position
-		this.vel = this.dir.scale(elapsedTime);
-		this.pos = this.pos.add(this.vel);
-		
-		// Update the local frame
-		this.updateLocalAxis();
-	},
+		this.fovy = fovy;
+		this.aspect = aspect;
+		this.near = near;
+		this.far = far;
+		this.eye = e && new Vec3(e.x, e.y, e.z) || new Vec3();
+		this.direction = d && new Vec3(d.x, d.y, d.z) || new Vec3();
+		this.up = u && new Vec3(u.x, u.y, u.z) || new Vec3(0, 1, 0);
+			
+		this.transform = new TransStack();
+		this.transform.projection();
+		this.transform.perspective(fovy, aspect, near, far);
+	};
 	
-	updateLocalAxes: function() {
-		with (this) {
-			// Keep rotations into the range of 360 degrees
-			if (rotX > DPI) rotX -= DPI;
-			else if (rotX < -DPI) rotX += DPI;
-			
-			if (rotY > DPI) rotY -= DPI;
-			else if (rotY < -DPI) rotY += DPI;
-			
-			if (rotZ > DPI) rotZ -= DPI;
-			else if (rotZ < -DPI) rotZ += DPI;
-			
-			// Builds a quaternion to represent the current rotation
-			var frame = Quaternion.MakeFromEuler(rotX, rotY, rotZ);
-			// Add the current rotation
-			quat = quat.multiply(frame);
-			
-			// Get the corresponding view matrix from the quaternion
-			var view = quat.getMatrix();
-			rgt = view.row(1);
-			upv = view.row(2);
-			dir = view.row(3); 
-		}
-	}
-};
+	Camera.prototype.update = function() {
+		this.transform.view();
+		this.transform.lookAt(this.eye, this.direction, this.up);
+		this.transform.model();
+	};
+	
+	Camera.prototype.move = function(options) {
+		options = options || {};
+		
+		var e = options.eye,
+				d = options.direction,
+				u = options.up;
+				
+		this.eye = e && new Vec3(e.x, e.y, e.z) || new Vec3();
+		this.direction = d && new Vec3(d.x, d.y, d.z) || new Vec3();
+		this.up = u && new Vec3(u.x, u.y, u.z) || new Vec3(0, 1, 0);
+		
+		this.update();
+	};
+	
+	BenchGL.Camera = Camera;
+	
+})();

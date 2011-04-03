@@ -3,291 +3,104 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-/**
- * Creates a new CanvasUI.
- * @class Holds information about a canvas.
- */
-function CanvasUI(canvas) {
-	this._canvas = canvas;
+(function() {
 	
-	this._keysDown = {};
-	this._mouseButtonsDown = {};
-	this._mousePos = { x: 0.0, y: 0.0 };
-	this._mouseLastPos = { x: 0.0, y: 0.0 };
-	this._mouseDelta = { x: 0.0, y: 0.0 };
-};
-
-/**
- * Getters.
- */
-CanvasUI.prototype = {
-	get canvas() { return this._canvas; },
-	get height() { return this._canvas.height; },
-	get width() { return this._canvas.width; },
-	
-	get keysDown() { return this._keysDown; },
-	get mouseButtonsDown() { return this._mouseButtonsDown; },
-	get mousePos() { return this._mousePos; },
-	get mouseLastPos() { return this._mouseLastPos; },
-	get mouseDelta() { return this._mouseDelta; }
-};
-
-
-/**
- * Creates a new CanvasManager.
- * @class Manages a canvas wrapped in a CanvasUI object.
- */
-function CanvasManager(canvasID) {
-	var handler = BenchGL.getInstance().handler;
-	
-	var canvas = document.getElementById(canvasID);
-	if (!canvas) throw new Error("Canvas not found.");
-	
-	//canvas.contentEditable = true;
-
-	var gl = getWebGLContext(canvasID);
-	if (!gl) throw new Error("Can't initialize WebGL context.");
-	
-	var ui = new CanvasUI(canvas);
-	var timer = new Timer();
-	handler.ui = ui;
-	
-	this.gl = gl;
-	this._handler = handler;
-	this._canvas = canvas;
-	this._ui = ui;
-	
-	this._timerID = null;
-	
-	this._timer = timer;
-	
-	// Get a reference to this object for closures
-	var myself = this;
-	
-	this.drawAwaiting = false;
-	this.drawFunc = function() {
-		myself.draw();
-	}
-	
-	// Register event functions (document)
-	document.addEventListener("keydown", function(e) { myself.keydown(e); }, false);
-	document.addEventListener("keyup", function(e) { myself.keyup(e); }, false);
-	
-	// Register event functions (canvas)
-	this._canvas.addEventListener("mousedown", function(e) { myself.mousedown(e); }, false);
-	this._canvas.addEventListener("mouseup", function(e) { myself.mouseup(e); }, false);
-	this._canvas.addEventListener("mousemove", function(e) { myself.mousemove(e); }, false);
-	this._canvas.addEventListener("mousewheel",      function(e) { myself.mousewheel  (e); }, false);
-	this._canvas.addEventListener("DOMMouseScroll",  function(e) { myself.mousewheel  (e); }, false);
-};
-
-/**
- * Getters and setters.
- */
-CanvasManager.prototype = {
-	get handler() { return this._handler; },
-	get canvas() { return this._canvas; },
-	get ui() { return this._ui; },
-};
-
-/**
- * Gets the current fps
- * @param {String} 
- * @param {Number} 
- * @returns
- */
-CanvasManager.prototype.getFps = function() {
-	return this._timer.fps;
-};
-
-/**
- * Request a drawing loop with the desired update rate.
- * @param {Number} updateRate The target frame rate.
- */
-CanvasManager.prototype.startDrawingLoop = function(updateRate) {
-	var rate = updateRate;
-	if (rate < 0.0) rate = 0.0;
-	if (rate > 1000.0) rate = 1000.0;
-	if (this._timer.target == rate) return;
-	
-	this._timer.target = updateRate;
-	
-	if (this._timerID != null) {
-		clearInterval(this._timerID);
-		this._timerID = null;
-	}
-	
-	if (this._timer.target > 0.0) {
-		var ms = 1000.0 / this._timer.target;
-		if (ms < 1.0) ms = 1.0;
-		var manager = this;
+	var Canvas = function(canvas, options) {
+		options = $.mix({
+			onKeyDown : $.empty,
+			onKeyUp 	: $.empty,
+			onMouseDown : $.empty,
+			onMouseUp		: $.empty,
+			onMouseMove : $.empty,
+			onMouseWheel	: $.empty,
+			onMouseOut    : $.empty
+		}, options || {});
 		
-		this._timer.start();
+		this.canvas = canvas;
+		this.events = options;
+		this.keysDown = {};
+		this.mouseDown = {};
+		this.mousePosition = { x: 0.0, y: 0.0 };
+		this.mouseLastPosition = { x: 0.0, y: 0.0 };
+		this.mouseDelta = { x: 0.0, y: 0.0 };
 		
-		this._timerID = setInterval(function() { manager.update(); }, ms);
-	}
-};
-
-/**
- * Request to stop the active drawing loop.
- */
-CanvasManager.prototype.stopDrawingLoop = function() {
-	this._timer.clear();
-	if (this._timerID != null) {
-		clearInterval(this._timerID);
-		this._timerID = null;
-	}	
-};
-
-/**
- * Request a draw.
- */
-CanvasManager.prototype.requestDraw = function() {
-	if (!this.drawAwaiting) {
-		this.drawAwaiting = true;
-		setTimeout(this.drawFunc, 0);
-	}
-};
-
-/**
- * Request the handler's load function, if any.
- */
-CanvasManager.prototype.load = function() {
-	if (this._handler.load) {
-		this._handler.load();
-	}
-	this.requestDraw();
-};
-
-/**
- * Updates the drawing state by the frame elapsed time.
- */
-CanvasManager.prototype.update = function() {
-  var draw = false;
+		myself = this;
+		canvas.addEventListener("keydown", function(e) { myself.onKeyDown(e); }, false);
+		canvas.addEventListener("keyup", function(e) { myself.onKeyUp(e); }, false);
+		canvas.addEventListener("mousedown", function(e) { myself.onMouseDown(e); }, false);
+		canvas.addEventListener("mouseup", function(e) { myself.onMouseUp(e); }, false);
+		canvas.addEventListener("mousemove", function(e) { myself.onMouseMove(e); }, false);
+		canvas.addEventListener("mousewheel", function(e) { myself.onMouseWheel(e); }, false);
+		canvas.addEventListener("DOMMouseScroll", function(e) { myself.onMouseWheel(e); }, false);
+		canvas.addEventListener("mouseout", function(e) { myself.onMouseOut(e); }, false);
+	};
 	
-	this._timer.stop();
-	if (this._handler.update) {
-		draw = this._handler.update(this._timer.elapsedTime);
-	}
+	Canvas.prototype.onKeyDown = function(e) {
+		this.keysDown[e.keyCode] = true;
+		this.events.onKeyDown(e);
+	};
 	
-	if (draw)
-		this.requestDraw();
-};
-
-/**
- * Calls the handler's drawing function, if any.
- */
-CanvasManager.prototype.draw = function() {
-	if (this._handler.draw)
-		this._handler.draw();
+	Canvas.prototype.onKeyUp = function(e) {
+		this.keysDown[e.keyCode] = false;
+		this.events.onKeyUp(e);
+	};
+	
+	Canvas.prototype.onMouseDown = function(e) {
+		var x = e.clientX,
+				y = this.height - e.clientY - 1;
+				
+		this.mousePosition.x = x;
+		this.mousePosition.y = y;
+		this.mouseLastPosition.x = x;
+		this.mouseLastPosition.y = y;
+		this.mouseDelta.x = 0.0;
+		this.mouseDelta.y = 0.0;
+		this.mouseDown[e.button] = true;
 		
-	this.gl.flush();
+		this.events.onMouseDown(e, x, y);
+	};
 	
-	this.drawAwaiting = false;
-};
-
-/**
- * Callback function to handle keyboard presses.
- * @param e The event to process.
- */
-CanvasManager.prototype.keydown = function(e) {
-  var key = String.fromCharCode(e.keyCode);
+	Canvas.prototype.onMouseUp = function(e) {
+		var x = e.clientX,
+				y = this.height - e.clientY - 1;
+				
+		this.mousePosition.x = x;
+		this.mousePosition.y = y;
+		this.mouseLastPosition.x = x;
+		this.mouseLastPosition.y = y;
+		this.mouseDelta.x = 0.0;
+		this.mouseDelta.y = 0.0;
+		this.mouseDown[e.button] = false;
+		
+		this.events.onMouseUp(e, x, y);
+	};
 	
-	this._ui.keysDown[e.keyCode] = true;
-	if (this._handler.keydown) {
-		if (this._handler.keydown(e) != false)
-			this.requestDraw();
-	}
-};
-
-/**
- * Callback function to handle keyboard depresses.
- * @param e The event to process.
- */
-CanvasManager.prototype.keyup = function(e) {
-	this._ui.keysDown[e.keyCode] = false;
-	var key = String.fromCharCode(e.keyCode);
-	if (this._handler.keyup) {
-		if (this._handler.keyup(e) != false)
-			this.requestDraw();
-	}
-};
-
-/**
- * Callback function to handle mouse presses.
- * @param e The event to process.
- */
-CanvasManager.prototype.mousedown = function(e) {
-	this._ui.mouseButtonsDown[e.button] = true;
-	var x = e.clientX;
-	var y = this._ui.height - e.clientY - 1;
-	this._ui.mousePos['x'] = x;
-	this._ui.mousePos['y'] = y;
-	this._ui.mouseLastPos['x'] = x;
-	this._ui.mouseLastPos['y'] = y;
-	this._ui.mouseDelta['x'] = 0.0;
-	this._ui.mouseDelta['y'] = 0.0;
-	if (this._handler.mousedown) {
-		if (this._handler.mousedown(e, x, y) != false)
-			this.requestDraw();
-	}	
-};
-
-/**
- * Callback function to handle mouse depresses.
- * @param e The event to process.
- */
-CanvasManager.prototype.mouseup = function(e) {
-	this._ui.mouseButtonsDown[e.button] = false;
-	var x = e.clientX;
-	var y = this._ui.height - e.clientY - 1;
-	this._ui.mousePos['x'] = x;
-	this._ui.mousePos['y'] = y;
-	this._ui.mouseLastPos['x'] = x;
-	this._ui.mouseLastPos['y'] = y;
-	this._ui.mouseDelta['x'] = 0.0;
-	this._ui.mouseDelta['y'] = 0.0;
-	if (this._handler.mousedown) {
-		if (this._handler.mouseup(e, x, y) != false)
-			this.requestDraw();
-	}	
-};
-
-/**
- * Callback function to handle mouse movements.
- * @param e The event to process.
- */
-CanvasManager.prototype.mousemove = function(e) {
-	var x = e.clientX;
-	var y = this._ui.height - e.clientY - 1;
-	this._ui.mouseLastPos['x'] = this._ui.mousePos['x'];
-	this._ui.mouseLastPos['y'] = this._ui.mousePos['y'];
-	this._ui.mousePos['x'] = x;
-	this._ui.mousePos['y'] = y;
-	this._ui.mouseDelta['x'] = this._ui.mousePos['x'] - this._ui.mouseLastPos['x'];
-	this._ui.mouseDelta['y'] = this._ui.mousePos['y'] - this._ui.mouseLastPos['y'];			
-	if (this._handler.mousemove) {
-		var dx = this._ui.mouseDelta['x'];
-		var dy = this._ui.mouseDelta['y'];
-		var r = this._handler.mousemove(dx, dy);
-		if (this._handler.mousemove(dx, dy) != false)
-			this.requestDraw();
-	}		
-};
-
-CanvasManager.prototype.mousewheel = function(e) {
-	var x = e.clientX;
-	var y = this._ui.height - e.clientY - 1;
-	this._ui.mouseLastPos['x'] = this._ui.mousePos['x'];
-	this._ui.mouseLastPos['y'] = this._ui.mousePos['y'];
-	this._ui.mousePos['x'] = x;
-	this._ui.mousePos['y'] = y;
-	this._ui.mouseDelta['x'] = 0;
-	this._ui.mouseDelta['y'] = 0;		
-	if (this._handler.mousewheel) {
-		var dx = this._ui.mouseDelta['x'];
-		var dy = this._ui.mouseDelta['y'];
-		var delta = 0;
+	Canvas.prototype.onMouseMove = function(e) {
+		var x = e.clientX,
+				y = this.height - e.clientY - 1;
+				
+		this.mouseLastPosition.x = this.mousePosition.x;
+		this.mouseLastPosition.y = this.mousePosition.y;
+		this.mousePosition.x = x;
+		this.mousePosition.y = y;
+		this.mouseDelta.x = this.mousePosition.x - this.mouseLastPosition.x;
+		this.mouseDelta.y = this.mousePosition.y - this.mouseLastPosition.y;
+	
+		this.events.onMouseMove(e, this.mouseDelta.x, this.mouseDelta.y);
+	};
+	
+	Canvas.prototype.onMouseWheel = function(e) {
+		var x = e.clientX,
+				y = this.height - e.clientY - 1,
+				delta = 0;
+				
+		this.mouseLastPosition.x = this.mousePosition.x;
+		this.mouseLastPosition.y = this.mousePosition.y;
+		this.mousePosition.x = x;
+		this.mousePosition.y = y;
+		this.mouseDelta.x = 0;
+		this.mouseDelta.y = 0;
+			
 		if (!e) /* For IE. */ {
 			e = window.event;
 		}
@@ -309,9 +122,15 @@ CanvasManager.prototype.mousewheel = function(e) {
 		 * Basically, delta is now positive if wheel was scrolled up,
 		 * and negative, if wheel was scrolled down.
 		 */
-		if (delta) {
-			if (this._handler.mousewheel(delta, dx, dy) != false)
-				this.requestDraw();
-		}
-	}		
-};
+		if (delta)
+			this.events.onMouseWheel(e, delta);
+	};
+	
+	Canvas.prototype.onMouseOut = function(e) {
+		// TODO
+		this.events.onMouseOut(e);
+	};
+	
+	BenchGL.Canvas = Canvas;
+	
+})();

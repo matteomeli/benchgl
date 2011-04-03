@@ -3,17 +3,28 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-function WebGL(canvas, options) {
-	// TODO: throw error to console if canvas not present
-	
-	var myCanvas = (canvas.width) ? canvas : document.getElementById(canvas);
-	if (!myCanvas) return null;
-	
-	var gl = myCanvas.getContext("experimental-webgl", options);
-	if (!gl) return null;
-	
-	this.gl = gl;
-};
+(function() {
 
-// TODO
+	var WebGL = function(canvas, options) {
+		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
+				gl = canvas.getContext('experimental-webgl', options);
+		
+		if (!gl) {
+			gl = canvas.getContext('webgl', options);
+		}
+		
+		this.context = gl;
+		this.canvas = canvas;
+	};
+	
+	WebGL.prototype.getContext = function() {
+		return this.context;
+	};
+	
+	WebGL.prototype.getCanvas = function() {
+		return this.canvas;
+	};
+	
+	BenchGL.WebGL = WebGL;
 
+})();

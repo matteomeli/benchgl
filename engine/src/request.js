@@ -3,70 +3,111 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-
-function XHRequest(options) {
-	var defaultOptions = {
-		url				: '',
-		async 		: true,
-		method		: 'GET',
-		callback	:	null,
+(function() {
+	
+	var XHRequest = function(options) {
+		options = $.mix({
+			url : 'www.google.com',
+			method : 'GET',
+			async : true,
+			binary : false,
+			onProgress : $.empty,
+			onLoad : $.empty,
+			onError : $.empty,
+			onAbort : $.empty,
+			onSuccess : $.empty
+		}, options || {});
+		
+		this.options = options;
+		this.request = new XmlHttpRequest();
+		myself = this;
+		
+		request.addEventListener("progress", function(e) { myself.onProgress(e); }, false);
+		request.addEventListener("load", function(e) { myself.onLoad(e); }, false);
+		request.addEventListener("error", function(e) { myself.onError(e); }, false);
+		request.addEventListener("abort", function(e) { myself.onAbort(e); }, false);
 	};
 	
-	var options = options || {};
-	for (var d in defaultOptions) {
-		if (typeof options[d] == "undefined") options[d] = defaultOptions[d];
-	}
-	
-	this._url = options.url;
-	this._async = options.async;
-	this._method = options.method;
-	this._callback = options.callback;
-};
-
-XHRequest.prototype.send = function() {
-	var request = new XMLHttpRequest();
-	var callback = this._callback;
-	
-	if (this._async) {
-		request.onreadystatechange = function() {
-			if (request.readyState == 4) {
-				if (request.status == 200) {
-					if (callback) {
-						callback(request.responseText);
+	XHRequest.prototype.send = function() {
+		var options = this.options,
+				url = this.options.url,
+				method = this.options.method,
+				async = this.options.async,
+				this.binary = this.options.binary,
+				request = this.request;
+				
+		request.open(method, url, async);
+		
+		if (async) {
+			request.onreadystatechange = function(e) {
+				if (request.readyState == 4) {
+					if (request.status == 200) {
+						options.onSuccess(request.responseText);
+					} else {
+						options.onError(request.status);
 					}
 				}
-			}
-		};
-	}
-	
-	request.open(this._method, this._url, this._async);
-	request.send();
-	
-	var ret = null;
-	if (!this._async) {
-		ret = request.responseText;
-	}
-	
-	return ret;
-};
-
-function TextureRequest(gl, options) {
-	var textures = options.textures;
-	var callback = options.callback;
-	var keys = Object.keys(textures);
-	
-	keys.map(function(key) {
-		var textureOptions = textures[key];
-		textureOptions.name = key;
-		textureOptions.image = new Image();
-		textureOptions.image.onload = function() {
-			var texture = new Texture(gl, textureOptions);
-			if (callback)
-				callback(texture);
+			};
 		}
-		textureOptions.image.src = textures[key].path + textures[key].src;
-	});
-};
-
-
-
+		
+		if (binary) {
+			request.sendAsBinary(null);
+		} else {
+			request.send(null);
+		}
+		
+		if (!async) {
+			if (request.status == 200) {
+				options.onSuccess(request.responseText);
+			} else {
+				options.onError(request.status);
+			}
+		}
+	};
+	
+	XHRequest.prototype.onProgress = function(e) {
+		this.options.onProgress(e);
+	};
+	
+	XHRequest.prototype.onError = function(e) {
+		this.options.onError(e);
+	};
+	
+	XHRequest.prototype.onAbort = function(e) {
+		this.options.onAbort(e);
+	};
+	
+	XHRequest.prototype.onLoad = function(e) {
+		this.options.onLoad(e);
+	};
+	
+	TextureRequest = function(options) {
+		options = $.mix({
+			textures : {},
+			callback : $.empty
+		}, options || {});
+		
+		this.textures = options.textures;
+		this.callback = options.callback;
+	};
+	
+	var TextureRequest.prototype.send = function() {
+		var textures = this.textures,
+				keys = Object.keys(this.textures),
+				callback = this.callback;
+				textureOpt;
+				
+		keys.map(function(key) {
+			textureOpt = textures[key];
+			textureOpt.image = new Image();
+			textureOpt.image.onload = function() {
+				callback(key, textureOpt);
+			};
+			textureOpt.image.src = textureOpt.src;
+		});
+	};
+	
+	BenchGL.XHRequest = XHRequest;
+	BenchGL.TextureRequest = TextureRequest;
+	
+})();
