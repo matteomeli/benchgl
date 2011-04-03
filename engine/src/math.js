@@ -195,7 +195,7 @@ Vector.prototype.angleWith = function(vector) {
 	if (this.elements.length != V.length) return null;
 	var dot = this.dot(vector);
 	var mod1 = this.modulus();
-	var mod2 = this.modulus();
+	var mod2 = vector.modulus();
 	return Math.acos(dot/(mod1 * mod2));
 };
 
@@ -940,8 +940,8 @@ Quaternion.prototype.multiply = function(q) {
  */
 Quaternion.prototype.getMatrix = function() {
 	var X = this.v[0]*this.v[0];
-	var Y = this.v[0]*this.v[0];
-	var Z = this.v[0]*this.v[0];
+	var Y = this.v[1]*this.v[1];
+	var Z = this.v[2]*this.v[2];
 	var xy = this.v[0]*this.v[1];
 	var xz = this.v[0]*this.v[2];
 	var yz = this.v[1]*this.v[2];

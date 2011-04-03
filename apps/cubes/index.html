@@ -210,8 +210,18 @@ MarchingCubesExample.prototype.compute = function() {
 		}
 	}, 
 	function(geometry) {
-	  myself.model.setVertices(geometry.vertices);
-		myself.model.setNormals(geometry.normals);
+		var model = myself.engine.createModel({
+	    useMaterial   : true,
+	    vertices : geometry.vertices,
+	    normals : geometry.normals,
+	    uniforms  : {
+	      u_shininess : 4.0,
+	      u_color     : [+this.colorR.value, +this.colorG.value, +this.colorB.value, 1.0]
+	    }
+		});
+	  //myself.model.setVertices(geometry.vertices);
+		//myself.model.setNormals(geometry.normals);
+		myself.model = model;
 	}, {
 		vertices 	: [],
 		normals 	: []

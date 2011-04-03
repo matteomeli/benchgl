@@ -14,7 +14,7 @@ function Model(gl, options) {
 	var options = options || {};
 	var defaultOptions = {
 		dynamic 		: true,
-		useMaterial : false, 
+		useMaterial	: false, 
 		vertices		: [],
 		normals			: [],
 		texcoords		: [],
@@ -71,7 +71,7 @@ Model.prototype.buildMesh = function() {
 	if (this._texcoords.length > 0)
 		mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
 	
-	if (this._color.length > 0 && !this._useMafterial)
+	if (this._color.length > 0 && !this._useMaterial)
 		mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
 	
 	for (var i in this._primitives) {
@@ -256,6 +256,53 @@ Model.prototype.calculateCentroid = function() {
 	}
 	
 	return [x, y, z];
+};
+
+/**
+<<<<<<< .mine
+ * Updates this Model reflecting its changes to the wrapped Mesh object.
+ */
+Model.prototype.updateMesh = function() {
+	var updates = this._pending;
+			
+	while (updates.length) {
+		var update = updates.shift();
+		
+  	switch (update) {
+  		case BGL_UPDATE_VERTEX:
+  			this._mesh.addAttribute('a_position', 3, false, new Float32Array(this._vertices));
+  			if (!this._useMaterial) {
+  				this.normalizeColor();
+					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+				}
+				break;
+  		case BGL_UPDATE_NORMAL:
+				this._mesh.addAttribute('a_normal', 3, false, new Float32Array(this._normals));
+  			break;
+  		case BGL_UPDATE_TCOORD:
+  			this._mesh.addAttribute('a_texcoord', 2, false, new Float32Array(this._texcoords));
+				break;
+  		case BGL_UPDATE_COLOR:
+  			if (!this._useMaterial) {
+  				this.normalizeColor();
+					this._mesh.addAttribute('a_color', 4, false, new Float32Array(this._color));
+				}
+				break;
+  		case BGL_UPDATE_INDEX:
+  				for (var i in this._primitives) {
+						var primitives = this._primitives[i] || this.gl.TRIANGLES;
+						var indices = this._indices[i];
+						if (!indices || indices.length == 0) {
+							this._mesh.addFlatTopology(i, primitives, 0, this._vertices.length);
+						} else {
+							this._mesh.addIndexedTopology(i, primitives, new Uint16Array(indices));
+						}
+					}
+					break;
+  		default:
+  			break;
+  	}
+  }
 };
 
 /**
