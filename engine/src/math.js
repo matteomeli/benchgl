@@ -53,7 +53,7 @@
 		var x = this.x, y = this.y, z = this.z,
 				d = sqrt(x * x + y * y + z * z);
 		if (d > 0) {
-			return this.$scale(1 / d);
+			return new Vector3(x / d, y / d, z / d);
 		}
 		return this.copy();		
 	};
@@ -62,7 +62,7 @@
 		var x = this.x, y = this.y, z = this.z,
 				d = sqrt(x * x + y * y + z * z);
 		if (d > 0) {
-			this.scale(1 / d);
+			this.$scale(1 / d);
 		}
 		return this;
 	};
@@ -141,7 +141,7 @@
 	};
 	
 	Vector3.prototype.toFloat32Array = function() {
-		return new Float32Array([x, y, z]);
+		return new Float32Array([this.x, this.y, this.z]);
 	};
 	
 	
@@ -413,65 +413,42 @@
 				m31 = this.m31, m32 = this.m32, m33 = this.m33, m34 = this.m34,
 				m41 = this.m41, m42 = this.m42, m43 = this.m43, m44 = this.m44;
 		
-		var b11 =   m22*m33*m44 + m23*m34*m42 + m24*m32*m43 
-							- m22*m34*m43 - m23*m32*m44 - m24*m33*m42;
+		var s0 = m11*m22 - m12*m21,
+				s1 = m11*m23 - m13*m21,
+				s2 = m11*m24 - m14*m21,
+				s3 = m12*m23 - m13*m22,
+				s4 = m12*m24 - m14*m22,
+				s5 = m13*m24 - m14*m23,
+				c0 = m31*m42 - m32*m41,
+				c1 = m31*m43 - m33*m41,
+				c2 = m31*m44 - m34*m41,
+				c3 = m32*m43 - m33*m42,
+				c4 = m32*m44 - m34*m42,
+				c5 = m33*m44 - m34*m43;
+				
+		det = s0*c5 - s1*c4 + s2*c3 + s3*c2 - s4*c1 + s5*c0;
+				
+		var a11 =  m22*c5 - m23*c4 + m24*c3,
+				a12 = -m12*c5 + m13*c4 - m14*c3,
+				a13 =  m42*s5 - m43*s4 + m44*s3,
+				a14 = -m32*s5 + m33*s4 - m34*s3,
+				a21 = -m21*c5 + m23*c2 - m24*c1,
+				a22 =  m11*c5 - m13*c2 + m14*c1,
+				a23 = -m41*s5 + m43*s2 - m44*s1,
+				a24 =  m31*s5 - m33*s2 + m34*s1,
+				a31 =  m21*c4 - m22*c2 + m24*c0,
+				a32 = -m11*c4 + m12*c2 - m14*c0,
+				a33 =  m41*s4 - m42*s2 + m44*s0,
+				a34 = -m31*s4 + m32*s2 - m34*s0,
+				a41 = -m21*c3 + m22*c1 - m23*c0,
+				a42 =  m11*c3 - m12*c1 + m13*c0,
+				a43 = -m41*s3 + m42*s1 - m43*s0,
+				a44 =  m31*s3 - m32*s1 + m33*s0; 
 		
-		var b12 =   m12*m34*m43 + m13*m32*m44 + m14*m33*m42
-							- m12*m33*m44 - m13*m34*m42 - m14*m32*m43;
-		
-		var b13 =   m12*m23*m44 + m13*m24*m42 + m14*m22*m43
-							- m12*m24*m43 - m13*m22*m44 - m14*m23*m42;
-		
-		var b14 =   m12*m24*m33 + m13*m22*m34 + m14*m23*m32
-							- m12*m23*m34 - m13*m24*m32 - m14*m22*m33;
-							
-		var b21 =   m21*m34*m43 + m23*m31*m44 + m24*m33*m41
-							- m21*m33*m44 - m23*m34*m41 - m24*m31*m43;
-							
-		var b22 =   m11*m33*m44 + m13*m34*m41 + m14*m31*m43
-							- m11*m34*m43 - m13*m31*m44 - m14*m33*m41;
-		
-		var b23 =   m11*m24*m43 + m13*m21*m44 + m14*m23*m41
-							- m11*m23*m44 - m13*m24*m41 - m14*m21*m43;
-		
-		var b24 =   m11*m23*m34 + m13*m24*m31 + m14*m21*m33
-							- m11*m24*m33 - m13*m21*m34 - m14*m23*m31;
-		
-		var b31 =   m21*m32*m44 + m22*m34*m41 + m24*m31*m42
-		          - m21*m34*m42 + m22*m31*m44 - m24*m32*m41;
-		          
-		var b32 =   m11*m34*m42 + m12*m31*m44 + m14*m32*m41
-							- m11*m32*m44 - m12*m34*m41 - m14*m31*m42;
-							
-		var b33 =   m11*m22*m44 + m12*m24*m41 + m14*m21*m42
-							- m11*m24*m42 - m12*m21*m44 - m14*m22*m41;
-		
-		var b34 =   m11*m24*m32 + m12*m21*m34 + m14*m22*m31
-							- m11*m22*m34 - m12*m24*m31 - m14*m21*m32;
-							
-		var b41 =   m21*m33*m42 + m22*m31*m43 + m23*m32*m41
-							- m21*m32*m43 - m22*m33*m41 - m23*m31*m42;
-							
-		var b42 =   m11*m32*m43 + m12*m33*m41 + m13*m31*m42
-							- m11*m33*m42 - m12*m31*m43 - m13*m32*m41;
-		
-		var b43 =   m11*m23*m42 + m12*m21*m43 + m13*m22*m41
-							- m11*m22*m43 - m12*m23*m41 - m13*m21*m42;
-		
-		var b44 =   m11*m22*m33 + m12*m23*m31 + m13*m21*m32
-							- m11*m23*m32 - m12*m21*m33 - m13*m22*m31;
-		
-		var det = m11*b11 + m12*b21 + m13*b31 + m14*b41;
-		if (det == 0) {
-			return false;
-		}
-		
-		det = 1.0 / det;
-		
-		return new Matrix4(b11/det, b12/det, b13/det, b14/det,
-											 b21/det, b22/det, b23/det, b24/det,
-											 b31/det, b32/det, b33/det, b34/det,
-											 b41/det, b42/det, b43/det, b44/det);
+		return new Matrix4(a11/det, a12/det, a13/det, a14/det,
+											 a21/det, a22/det, a23/det, a24/det,
+											 a31/det, a32/det, a33/det, a34/det,
+											 a41/det, a42/det, a43/det, a44/det);
 	};
 	
 	Matrix4.prototype.$invert = function() {
@@ -479,66 +456,43 @@
 				m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24,
 				m31 = this.m31, m32 = this.m32, m33 = this.m33, m34 = this.m34,
 				m41 = this.m41, m42 = this.m42, m43 = this.m43, m44 = this.m44;
+
+		var s0 = m11*m22 - m12*m21,
+				s1 = m11*m23 - m13*m21,
+				s2 = m11*m24 - m14*m21,
+				s3 = m12*m23 - m13*m22,
+				s4 = m12*m24 - m14*m22,
+				s5 = m13*m24 - m14*m23,
+				c0 = m31*m42 - m32*m41,
+				c1 = m31*m43 - m33*m41,
+				c2 = m31*m44 - m34*m41,
+				c3 = m32*m43 - m33*m42,
+				c4 = m32*m44 - m34*m42,
+				c5 = m33*m44 - m34*m43;
+				
+		det = s0*c5 - s1*c4 + s2*c3 + s3*c2 - s4*c1 + s5*c0;
+				
+		var a11 =  m22*c5 - m23*c4 + m24*c3,
+				a12 = -m12*c5 + m13*c4 - m14*c3,
+				a13 =  m42*s5 - m43*s4 + m44*s3,
+				a14 = -m32*s5 + m33*s4 - m34*s3,
+				a21 = -m21*c5 + m23*c2 - m24*c1,
+				a22 =  m11*c5 - m13*c2 + m14*c1,
+				a23 = -m41*s5 + m43*s2 - m44*s1,
+				a24 =  m31*s5 - m33*s2 + m34*s1,
+				a31 =  m21*c4 - m22*c2 + m24*c0,
+				a32 = -m11*c4 + m12*c2 - m14*c0,
+				a33 =  m41*s4 - m42*s2 + m44*s0,
+				a34 = -m31*s4 + m32*s2 - m34*s0,
+				a41 = -m21*c3 + m22*c1 - m23*c0,
+				a42 =  m11*c3 - m12*c1 + m13*c0,
+				a43 = -m41*s3 + m42*s1 - m43*s0,
+				a44 =  m31*s3 - m32*s1 + m33*s0; 
 		
-		var b11 =   m22*m33*m44 + m23*m34*m42 + m24*m32*m43 
-							- m22*m34*m43 - m23*m32*m44 - m24*m33*m42;
-		
-		var b12 =   m12*m34*m43 + m13*m32*m44 + m14*m33*m42
-							- m12*m33*m44 - m13*m34*m42 - m14*m32*m43;
-		
-		var b13 =   m12*m23*m44 + m13*m24*m42 + m14*m22*m43
-							- m12*m24*m43 - m13*m22*m44 - m14*m23*m42;
-		
-		var b14 =   m12*m24*m33 + m13*m22*m34 + m14*m23*m32
-							- m12*m23*m34 - m13*m24*m32 - m14*m22*m33;
-							
-		var b21 =   m21*m34*m43 + m23*m31*m44 + m24*m33*m41
-							- m21*m33*m44 - m23*m34*m41 - m24*m31*m43;
-							
-		var b22 =   m11*m33*m44 + m13*m34*m41 + m14*m31*m43
-							- m11*m34*m43 - m13*m31*m44 - m14*m33*m41;
-		
-		var b23 =   m11*m24*m43 + m13*m21*m44 + m14*m23*m41
-							- m11*m23*m44 - m13*m24*m41 - m14*m21*m43;
-		
-		var b24 =   m11*m23*m34 + m13*m24*m31 + m14*m21*m33
-							- m11*m24*m33 - m13*m21*m34 - m14*m23*m31;
-		
-		var b31 =   m21*m32*m44 + m22*m34*m41 + m24*m31*m42
-		          - m21*m34*m42 + m22*m31*m44 - m24*m32*m41;
-		          
-		var b32 =   m11*m34*m42 + m12*m31*m44 + m14*m32*m41
-							- m11*m32*m44 - m12*m34*m41 - m14*m31*m42;
-							
-		var b33 =   m11*m22*m44 + m12*m24*m41 + m14*m21*m42
-							- m11*m24*m42 - m12*m21*m44 - m14*m22*m41;
-		
-		var b34 =   m11*m24*m32 + m12*m21*m34 + m14*m22*m31
-							- m11*m22*m34 - m12*m24*m31 - m14*m21*m32;
-							
-		var b41 =   m21*m33*m42 + m22*m31*m43 + m23*m32*m41
-							- m21*m32*m43 - m22*m33*m41 - m23*m31*m42;
-							
-		var b42 =   m11*m32*m43 + m12*m33*m41 + m13*m31*m42
-							- m11*m33*m42 - m12*m31*m43 - m13*m32*m41;
-		
-		var b43 =   m11*m23*m42 + m12*m21*m43 + m13*m22*m41
-							- m11*m22*m43 - m12*m23*m41 - m13*m21*m42;
-		
-		var b44 =   m11*m22*m33 + m12*m23*m31 + m13*m21*m32
-							- m11*m23*m32 - m12*m21*m33 - m13*m22*m31;
-		
-		var det = m11*b11 + m12*b21 + m13*b31 + m14*b41;
-		if (det == 0) {
-			return false;
-		}
-		
-		det = 1.0 / det;
-		
-		this.set(b11/det, b12/det, b13/det, b14/det,
-						 b21/det, b22/det, b23/det, b24/det,
-						 b31/det, b32/det, b33/det, b34/det,
-						 b41/det, b42/det, b43/det, b44/det);
+		this.set(a11/det, a12/det, a13/det, a14/det,
+						 a21/det, a22/det, a23/det, a24/det,
+						 a31/det, a32/det, a33/det, a34/det,
+						 a41/det, a42/det, a43/det, a44/det);
 		
 		return this;
 	};
@@ -557,15 +511,16 @@
 											 0, 0, 0, 1);
 	};
 	
-	Matrix4.Scale = function() {
+	Matrix4.Scale = function(x, y, z) {
 		return new Matrix4(x, 0, 0, 0,
 											 0, y, 0, 0,
 											 0, 0, z, 0,
 											 0, 0, 0, 1);	
 	};
 	
-	Matrix4.Rotate = function(angle, vector) {
-		var x = vector.x, y = vector.y, z = vector.z,
+	Matrix4.Rotate = function(angle, x, y, z) {
+		var axis = new Vector3(x, y, z).$unit(),
+				x = axis.x, y = axis.y, z = axis.z,
 				s = sin(angle), c = cos(angle), t = 1 - c;
 		return new Matrix4(t*x*x + c,   t*x*y - z*s, t*x*z + y*s, 0,
 											 t*x*y + z*s, t*y*y + c, 	 t*y*z - x*s, 0,
@@ -621,6 +576,10 @@
 		var xmax = ymax * aspect;
 	
 		return Matrix4.Frustum(xmin, xmax, ymin, ymax, near, far);	
+	};
+	
+	Matrix4.Ortho = function() {
+		// TODO
 	};
 	
 	var Quaternion = function(a, b, c, d) {

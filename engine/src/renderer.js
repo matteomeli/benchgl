@@ -5,10 +5,13 @@
 
 (function() {
 
-	var Color = BenchGL.Color,
-			Vec3 = BenchGL.Vector3,
+	var Vec3 = BenchGL.Vector3,
 			Mat4 = BenchGL.Matrix4,
 			MatStack = BenchGL.MatrixStack,
+			Color = BenchGL.Color,
+			Material = BenchGL.Material,
+			Light = BenchGL.Light,
+			Texture = BenchGL.Texture,
 			TextureRequest = BenchGL.TextureRequest;
 
 	var Renderer = function(gl, program, camera, effects) {
@@ -24,7 +27,6 @@
 		this.useTexturing = false;
 		this.textures = {};
 		this.activeTextures = [];
-		this.savedTextures = 0;
 		
 		// Ambient Light
 		this.ambientColor = new Color(0.2, 0.2, 0.2);
@@ -32,9 +34,8 @@
 		// Lights
 		this.useLighting = false;
 		this.directionalColor = new Color(0.8, 0.8, 0.8);
-		this.lightingDirection = new Vector([0.0, 0.0, -1.0);
+		this.lightingDirection = new Vec3(0.0, 0.0, -1.0);
 		this.lights = {};
-		this.savedLights = 0;
 		
 		// Materials
 		this.useMaterials = false;
@@ -48,11 +49,19 @@
 		this.models = [];
 	};
 	
-	Renderer.prototype.useLighting = function(lighting) {
+	Renderer.prototype.background = function() {
+		var color = this.clearColor;
+		
+		this.gl.clearColor(color.r, color.g, color.b, color.a);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+		this.gl.enable(this.gl.DEPTH_TEST);
+	};	
+	
+	Renderer.prototype.useLights = function(lighting) {
 		this.useLighting = lighting;
 	};
 	
-	Renderer.prototype.useTexturing = function(texturing) {
+	Renderer.prototype.useTextures = function(texturing) {
 		this.useTexturing = texturing;
 	};
 
@@ -80,7 +89,7 @@
 		this.ambientColor = new Color(r, g, b, a);
 	};
 	
-	Renderer.prototype.setDirectionalColor = function(rgb) {
+	Renderer.prototype.setDirectionalColor = function(r, g, b, a) {
 		this.directionalColor = new Color(r, g, b, a);
 	};
 	
@@ -88,78 +97,66 @@
 		this.lightingDirection = new Vec3(x, y, z).$unit();
 	};
 	
-	Renderer.prototype.background = function() {
-		var color = this.color;
-		
-		this.gl.clearColor(color.r, color.g, color.b, color.a);
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-		this.gl.enable(this.gl.DEPTH_TEST);
-	};
-	
-	Renderer.prototype.setMaterial = function(options) {
-		this.material.setParameters(options);
-	};	
-	
 	Renderer.prototype.addLight = function(name, options) {
-		this.lights.push(new Light(options));
-		this.savedLights++;
-	};
-	
-	Renderer.prototype.setLight = function(name, options) {
-		if (name in lights) {
-			this.lights[name].setParameters(options);
-		}
+		this.lights[name] = new Light(options);
 	};
 	
 	Renderer.prototype.addTexture = function(name, options) {
 		this.textures[name] = new Texture(this.gl, options);
-		this.savedTextures++;
 	};
 	
 	Renderer.prototype.addTextures = function(options) {
-		new TextureRequest(options).send();
+		new TextureRequest(this, options).send();
 	};
 	
 	Renderer.prototype.setTextures = function(options) {
-		for (var o in options) {
-			if (options[o] in this.textures) {
-				this.activeTextures.push(this.textures[o]);
+		this.activeTextures = [];
+		for (var i = 0; i < arguments.length; i++) {
+			var arg = arguments[i];
+			if (arg in this.textures) {
+				this.activeTextures.push(this.textures[arg]);
 			}
 		}
 	};
 	
-	Renderer.prototype.noTexture = function() {
-		this.activeTextures = [];
+	Renderer.prototype.setUniform = function(name, value) {
+		this.uniforms[name] = value;
 	};
 	
-	Renderer.prototype.setupTransformations = function() {
+	Renderer.prototype.setSampler = function(name, value) {
+		this.samplers[name] = value;
+	};
+	
+	Renderer.prototype.setupCamera = function() {
 		var uniforms = this.uniforms,
-				proj = this.camera.transform.getProjectionMatrix(),
-				view = this.camera.transform.getViewMatrix(),
-				modelView = this.camera.transform.getModelViewMatrix(),
-				normal = this.camera.transform.getNormalMatrix();
+				transformStack = this.camera.transform,
+				proj = transformStack.getProjectionMatrix().toFloat32Array(),
+				view = transformStack.getViewMatrix().toFloat32Array(),
+				modelView = transformStack.getModelViewMatrix().toFloat32Array(),
+				normal = transformStack.getNormalMatrix().toFloat32Array();
 		
-		uniforms['u_projectionMatrix'] = proj.toFloat32Array();
-		uniforms['u_viewMatrix'] = view.toFloat32Array();
-		uniforms['u_modelViewMatrix'] = modelView.toFloat32Array();
-		uniforms['u_normalMatrix'] = normal.toFloat32Array();
+		uniforms['u_projectionMatrix'] = proj;
+		uniforms['u_viewMatrix'] = view;
+		uniforms['u_modelViewMatrix'] = modelView;
+		uniforms['u_normalMatrix'] = normal;
 	};
 	
-	Renderer.prototype.setupAllLights = function() {
+	Renderer.prototype.setupLights = function() {
 		var uniforms = this.uniforms,
-				light;
+				index = 0, light;
 		
 		uniforms['u_enableLighting'] = this.useLighting;
 		uniforms['u_ambientColor'] = this.ambientColor.toRGBFloat32Array();
 		uniforms['u_directionalColor'] = this.directionalColor.toRGBFloat32Array();
 		uniforms['u_lightingDirection'] = this.lightingDirection.toFloat32Array();
 		
-		for (var i = 0, l = this.activeLights.length; i < l; i++) {
-			light = this.activeLights[i];
-			uniforms['u_enableLight' + (i + 1)] = light.isActive();
-			uniforms['u_lightColor' + (i + 1)] = light.getDiffuse().toRGBFloat32Array();;
-			uniforms['u_lightPosition' + (i + 1)] = light.getPosition().toRGBFloat32Array();
-			uniforms['u_lightSpecularColor' + (i + 1)] = light.getSpecular().toRGBFloat32Array();
+		for (var l in this.lights) {
+			light = this.lights[l];
+			uniforms['u_enableLight' + (index + 1)] = light.active;
+			uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBFloat32Array();
+			uniforms['u_lightPosition' + (index + 1)] = light.position.toFloat32Array();
+			uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBFloat32Array();
+			index++;
 		}
 	};
 	
@@ -168,28 +165,25 @@
 				samplers = this.samplers,
 				texture;
 				
-		uniforms['u_enableTexturing'] = this._useTexturing;
+		uniforms['u_enableTexturing'] = this.useTexturing;
 		
-		for (var i = 0, l = this.activeTextures; i < l; i++) {
-			texture = this._activeTextures[i];
-			texture.bind(i);
-			
+		for (var i = 0, l = this.activeTextures.length; i < l; i++) {
+			texture = this.activeTextures[i];
 			uniforms['u_useTexture' + i] = true;
 			samplers['tex' + i] = i;
+			texture.bind(i);
 		}
-		
-		//this.activeTextures = [];	
 	};
 	
 	Renderer.prototype.setupMaterials = function() {
 		var uniforms = this.uniforms,
 				material = this.material;
 		
-		uniforms['u_matAmbient'] = material.getAmbient().toRGBFloat32Array();
-		uniforms['u_matDiffuse'] = material.getDiffuse().toRGBFloat32Array();
-		uniforms['u_matSpecular'] = material.getSpecular().toRGBFloat32Array();
-		uniforms['u_matEmissive'] = material.getEmissive().toRGBFloat32Array();
-		uniforms['u_matShininess'] = material.getShininess();
+		uniforms['u_matAmbient'] = material.ambient.toRGBAFloat32Array();
+		uniforms['u_matDiffuse'] = material.diffuse.toRGBAFloat32Array();
+		uniforms['u_matSpecular'] = material.specular.toRGBAFloat32Array();
+		uniforms['u_matEmissive'] = material.emissive.toRGBAFloat32Array();
+		uniforms['u_matShininess'] = material.shininess;
 	};
 	
 	Renderer.prototype.setupEffects = function() {
@@ -215,7 +209,7 @@
 					uniforms = this.uniforms
 					samplers = this.samplers;
 				
-			this.setupTransformations();
+			this.setupCamera();
 			this.setupLights();
 			this.setupTextures();
 			this.setupMaterials();
@@ -231,5 +225,3 @@
 	BenchGL.Renderer = Renderer;
 
 })();
-
-

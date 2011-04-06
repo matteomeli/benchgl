@@ -5,7 +5,8 @@
 
 (function(){
 
-	var Mat4 = BenchGL.Matrix4,
+	var Vec3 = BenchGL.Vector3,
+			Mat4 = BenchGL.Matrix4,
 			pi = Math.PI;
 	
 	var MatrixStack = function() {
@@ -48,7 +49,7 @@
 	};
 	
 	MatrixStack.prototype.rotate = function(angle, x, y, z) {
-		this.multiply(Mat4.Rotate(angle * pi / 180, new Vec3(x, y, z)));
+		this.multiply(Mat4.Rotate(angle * pi / 180, x, y, z));
 		return this;
 	};
 	
@@ -57,13 +58,13 @@
 		return this;
 	};
 	
-	MatrixStack.prototype.scale = function(vector) {
-		this.multiply(Mat4.Scale(vector));
+	MatrixStack.prototype.scale = function(x, y, z) {
+		this.multiply(Mat4.Scale(x, y, z));
 		return this;
 	};
 	
-	MatrixStack.prototype.translate = function(vector) {
-		this.multiply(Mat4.Translate(vector));
+	MatrixStack.prototype.translate = function(x, y, z) {
+		this.multiply(Mat4.Translate(x, y, z));
 		return this;
 	};
 
@@ -83,62 +84,62 @@
 	};
 	
 	var TransformStack = function() {
-		this.model = new MatrixStack();
-		this.view = new MatrixStack();
-		this.proj = new MatrixStack();
-		this.currentStack = this.proj;
+		this.modelStack = new MatrixStack();
+		this.viewStack = new MatrixStack();
+		this.projStack = new MatrixStack();
+		this.currentStack = null;
 	};
 	
 	TransformStack.prototype.getModelMatrix = function() {
-		return this.model.top;
+		return this.modelStack.top();
 	};
 	
 	TransformStack.prototype.getModelMatrixTranspose = function() {
-		return this.model.top.transpose();
+		return this.modelStack.top().transpose();
 	};
 	
 	TransformStack.prototype.getModelMatrixInverse = function() {
-		return this.model.top.inverse();
+		return this.modelStack.top().invert();
 	};
 	
 	TransformStack.prototype.getModelMatrixInverseTranspose = function() {
-		return this.model.top.inverse().$transpose();
+		return this.modelStack.top().invert().$transpose();
 	};
 	
 	TransformStack.prototype.getViewMatrix = function() {
-		return this.view.top;
+		return this.viewStack.top();
 	};
 	
 	TransformStack.prototype.getViewMatrixTranspose = function() {
-		return this.view.top.transpose();
+		return this.viewStack.top().transpose();
 	};
 	
 	TransformStack.prototype.getViewMatrixInverse = function() {
-		return this.view.top.inverse();
+		return this.viewStack.top().invert();
 	};
 	
 	TransformStack.prototype.getViewMatrixInverseTranspose = function() {
-		return this.view.top.inverse().$transpose();
+		return this.viewStack.top().invert().$transpose();
 	};
 	
 	TransformStack.prototype.getProjectionMatrix = function() {
-		return this.proj.top;
+		return this.projStack.top();
 	};
 	
 	TransformStack.prototype.getProjectionMatrixTranspose = function() {
-		return this.proj.top.transpose();
+		return this.projStack.top().transpose();
 	};
 	
 	TransformStack.prototype.getProjectionMatrixInverse = function() {
-		return this.proj.top.inverse();
+		return this.projStack.top().invert();
 	};
 	
 	TransformStack.prototype.getProjectionMatrixInverseTranspose = function() {
-		return this.proj.top.inverse().$transpose();
+		return this.projStack.top().inverse().$transpose();
 	};
 	
 	TransformStack.prototype.getModelViewMatrix = function() {
-		return this.view.top.multiply(this.model.top);
+		return this.viewStack.top().multiplyMat4(this.modelStack.top());
 	};
 	
 	TransformStack.prototype.getModelViewMatrixTranspose = function() {
@@ -146,11 +147,11 @@
 	};
 	
 	TransformStack.prototype.getModelViewMatrixInverse = function() {
-		return this.getModelViewMatrix().inverse();
+		return this.getModelViewMatrix().invert();
 	};
 	
 	TransformStack.prototype.getModelViewMatrixInverseTranspose = function() {
-		return this.getModelViewMatrix().inverse().$transpose();
+		return this.getModelViewMatrix().invert().$transpose();
 	};
 	
 	TransformStack.prototype.getNormalMatrix = function() {
@@ -158,17 +159,17 @@
 	};
 	
 	TransformStack.prototype.projection = function() {
-		this.currentStack = this.proj;
+		this.currentStack = this.projStack;
 		return this;
 	};
 	
 	TransformStack.prototype.view = function() {
-		this.currentStack = this.view;
+		this.currentStack = this.viewStack;
 		return this;
 	};
 	
 	TransformStack.prototype.model = function() {
-		this.currentStack = this.model;
+		this.currentStack = this.modelStack;
 		return this;
 	};	
 
@@ -187,8 +188,8 @@
 		return this;
 	};
 
-	TransformStack.prototype.lookAt = function(ex, ey, ez, cx, cy, cz, ux, uy, uz) {
-		this.currentStack.lookAt(ex, ey, ez, cx, cy, cz, ux, uy, uz);
+	TransformStack.prototype.lookAt = function(eye, direction, up) {
+		this.currentStack.lookAt(eye, direction, up);
 		return this;
 	};
 

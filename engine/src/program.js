@@ -5,7 +5,8 @@
 
 (function() {
 
-	var Shader = BenchGL.Shader;
+	var Shader = BenchGL.Shader,
+			XHR = BenchGL.XHRequest;
 	
 	var ProgramAttribute = function(program, name, type, size, index) {
 		this.program = program;
@@ -202,7 +203,6 @@
 			uniform = this.uniforms[u];
 			uniform.location = gl.getUniformLocation(program, uniform.name);
 		}
-		gl.useProgram(program);
 		
 		for (var s in this.samplers) {
 			sampler = this.samplers[s];
@@ -358,61 +358,76 @@
 		for (var s in mapping) {
 			sampler = this.samplers[s];
 			if (sampler) {
-				sampler.setUnit(mapping[u]);
+				sampler.setUnit(mapping[s]);
 			}
 		}
 	};
 	
 	Program.factory = function(gl, options) {
-		var type = options && 
-							 ('From' + options.type.charAt(0).toUpperCase() + type.slice(1)) 
-							 || 'FromDefaults',
-				vertex = options && options.vertex || '',
-				fragment = options && options.fragment || '';
+		var type = options && options.type || 'defaults',
+				method = 'From' + $.capitalize(type);
 				
-		if (typeof Program[type] !== "function") {
+		if (typeof Program[method] !== "function") {
 			throw {
 				name : "UnknownProgramType",
-				message : type + "does not exists."
+				message : "Type '" + method + "' does not exist."
 			};
 		}
 		
-		return Program[type](gl, vertex, fragment);
+		return Program[method](gl, options);
 	};
 	
-	Program.FromUrls = function(gl, vurl, furl) {
-		var program;
+	Program.FromUrls = function(gl, options) {
+		options = $.mix({
+			vertex : '',
+			fragment : '',
+			onSuccess : $.empty,
+			onError : $.empty
+		}, options || {});
 		
-		new XHRequest({
-			url : vurl,
+		new XHR({
+			url : options.vertex,
+			onError : function(e) {
+				options.onError(e);
+			},
 			onSuccess : function(vs) {
-				new XHRequest({
-					url : furl,
+				new XHR({
+					url : options.fragment,
+					onError : function(e) {
+						options.onError(e);
+					},
 					onSuccess : function(fs) {
-						program = Program.fromSources(gl, vs, fs);
+						options.onSuccess(Program.FromSources(gl, {
+							vertex : vs, 
+							fragment : fs
+						}));
 					}
 				}).send();
 			} 
 		}).send();
-		
-		return program;
 	};
 	
-	Program.FromScripts = function(gl, vscriptId, fscriptId) {
-		var vertex = new Shader(gl, gl.VERTEX_SHADER, $(vscriptId).innerHTML),
-				fragment = new Shader(gl, gl.FRAGMENT_SHADER, $(fscriptId).innerHTML);
+	Program.FromScripts = function(gl, options) {
+		var vs = options.vertex, 
+				fs = options.fragment,
+				vertex = new Shader(gl, gl.VERTEX_SHADER, $(vs).innerHTML),
+				fragment = new Shader(gl, gl.FRAGMENT_SHADER, $(fs).innerHTML);
 		return new Program(gl, vertex, fragment);
 	};
 	
-	Program.FromSources = function(gl, vsrc, fsrc) {
-		var vertex = new Shader(gl, gl.VERTEX_SHADER, vsrc),
-				fragment = new Shader(gl, gl.FRAGMENT_SHADER, fsrc);
+	Program.FromSources = function(gl, options) {
+		var vs = options.vertex, 
+				fs = options.fragment,
+				vertex = new Shader(gl, gl.VERTEX_SHADER, vs),
+				fragment = new Shader(gl, gl.FRAGMENT_SHADER, fs);
 		return new Program(gl, vertex, fragment);
 	};
 	
-	Program.FromDefaults = function(gl) {
-		var vertex = new Shader(gl, gl.VERTEX_SHADER, Shader.Vertex.Default),
-				fragment = new Shader(gl, gl.FRAGMENT_SHADER, Shader.Fragment.Default);
+	Program.FromDefaults = function(gl, options) {
+		var vs = options && $.capitalize(options.vertex) || 'Default',
+				fs = options && $.capitalize(options.fragment) || 'Default',
+				vertex = new Shader(gl, gl.VERTEX_SHADER, Shader.Vertex[vs]),
+				fragment = new Shader(gl, gl.FRAGMENT_SHADER, Shader.Fragment[fs]);
 		return new Program(gl, vertex, fragment);
 	};
 

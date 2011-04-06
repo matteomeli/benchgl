@@ -20,6 +20,7 @@
 		nowTime = new Date().getTime();
 		lastTime = nowTime;
 		elapsedTime = 0;
+		return this;
 	};
 	
 	Timer.prototype.stop = function() {
@@ -40,6 +41,7 @@
 		
 		this.fps = Math.round(fps);
 		this.lastDelta = elapsedTime;
+		return this;
 	};
 	
 	Timer.prototype.clear = function() {
@@ -50,6 +52,7 @@
 		this.fps = 0;
 		this.lastDelta = 0;
 		this.samples = [];
+		return this;
 	};
 	
 	BenchGL.Timer = Timer;

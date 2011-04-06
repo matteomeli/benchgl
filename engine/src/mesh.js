@@ -188,28 +188,30 @@
 	};
 	
 	Mesh.prototype.bind = function(program) {
-		var attribute, buffer;
+		var attribute, buffer, index;
 
 		for (var a in program.attributes) {
 			attribute = program.attributes[a];
 			buffer = this.astream.attributes[attribute.name];
-			program.gl.enableVertexAttribArray(attribute.index);
+			index = attribute.getIndex();
+			program.gl.enableVertexAttribArray(index);
 			if (buffer) {
-				buffer.bind(attribute.index);
+				buffer.bind(index);
 			}
 		}	
 	};
 	
 	Mesh.prototype.unbind = function(program) {
-		var attribute, buffer;
+		var attribute, buffer, index;
 		
 		for (var a in program.attributes) {
 			var attribute = program.attributes[a];
 			var buffer = this.astream.attributes[attribute.name];
+			index = attribute.getIndex();
 			if (buffer) {
-				buffer.unbind(attribute.index);
+				buffer.unbind(index);
 			}
-			program.gl.disableVertexAttribArray(attribute.index);
+			program.gl.disableVertexAttribArray(index);
 		}	
 	};
 	
@@ -225,7 +227,7 @@
 	Mesh.prototype.render = function(program, primitives) {
 		this.bind(program);
 		this.draw(primitives);
-		this.unibind(program);
+		this.unbind(program);
 	};
 
 	BenchGL.Mesh = Mesh;

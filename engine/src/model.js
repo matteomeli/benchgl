@@ -6,7 +6,11 @@
 (function() {
 
 	var Vec3 = BenchGL.Vector3,
-			Mesh = BenchGL.Mesh;
+			Mesh = BenchGL.Mesh,
+			cos = Math.cos,
+			sin = Math.sin,
+			pi = Math.PI,
+			XHR = BenchGL.XHRequest;
 
 	var Model = function(gl, options) {
 		options = $.mix({
@@ -31,7 +35,6 @@
 		this.texcoords = options.texcoords;
 		this.color = options.color;
 		this.primitives = options.primitives;
-		this.uniforms = options.uniforms;
 		this.mesh = null;
 		
 		if (this.dynamic) {
@@ -56,7 +59,7 @@
 		if (texcoords.length > 0)
 			mesh.addAttribute('a_texcoord', 2, false, new Float32Array(texcoords));
 		
-		if (color.length > 0 && !this.colorPerVertex) {
+		if (this.colorPerVertex && color.length > 0) {
 			this.normalizeColor();
 			mesh.addAttribute('a_color', 4, false, new Float32Array(color));
 		}
@@ -65,7 +68,7 @@
 			var primitives = primitives[p],
 					type = primitives.type,
 					indices = primitives.indices;
-			if (indices || indices.length > 0) {
+			if (indices && indices.length > 0) {
 				mesh.addIndexedTopology(p, type, new Uint16Array(indices));
 			} else {
 				mesh.addFlatTopology(p, type, 0, vertices.length/3);
@@ -122,7 +125,7 @@
 			type = primitives.type || this.gl.TRIANGLES;
 			indices = primitives.indices;
 			if (this.dynamic) {
-	      if (indices || indices.length > 0) {
+	      if (indices && indices.length > 0) {
 	      	this.mesh.addIndexedTopology(o, type, new Uint16Array(indices));
 	      } else {
 	        this.mesh.addFlatTopology(o, type, 0, this.vertices.length/3);
@@ -137,7 +140,7 @@
 		var color = this.color,
 				factor = this.vertices.length * 4/3;
 		
-		if (color.length < cl) {
+		if (color.length < factor) {
 			var count = factor / this.color.length,
 					copy = color.slice();
 			
@@ -178,13 +181,13 @@
 		this.mesh.render(program, mode);
 	};
 	
-	Model.factory(gl, type, options) {
-		type = type.charAt(0).toUpperCase() + type.slice(1);
+	Model.factory = function(gl, type, options) {
+		type = $.capitalize(type);
 		
 		if (typeof Model[type] !== "function") {
 			throw {
 				name : "UnknownModelType",
-				message : type + "does not exists."
+				message : "Method '" + type + "' does not exist."
 			};
 		}
 		
@@ -219,7 +222,7 @@
 					type : gl.TRIANGLES
 				}
 			}			
-		}, options || {}););		
+		}, options || {}));		
 	};
 	
 	Model.Rectangle = function(gl, options) {
@@ -258,19 +261,18 @@
 	};
 	
 	Model.Circle = function(gl, options) {
-		var n = (options) ? options.slices || 16 : 16;
-		var r = (options) ? options.radius || 1.0 : 1.0;
-		
-		var vertexCoords = [0.0, 0.0, 0.0];
-		var normalCoords = [0.0, 0.0, 1.0];
-		var textureCoords = [0.5, 0.5];
+		var n = (options) ? options.slices || 16 : 16,
+				r = (options) ? options.radius || 1.0 : 1.0,
+				vertexCoords = [0.0, 0.0, 0.0],
+				normalCoords = [0.0, 0.0, 1.0],
+				textureCoords = [0.5, 0.5];
 		
 		for (var i=0; i<=n; i++) {
-			var angle = DPI*i/n;
-			var x = r*Math.cos(angle);
-			var y = r*Math.sin(angle);
-			var u = (Math.cos(angle)+1.0)*0.5;
-			var v = (Math.sin(angle)+1.0)*0.5;
+			var angle = pi*i/n;
+			var x = r*cos(angle);
+			var y = r*sin(angle);
+			var u = (cos(angle)+1.0)*0.5;
+			var v = (sin(angle)+1.0)*0.5;
 			
 			vertexCoords.push(x);
 			vertexCoords.push(y);
@@ -298,100 +300,115 @@
 	Model.Cube = function(gl, options) {
 		return new Model(gl, $.mix({
 			vertices : [
-				// Front face
-				-1.0, -1.0, 1.0,
-				 1.0, -1.0, 1.0,
-				 1.0,  1.0, 1.0,
-				-1.0,  1.0, 1.0,
-				// Back face
-				-1.0, -1.0, -1.0,
-				-1.0,  1.0, -1.0,
-				 1.0,  1.0, -1.0,
-				 1.0, -1.0, -1.0,
-				// Top Face
-				-1.0, 1.0, -1.0,
-				-1.0, 1.0,  1.0,
-				 1.0, 1.0,  1.0,
-				 1.0, 1.0, -1.0,
-				// Bottom face
-				-1.0, -1.0, -1.0,
-				 1.0, -1.0, -1.0,
-				 1.0, -1.0,  1.0,
-				-1.0, -1.0,  1.0,
-				// Right face
-				1.0, -1.0, -1.0,
-				1.0,  1.0, -1.0,
-				1.0,  1.0,  1.0,
-				1.0, -1.0,  1.0,
-				// Left face
-				-1.0, -1.0, -1.0,
-				-1.0, -1.0,  1.0,
-				-1.0,  1.0,  1.0,
-				-1.0,  1.0, -1.0
-			],
+        // Front face
+        -1.0, -1.0,  1.0,
+         1.0, -1.0,  1.0,
+         1.0,  1.0,  1.0,
+        -1.0,  1.0,  1.0,
+
+        // Back face
+        -1.0, -1.0, -1.0,
+        -1.0,  1.0, -1.0,
+         1.0,  1.0, -1.0,
+         1.0, -1.0, -1.0,
+
+        // Top face
+        -1.0,  1.0, -1.0,
+        -1.0,  1.0,  1.0,
+         1.0,  1.0,  1.0,
+         1.0,  1.0, -1.0,
+
+        // Bottom face
+        -1.0, -1.0, -1.0,
+         1.0, -1.0, -1.0,
+         1.0, -1.0,  1.0,
+        -1.0, -1.0,  1.0,
+
+        // Right face
+         1.0, -1.0, -1.0,
+         1.0,  1.0, -1.0,
+         1.0,  1.0,  1.0,
+         1.0, -1.0,  1.0,
+
+        // Left face
+        -1.0, -1.0, -1.0,
+        -1.0, -1.0,  1.0,
+        -1.0,  1.0,  1.0,
+        -1.0,  1.0, -1.0
+      ],
 			normals : [
-				// Front face
-				0.0, 0.0, 1.0,
-				0.0, 0.0, 1.0,
-				0.0, 0.0, 1.0,
-				0.0, 0.0, 1.0,
-				// Back face
-				0.0, 0.0, -1.0,
-				0.0, 0.0, -1.0,
-				0.0, 0.0, -1.0,
-				0.0, 0.0, -1.0,
-				// Top face
-				0.0, 1.0, 0.0,
-				0.0, 1.0, 0.0,
-				0.0, 1.0, 0.0,
-				0.0, 1.0, 0.0,
-				// Bottom face
-				0.0, -1.0, 0.0,
-				0.0, -1.0, 0.0,
-				0.0, -1.0, 0.0,
-				0.0, -1.0, 0.0,
-				// Right face
-				1.0, 0.0, 0.0,
-				1.0, 0.0, 0.0,
-				1.0, 0.0, 0.0,
-				1.0, 0.0, 0.0,
-				// Left face
-				-1.0, 0.0, 0.0,
-				-1.0, 0.0, 0.0,
-				-1.0, 0.0, 0.0,
-				-1.0, 0.0, 0.0
+        // Front face
+         0.0,  0.0,  1.0,
+         0.0,  0.0,  1.0,
+         0.0,  0.0,  1.0,
+         0.0,  0.0,  1.0,
+
+        // Back face
+         0.0,  0.0, -1.0,
+         0.0,  0.0, -1.0,
+         0.0,  0.0, -1.0,
+         0.0,  0.0, -1.0,
+
+        // Top face
+         0.0,  1.0,  0.0,
+         0.0,  1.0,  0.0,
+         0.0,  1.0,  0.0,
+         0.0,  1.0,  0.0,
+
+        // Bottom face
+         0.0, -1.0,  0.0,
+         0.0, -1.0,  0.0,
+         0.0, -1.0,  0.0,
+         0.0, -1.0,  0.0,
+
+        // Right face
+         1.0,  0.0,  0.0,
+         1.0,  0.0,  0.0,
+         1.0,  0.0,  0.0,
+         1.0,  0.0,  0.0,
+
+        // Left face
+        -1.0,  0.0,  0.0,
+        -1.0,  0.0,  0.0,
+        -1.0,  0.0,  0.0,
+        -1.0,  0.0,  0.0
 			],
 			texcoords : [
-				// Front face
-				0.0, 0.0,
-				1.0, 0.0,
-				1.0, 1.0,
-				0.0, 1.0,
-				// Back face
-				1.0, 0.0,
-				1.0, 1.0,
-				0.0, 1.0,
-				0.0, 0.0,
-		    // Top face
-		    0.0, 1.0,
-		    0.0, 0.0,
-		    1.0, 0.0,
-		    1.0, 1.0,
-		    // Bottom face
-		    1.0, 1.0,
-		    0.0, 1.0,
-		    0.0, 0.0,
-		    1.0, 0.0,
-		    // Right face
-		    1.0, 0.0,
-		    1.0, 1.0,
-		    0.0, 1.0,
-		    0.0, 0.0,
-		    // Left face
-		    0.0, 0.0,
-		    1.0, 0.0,
-		    1.0, 1.0,
-		    0.0, 1.0
+        // Front face
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
+
+        // Back face
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 0.0,
+
+        // Top face
+        0.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+
+        // Bottom face
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+
+        // Right face
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 0.0,
+
+        // Left face
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
 			],
 			color : [
 				// Front face
@@ -429,12 +446,12 @@
 				triangles : {
 					type  : gl.TRIANGLES,
 					indices : [
-						0, 1, 2, 0, 2, 3,					// Front face
-						4, 5, 6, 4, 6, 7,					// Back face
-						8, 9, 10, 8, 10, 11,			// Top face
-						12, 13, 14, 12, 14, 15,		// Bottom face
-						16, 17, 18, 16, 18, 19,		// Right face
-						20, 21, 22, 20, 22, 23		// Left face
+            0, 1, 2,      0, 2, 3,    // Front face
+            4, 5, 6,      4, 6, 7,    // Back face
+            8, 9, 10,     8, 10, 11,  // Top face
+            12, 13, 14,   12, 14, 15, // Bottom face
+            16, 17, 18,   16, 18, 19, // Right face
+            20, 21, 22,   20, 22, 23  // Left face
 					]
 				}
 			}		
@@ -524,22 +541,22 @@
 	};
 	
 	Model.Sphere = function(gl, options) {
-		var n = (options) ? options.slices || 32 : 32;
-		var m = (options) ? options.stacks || 32 : 32;
-		var r = (options) ? options.radius || 1.0 : 1.0;
-		
-		var vertexCoords = [];
-		var normalCoords = [];
-		var textureCoords = [];
+		var n = (options) ? options.slices || 32 : 32,
+				m = (options) ? options.stacks || 32 : 32,
+				r = (options) ? options.radius || 1.0 : 1.0,
+				vertexCoords = [],
+				normalCoords = [],
+				textureCoords = [],
+				pi2 = pi*2;
 		
 		for (var i=0; i<=n; i++) {
-			var theta = Math.PI*i/n;
-			var sinT = Math.sin(theta);
-			var cosT = Math.cos(theta);
+			var theta = pi*i/n;
+			var sinT = sin(theta);
+			var cosT = cos(theta);
 			for (var j=0; j<=m; j++) {
-				var phi = DPI*j/m;
-				var sinP = Math.sin(phi);
-				var cosP = Math.cos(phi);
+				var phi = pi2*j/m;
+				var sinP = sin(phi);
+				var cosP = cos(phi);
 				var x = r*sinT*cosP;
 				var y = r*cosT;
 				var z = r*sinT*sinP;
@@ -588,32 +605,34 @@
 		}, options || {}));			
 	};
 	
-	Model.FromJSON = function(gl, options) {
-		// TODO
-		var model = new Model(gl);
+	Model.Json = function(gl, options) {
+		var model;
 		
-		var defaultOptions = {
-			async			: true,
-			callback	: function(response) {
-				var data = JSON.parse(response);
-				model.setVertices(data.vertexPositions);
-				model.setNormals(data.vertexNormals);
-				model.setTexcoords(data.vertexTextureCoords);
-				model.setIndices('triangles', gl.TRIANGLES, data.indices);
+		new XHR({
+			url : options.url,
+			async : false,
+			onSuccess : function(response) {
+				var json = JSON.parse(response),
+						modelOpt = $.mix({
+							vertices : json.vertexPositions,
+							normals : json.vertexNormals,
+							texcoords : json.vertexTextureCoords,
+							primitives : {
+								triangles : {
+									type : gl.TRIANGLES,
+									indices : json.indices
+								}
+							} 
+						}, options.model || {});
+				
+				model = new Model(gl, modelOpt);
 			}
-		};
-		
-		var options = options || {};
-		for (var d in defaultOptions) {
-			if (typeof options[d] == "undefined") options[d] = defaultOptions[d];
-		}
-		
-		var response = new XHRequest(options).send();
+		}).send();
 		
 		return model;		
 	};
 	
-	Model.FromOBJ = function(gl, options) {
+	Model.Obj = function(gl, options) {
 		var model = new Model(gl);
 		
 		var defaultOptions = {
@@ -741,7 +760,7 @@
 		return model;	
 	};
 	
-	Model.FromOBJInBackground = function(gl, options) {
+	Model.Objb = function(gl, options) {
 		var model = new Model(gl);
 		
 		var worker = new Worker('../workers/loader1.js');
@@ -770,7 +789,7 @@
 		return model;	
 	};
 	
-	Model.FromOBJsInBackground = function(gl, objs) {
+	Model.Objs = function(gl, objs) {
 		var keys = Object.keys(objs);
 		var l = keys.length;
 		var models = [];

@@ -16,6 +16,8 @@
 			onMouseOut    : $.empty
 		}, options || {});
 		
+		//canvas.contentEditable = true;
+		
 		this.canvas = canvas;
 		this.events = options;
 		this.keysDown = {};
@@ -25,8 +27,8 @@
 		this.mouseDelta = { x: 0.0, y: 0.0 };
 		
 		myself = this;
-		canvas.addEventListener("keydown", function(e) { myself.onKeyDown(e); }, false);
-		canvas.addEventListener("keyup", function(e) { myself.onKeyUp(e); }, false);
+		document.addEventListener("keydown", function(e) { myself.onKeyDown(e); }, false);
+		document.addEventListener("keyup", function(e) { myself.onKeyUp(e); }, false);
 		canvas.addEventListener("mousedown", function(e) { myself.onMouseDown(e); }, false);
 		canvas.addEventListener("mouseup", function(e) { myself.onMouseUp(e); }, false);
 		canvas.addEventListener("mousemove", function(e) { myself.onMouseMove(e); }, false);
@@ -47,7 +49,7 @@
 	
 	Canvas.prototype.onMouseDown = function(e) {
 		var x = e.clientX,
-				y = this.height - e.clientY - 1;
+				y = this.canvas.height - e.clientY - 1;
 				
 		this.mousePosition.x = x;
 		this.mousePosition.y = y;
@@ -62,7 +64,7 @@
 	
 	Canvas.prototype.onMouseUp = function(e) {
 		var x = e.clientX,
-				y = this.height - e.clientY - 1;
+				y = this.canvas.height - e.clientY - 1;
 				
 		this.mousePosition.x = x;
 		this.mousePosition.y = y;
@@ -77,7 +79,7 @@
 	
 	Canvas.prototype.onMouseMove = function(e) {
 		var x = e.clientX,
-				y = this.height - e.clientY - 1;
+				y = this.canvas.height - e.clientY - 1;
 				
 		this.mouseLastPosition.x = this.mousePosition.x;
 		this.mouseLastPosition.y = this.mousePosition.y;
@@ -91,7 +93,7 @@
 	
 	Canvas.prototype.onMouseWheel = function(e) {
 		var x = e.clientX,
-				y = this.height - e.clientY - 1,
+				y = this.canvas.height - e.clientY - 1,
 				delta = 0;
 				
 		this.mouseLastPosition.x = this.mousePosition.x;

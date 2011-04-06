@@ -19,13 +19,13 @@
 		}, options || {});
 		
 		this.options = options;
-		this.request = new XmlHttpRequest();
+		this.request = new XMLHttpRequest();
 		myself = this;
 		
-		request.addEventListener("progress", function(e) { myself.onProgress(e); }, false);
-		request.addEventListener("load", function(e) { myself.onLoad(e); }, false);
-		request.addEventListener("error", function(e) { myself.onError(e); }, false);
-		request.addEventListener("abort", function(e) { myself.onAbort(e); }, false);
+		this.request.addEventListener("progress", function(e) { myself.onProgress(e); }, false);
+		this.request.addEventListener("load", function(e) { myself.onLoad(e); }, false);
+		this.request.addEventListener("error", function(e) { myself.onError(e); }, false);
+		this.request.addEventListener("abort", function(e) { myself.onAbort(e); }, false);
 	};
 	
 	XHRequest.prototype.send = function() {
@@ -33,7 +33,7 @@
 				url = this.options.url,
 				method = this.options.method,
 				async = this.options.async,
-				this.binary = this.options.binary,
+				binary = this.options.binary,
 				request = this.request;
 				
 		request.open(method, url, async);
@@ -81,27 +81,22 @@
 		this.options.onLoad(e);
 	};
 	
-	TextureRequest = function(options) {
-		options = $.mix({
-			textures : {},
-			callback : $.empty
-		}, options || {});
-		
-		this.textures = options.textures;
-		this.callback = options.callback;
+	var TextureRequest = function(renderer, options) {		
+		this.textures = options;
+		this.renderer = renderer;
 	};
 	
-	var TextureRequest.prototype.send = function() {
+	TextureRequest.prototype.send = function() {
 		var textures = this.textures,
+				renderer = this.renderer,
 				keys = Object.keys(this.textures),
 				callback = this.callback;
-				textureOpt;
 				
 		keys.map(function(key) {
-			textureOpt = textures[key];
+			var textureOpt = textures[key];
 			textureOpt.image = new Image();
 			textureOpt.image.onload = function() {
-				callback(key, textureOpt);
+				renderer.addTexture(key, textureOpt);
 			};
 			textureOpt.image.src = textureOpt.src;
 		});

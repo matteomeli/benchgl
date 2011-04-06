@@ -1,0 +1,25 @@
+body {
+  font-family: "Lucida Grande", Verdana, Arial;
+  font-size: small;
+}
+
+#title {
+	color: #4eb85c;
+	text-align: center;
+}
+
+#outer {
+  width: 100%;
+  text-align: center;
+}
+
+#inner {
+  display: inline-block;
+}
+
+#ui {
+	text-align: left;
+	background-color: #94ffa7;
+	border: solid 1px #a9a0a0;
+  width: 800px;
+}

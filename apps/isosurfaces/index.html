@@ -1,0 +1,293 @@
+<html>
+<head>
+<title>BenchGL Engine - Isosurfaces</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="../../engine/build/benchgl.js"></script>
+<!--<script type="text/javascript" src="WorkerConsole.js"></script>-->
+<script type="text/javascript" src="index.js"></script>
+    
+<script id="surfaces-fs" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform mat4 u_viewMatrix;
+
+uniform bool u_enableLighting;
+uniform vec3 u_ambientColor;
+uniform vec3 u_directionalColor;
+uniform vec3 u_lightingDirection;
+		
+uniform bool u_enableLight1;
+uniform vec3 u_lightColor1;
+uniform vec3 u_lightPosition1;
+uniform vec3 u_lightSpecularColor1;
+		
+uniform bool u_enableLight2;
+uniform vec3 u_lightColor2;
+uniform vec3 u_lightPosition2;
+uniform vec3 u_lightSpecularColor2;
+	
+uniform bool u_enableLight3;
+uniform vec3 u_lightColor3;
+uniform vec3 u_lightPosition3;
+uniform vec3 u_lightSpecularColor3;
+		
+uniform bool u_enableLight4;
+uniform vec3 u_lightColor4;
+uniform vec3 u_lightPosition4;
+uniform vec3 u_lightSpecularColor4;
+
+uniform vec4 u_matDiffuse;
+uniform float u_matShininess;
+
+varying vec4 v_position;
+varying vec4 v_normal;
+
+void main(void) {
+	vec3 lightFactor;
+	if (!u_enableLighting) {
+		lightFactor = vec3(1.0, 1.0, 1.0);
+	} else {
+		vec3 lightDirection;
+		vec3 lightPosition;
+		vec3 reflectDirection;
+		vec3 diffuseLight = vec3(0.0, 0.0, 0.0);
+		vec3 specularLight = vec3(0.0, 0.0, 0.0);
+		
+		vec3 normal = normalize(v_normal.xyz);
+		vec3 directionalFactor = max(0.0, dot(normal, -u_lightingDirection)) * u_directionalColor;
+		vec3 eye = normalize(-v_position.xyz);
+		
+		if (u_enableLight1) {
+			lightPosition = (u_viewMatrix * vec4(u_lightPosition1, 1.0)).xyz;
+			lightDirection = normalize(lightPosition - v_position.xyz);
+			reflectDirection = reflect(-lightDirection, normal);
+			diffuseLight += max(0.0, dot(normal, lightDirection)) * u_lightColor1;
+			specularLight += pow(max(0.0, dot(reflectDirection, eye)), u_matShininess) * u_lightSpecularColor1;
+		}
+		
+		if (u_enableLight2) {
+			lightPosition = (u_viewMatrix * vec4(u_lightPosition2, 1.0)).xyz;
+			lightDirection = normalize(lightPosition - v_position.xyz);
+			reflectDirection = reflect(-lightDirection, normal);
+			diffuseLight += max(0.0, dot(normal, lightDirection)) * u_lightColor2;
+			specularLight += pow(max(0.0, dot(reflectDirection, eye)), u_matShininess) * u_lightSpecularColor2;
+		}
+		
+		if (u_enableLight3) {
+			lightPosition = (u_viewMatrix * vec4(u_lightPosition3, 1.0)).xyz;
+			lightDirection = normalize(lightPosition - v_position.xyz);
+			reflectDirection = reflect(-lightDirection, normal);
+			diffuseLight += max(0.0, dot(normal, lightDirection)) * u_lightColor3;
+			specularLight += pow(max(0.0, dot(reflectDirection, eye)), u_matShininess) * u_lightSpecularColor3;
+		}
+		
+		if (u_enableLight4) {
+			lightPosition = (u_viewMatrix * vec4(u_lightPosition4, 1.0)).xyz;
+			lightDirection = normalize(lightPosition - v_position.xyz);
+			reflectDirection = reflect(-lightDirection, normal);
+			diffuseLight += max(0.0, dot(normal, lightDirection)) * u_lightColor4;
+			specularLight += pow(max(0.0, dot(reflectDirection, eye)), u_matShininess) * u_lightSpecularColor4;
+		}
+		
+		lightFactor = u_ambientColor + directionalFactor + diffuseLight + specularLight;
+	}
+	
+	gl_FragColor = vec4(u_matDiffuse.rgb * lightFactor, u_matDiffuse.a);
+}
+</script>
+
+<script id="surfaces-vs" type="x-shader/x-vertex">
+#ifdef GL_ES
+precision highp float;
+#endif
+
+attribute vec3 a_position;
+attribute vec3 a_normal;
+
+uniform mat4 u_modelViewMatrix;
+uniform mat4 u_projectionMatrix;
+uniform mat4 u_normalMatrix;
+
+varying vec4 v_position;
+varying vec4 v_normal;
+
+void main(void) {
+	v_position = u_modelViewMatrix * vec4(a_position, 1.0);
+	v_normal = u_normalMatrix * vec4(a_normal, 1.0);
+	
+	gl_Position = u_projectionMatrix * v_position;
+}
+</script>
+
+
+</head>
+
+<body onload="start();">
+	<div id="title">
+		<h1>Isosurfaces viewer</h1>
+	</div>
+  <div id="outer">
+  	<div id="inner">
+	    <canvas id="example-canvas" width="800" height="600"></canvas>
+			<div id="ui">
+	      <table style="border: 0; padding: 10px; width: 100%">
+					<tr>
+						<td valign="top">
+							Surface
+						</td>
+					  <td valign="top">
+					  	Isolevel
+							<input id="isolevel" type="range" min="0" max="100" value="48" step="2" /> | 
+							R 
+	            <select id="surfaceR">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option selected>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select>
+	            G 
+	            <select id="surfaceG">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option selected>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select>
+	            B
+	            <select id="surfaceB">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option selected>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top">
+							Light
+						</td>
+						<td valign="top">
+							R 
+	            <select id="lightR">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option selected>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select>
+	            G 
+	            <select id="lightG">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option selected>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select>
+	            B
+	            <select id="lightB">
+	              <option>0.0</option>
+	              <option>0.1</option>
+	              <option>0.2</option>
+	              <option>0.3</option>
+	              <option>0.4</option>
+	              <option>0.5</option>
+	              <option>0.6</option>
+	              <option>0.7</option>
+	              <option selected>0.8</option>
+	              <option>0.9</option>
+	              <option>1.0</option>
+	            </select<!-- This is a comment --><!-- This is a comment --><!-- This is a comment -->> | 
+							X <input type="number" id="lightX" value="3" step="1" />
+							Y <input type="number" id="lightY" value="3" step="1" />
+							Z <input type="number" id="lightZ" value="3" step="1" />						
+						</td>
+					</tr>
+					<tr>
+						<td valign="top">
+							Time
+						</td>
+						<td>
+							<input type="checkbox" id="time" /> Enable | 
+							From <input type="number" id="timeFrom" value="0" step="0.1" disabled />
+							To <input type="number" id="timeTo" value="1" step="0.1" disabled /> | 
+							<input type="checkbox" id="loop" /> Loop | 
+							<input type="button" id="play" value="Play" disabled />
+							<input type="button" id="stop" value="Stop" disabled />
+						</td>
+					</tr>
+					<tr>
+						<td valign="top">
+								Samplers
+						</td>
+						<td valign="top">
+							<select id="sampler">
+								<option value="0" selected>Sampler 1</option>
+								<option value="1">Sampler 2</option>
+								<option value="2">Sampler 3</option>
+							</select>
+							Workers
+	            <select id="workers">
+	              <option selected>1</option>
+	              <option>2</option>
+	              <option>3</option>
+	              <option>4</option>
+	              <option>5</option>
+	              <option>6</option>
+	              <option>7</option>
+	              <option>8</option>
+	              <option>9</option>
+	              <option>10</option>
+	              <option>11</option>
+	              <option>12</option>
+	              <option>13</option>
+	              <option>14</option>
+	              <option>15</option>
+	              <option>16</option>
+	            </select> | 		
+							Grid
+							<input type="number" id="grid" value="8" step="1" />
+						</td>
+					</tr>
+	      </table>
+			</div>
+		</div>
+  </div>
+</body>
+
+</html>

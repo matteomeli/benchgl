@@ -7,7 +7,7 @@
 	
 	var Vec3 = BenchGL.Vector3,
 			MatStack = BenchGL.MatrixStack,
-			TransStack = BenchGL.TransformationStack;
+			TransformStack = BenchGL.TransformStack;
 	
 	var Camera = function(options) {
 		var e = options.eye,
@@ -26,7 +26,7 @@
 		this.direction = d && new Vec3(d.x, d.y, d.z) || new Vec3();
 		this.up = u && new Vec3(u.x, u.y, u.z) || new Vec3(0, 1, 0);
 			
-		this.transform = new TransStack();
+		this.transform = new TransformStack();
 		this.transform.projection();
 		this.transform.perspective(fovy, aspect, near, far);
 	};

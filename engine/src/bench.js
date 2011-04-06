@@ -11,9 +11,7 @@ this.BenchGL = null;
 		options = $.mix({
 			context : {},
 			program : {
-				from 			: 'Defaults',			// Defaults, Scripts, Sources, Urls
-				vertex		: '',
-				fragment 	: ''
+				type 	: 'defaults'			// Defaults, Scripts, Sources, Urls
 			},
 			camera 	: {
 				fovy 	: 45,
@@ -36,39 +34,47 @@ this.BenchGL = null;
 			return null;
 		}
 		
-		// create canvas and attach events
 		canvas = new BenchGL.Canvas(gl.canvas, options.events);
-		
-		// create default program
-		program = BenchGL.Program.factory(gl, options.program);
-		
-		if (!program.valid) {
-			options.onError();
-			return null;
-		}
-		
-		// bind program
-		program.bind();
-		
-		// create and update camera
+	
 		camera = new BenchGL.Camera($.mix(options.camera, { 
 			aspect : gl.canvas.width / gl.canvas.height
 		}));
 		camera.update();
 		
-		// create renderer
-		renderer = new BenchGL.Renderer(gl, program, camera, options.effects);
+		/*program = BenchGL.Program.factory(gl, $.mix({
+			onSuccess : function(program) {
+				loadApplication(gl, program, function(application) {
+					options.onLoad(application);
+				});
+			},
+			onError : function(e) {
+				options.onError(e);
+			}
+		}, options.program));*/
+
+		program = BenchGL.Program.factory(gl, options.program);
 		
-		// call the drawing function with an app object to hold references
-		handler = {
-			gl : gl,
-			canvas : canvas,
-			program : program,
-			camera : camera,
-			renderer : renderer
+		if (program) {
+			loadApplication(gl, program, function(application) {
+				options.onLoad(application)
+			});
+		}
+		
+		function loadApplication(gl, program, callback) {
+			program.bind();
+			
+			renderer = new BenchGL.Renderer(gl, program, camera, options.effects);
+			
+			handler = {
+				gl : gl,
+				canvas : canvas,
+				program : program,
+				camera : camera,
+				renderer : renderer
+			};
+			
+			callback(handler);			
 		};
-		
-		options.onLoad(handler);
 	};
 
 })();
@@ -91,4 +97,26 @@ $.mix = function() {
 	return mix;
 };
 
+$.capitalize = function(text) {
+	if (text && text.length > 0) {
+		text = text.charAt(0).toUpperCase() + text.slice(1);	
+	}
+	return text;
+};
+
 $.empty = function() {};
+
+/**
+ * Provides requestAnimationFrame in a cross browser way.
+ */
+window.requestAnimFrame = (function() {
+  return window.requestAnimationFrame ||
+         window.webkitRequestAnimationFrame ||
+         window.mozRequestAnimationFrame ||
+         window.oRequestAnimationFrame ||
+         window.msRequestAnimationFrame ||
+         function(/* function FrameRequestCallback */ callback, 
+         					/* DOMElement Element */ element) {
+           window.setTimeout(callback, 1000/60);
+         };
+})();

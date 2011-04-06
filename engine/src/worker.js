@@ -41,6 +41,10 @@
 		}
 	};
 	
+	WorkerPool.prototype.clean = function() {
+		this.intermediates = [];
+	};
+	
 	BenchGL.WorkerPool = WorkerPool; 
 	
 })();

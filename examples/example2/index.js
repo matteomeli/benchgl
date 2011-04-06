@@ -9,8 +9,16 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					triangle = BenchGL.Model.factory(gl, 'triangle'), 
-					square = BenchGL.Model.factory(gl, 'rectangle');
+					triangle = BenchGL.Model.factory(gl, 'triangle', {
+						color : [
+							1.0, 0.0, 0.0, 1.0,
+							0.0, 1.0, 0.0, 1.0,
+							0.0, 0.0, 1.0, 1.0
+						]
+					}), 
+					square = BenchGL.Model.factory(gl, 'rectangle', {
+						color : [0.5, 0.5, 1.0, 1.0]
+					});
 			
 			renderer.background();
 			
