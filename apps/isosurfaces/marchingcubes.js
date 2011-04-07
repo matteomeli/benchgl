@@ -331,7 +331,7 @@ function MarchingCubes() {
     };
 	};
 	
-	this.polygonize = function(x, y, z, t, step, isolevel, sampler, options) {
+	this.polygonize = function(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 		var cube_vertices = new Array(8),
 		    cube_values = new Array(8),
 				vertices = new Array(12),
@@ -341,53 +341,53 @@ function MarchingCubes() {
         cube_index = 0,
         edges_index = 0,
 				cube_center = {
-					x : x + step / 2,
-					y : y + step / 2,
-					z : z + step / 2
+					x : x*xstep + xstep / 2,
+					y : y*ystep + ystep / 2,
+					z : z*zstep + zstep / 2
 				},
 				vertex,
         point,
         triangles;	
 
 		cube_vertices[0] = {
-			x : cube_center.x - step / 2,
-			y : cube_center.y - step / 2,
-			z : cube_center.z - step / 2
+			x : cube_center.x - xstep / 2,
+			y : cube_center.y - ystep / 2,
+			z : cube_center.z - zstep / 2
 		};
     cube_vertices[1] = {
-      x : cube_center.x + step / 2,
-      y : cube_center.y - step / 2,
-      z : cube_center.z - step / 2
+      x : cube_center.x + xstep / 2,
+      y : cube_center.y - ystep / 2,
+      z : cube_center.z - zstep / 2
     };
     cube_vertices[2] = {
-      x : cube_center.x + step / 2,
-      y : cube_center.y + step / 2,
-      z : cube_center.z - step / 2
+      x : cube_center.x + xstep / 2,
+      y : cube_center.y + ystep / 2,
+      z : cube_center.z - zstep / 2
     };
     cube_vertices[3] = {
-      x : cube_center.x - step / 2,
-      y : cube_center.y + step / 2,
-      z : cube_center.z - step / 2
+      x : cube_center.x - xstep / 2,
+      y : cube_center.y + ystep / 2,
+      z : cube_center.z - zstep / 2
     };
     cube_vertices[4] = {
-      x : cube_center.x - step / 2,
-      y : cube_center.y - step / 2,
-      z : cube_center.z + step / 2
+      x : cube_center.x - xstep / 2,
+      y : cube_center.y - ystep / 2,
+      z : cube_center.z + zstep / 2
     };
     cube_vertices[5] = {
-      x : cube_center.x + step / 2,
-      y : cube_center.y - step / 2,
-      z : cube_center.z + step / 2
+      x : cube_center.x + xstep / 2,
+      y : cube_center.y - ystep / 2,
+      z : cube_center.z + zstep / 2
     };
     cube_vertices[6] = {
-      x : cube_center.x + step / 2,
-      y : cube_center.y + step / 2,
-      z : cube_center.z + step / 2
+      x : cube_center.x + xstep / 2,
+      y : cube_center.y + ystep / 2,
+      z : cube_center.z + zstep / 2
     };
     cube_vertices[7] = {
-      x : cube_center.x - step / 2,
-      y : cube_center.y + step / 2,
-      z : cube_center.z + step / 2
+      x : cube_center.x - xstep / 2,
+      y : cube_center.y + zstep / 2,
+      z : cube_center.z + ystep / 2
     };
 		
     for (var i = 0; i < 8; i++) {
@@ -503,8 +503,17 @@ function MarchingCubes() {
 	};
 };
 
-MarchingCubes.prototype.compute = function(start, size, limit, step, time, isolevel, sampler) {
-	var vertices = [],
+MarchingCubes.prototype.compute = function(grid, time, isolevel, sampler) {
+	var xstart = grid.x.start,
+			ystart = grid.y.start,
+			zstart = grid.z.start,
+			xend = grid.x.end,
+			yend = grid.y.end,
+			zend = grid.z.end,
+			xstep = grid.x.step,
+			ystep = grid.y.step,
+			zstep = grid.z.step,
+			vertices = [],
       normals = [],
 			result;
 			
@@ -514,10 +523,10 @@ MarchingCubes.prototype.compute = function(start, size, limit, step, time, isole
 	//console.log(now + ': Marching cubes worker starting!');
 	// DEBUG
 			
-	for (var i = 0; i < size; i++) {
-		for (var j = 0; j < size; j++) {
-			for (var k = start; k < limit; k++) {
-				result = this.polygonize(i * step, j * step, k * step, time, step, isolevel, sampler);
+	for (var i = xstart; i < xend; i++) {
+		for (var j = ystart; j < yend; j++) {
+			for (var k = zstart; k < zend; k++) {
+				result = this.polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
 					normals.push.apply(normals, result.normals);
@@ -541,15 +550,12 @@ MarchingCubes.prototype.compute = function(start, size, limit, step, time, isole
 
 onmessage = function(e) {
   var data = e.data,
-  		start = data.start,
-      size = data.size,
-      step = data.step,
-			limit = data.limit,
+  		grid = data.grid,
       time = data.time,
       isolevel = data.isolevel,
       body = data.body,
       sampler = new Function('x, y, z, t, s', body),
-  		result = new MarchingCubes().compute(start, size, limit, step, time, isolevel, sampler);
+  		result = new MarchingCubes().compute(grid, time, isolevel, sampler);
   		
   postMessage(result);
 };

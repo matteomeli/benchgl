@@ -291,11 +291,28 @@ function start() {
 				// DEBUG
 				
 				pool.map(function(i) {
+			    var idx = i % parallelFactor,
+					    idy = ((i / parallelFactor) >> 0) % parallelFactor,
+					    idz = ((i / parallelFactor / parallelFactor) >> 0) % parallelFactor;
+					
 					var config = {
-						start 		: i * partial,
-						size			:	size,
-						step			: step,
-						limit			: (i + 1) * partial,
+						grid 			: {
+							x : {
+								start : 0,
+								end : size,
+								step : step
+							},
+							y : {
+								start : 0,
+								end : size,
+								step : step,
+							},
+							z : {
+								start : idx * partial,
+								end : idx * partial + partial,
+								step : step
+							}
+						},
 						time			: time,
 						isolevel 	: isolevel,
 						body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
@@ -305,12 +322,9 @@ function start() {
 				});
 				
 				pool.reduce(function(total, partial) {
-					if (partial) {
-						total.vertices.push.apply(total.vertices, partial.vertices);
-						total.normals.push.apply(total.normals, partial.normals);
-					} else {
-						console.log('error!');
-					}
+					total.vertices.push.apply(total.vertices, partial.vertices);
+					total.normals.push.apply(total.normals, partial.normals);
+					return total;
 				}, 
 				function(result) {
 					// DEBUG
