@@ -1,4 +1,4 @@
-<!-- Do NOT put any DOCTYPE here unless you want problems in IEs. -->
+<!DOCTYPE html>
 <html>
 <head>
   <!-- The following line defines content type and utf-8 as character set. -->
@@ -43,103 +43,15 @@
   // Path to the blank image must point to a valid location on your server
   Ext.BLANK_IMAGE_URL = 'lib/ext/resources/images/default/s.gif';
   
-  // Application's helper functions and variables
-  var xRot = 0.0;
-
-	function drawCall(obj) {
-		xRot += 1.0;
-		if (xRot > 360.0)
-			xRot -= 360.0;
-		obj.draw();
-	};
-	
-	function vsrc() {
-		var src = "";
-  	src += "attribute vec3 a_position;\n";
-  	src += "uniform mat4 u_modelViewMatrix;\n";
-  	src += "uniform mat4 u_projectionMatrix;\n";
- 		src += "void main(void) {\n";
-    src += " gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1.0);\n"
-  	src += "}\n";
-		return src;
-	};
-	
-	function psrc() {
-		var src = "";
-		src += "#ifdef GL_ES\n";
-  	src += "precision highp float;\n";
-  	src += "#endif\n";
- 		src += "void main(void) {\n";
-    src += " gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n";
-  	src += "}\n";		
-		return src
-	};
-  
   /**
    * Creates a Test Application.
    * @class Represent a test application for the engine.
    */
   function TestApplication() {
-		this.manager = new CanvasManager("canvas0", this);
-		//this.program = ShaderProgram.Default(this.manager.gl);
-		this.program = new ShaderProgram(this.manager.gl, vsrc(), psrc());
-		this.transform = new TransformStack();
-		this.renderer = new MeshRenderer(this.program);
+
 	};
   
   TestApplication.prototype = {
-		init: function() {
-			var gl = this.manager.gl;
-			gl.clearColor(0.0, 0.0, 0.0, 1.0);
-			gl.clearDepth(1.0);
-			gl.enable(gl.DEPTH_TEST);
-			gl.depthFunc(gl.LEQUAL);
-		},
-		
-		setupMesh: function() {
-			this.mesh = new Mesh(this.manager.gl);
-			var vertices = [
-         0.0,  1.0,  0.0,
-        -1.0, -1.0,  0.0,
-         1.0, -1.0,  0.0
-    	];
-    	this.mesh.addVertexAttribute("a_position", 3, false, new Float32Array(vertices));
-		},
-		
-		draw: function() {
-			var gl = this.manager.gl;
-			
-			gl.viewport(0, 0, this.ui.height, this.ui.width);
-			
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-			
-			this.transform.projection.loadIdentity();
-			this.transform.projection.perspective(45, this.ui.width/this.ui.height, 0.1, 100.0);
-			
-			this.transform.view.loadIdentity();
-			
-			this.transform.model.loadIdentity();
-			this.transform.model.push();
-			this.transform.model.translate(0.0, 0.0, -7.0);
-			this.transform.model.rotate(xRot, 1.0, 0.0, 0.0);
-			
-			// Draw a triangle mesh
-			this.renderer.render(this.mesh, gl.TRIANGLES, 0, 3, 
-				{ 
-					u_modelViewMatrix : this.transform.modelViewMatrix.flatten(),
-					u_projectionMatrix : this.transform.projectionMatrix.flatten()
-				},
-				null
-			);
-			
-			this.transform.model.pop();
-			this.transform.reset();
-		},
-		
-		start: function() {
-			myself = this;
-			setInterval('drawCall(myself)', 15);
-		}
 	};
  
   // Main application entry point

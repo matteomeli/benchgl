@@ -1,28 +1,26 @@
-/* @override http://webrendering.local/trunk/public/core.css */
-
 body {
 	margin: 0;
 	text-align: center;
 	color: #7f7f7f;
-	background-color: #e0ffd2;
+	background-color: #ffca9a;
 	font-family: "Lucida Grande", Verdana, Arial, sans-serif;
-	font-size: 76%;
+	font-size: 1em;
 }
 
 h2 {
-	color: #09ca66;
+	color: #ff9800;
 }
 
 a {
-	color: #09ca66;
+	color: #ff9800;
 }
 
 a:hover {
-	color: #044824;
+	color: #ce7a08;
 }
 
 #main {
-	width: 80em;
+	width: 70em;
 	margin: 0px auto;
 	padding: 0;
 	background-color: #ffffff;
@@ -33,7 +31,7 @@ a:hover {
 }
 
 #menu {
-	padding: 10px;
+	padding: 0.5em;
 	overflow:  hidden;
 	text-align: right;
 }
@@ -64,20 +62,21 @@ a:hover {
 #header {
 	clear: both;
 	overflow: hidden;
-	padding: 10px;
-	background-color: #044824;
+	padding: 0.5;
+	background-color: #9a1123;
 }
 
 #logo {
 	float: left;
-	padding: 2em 8em;
+	width: 20%;
+	padding: 1em 5em;
 }
 
 #description {
 	float: right;
-	width: 45%;
-	padding: 3em 5em 3em 5em;
+	width: 60%;
 	color: #ffffff;
+	padding: 3em 0em;
 }
 
 #content {
@@ -87,19 +86,43 @@ a:hover {
 
 #glance {
 	float: left;
-	width: 50%;
+	width: 33%;
 }
 
 #examples {
+	float: left;
+	width: 33%;
+}
+
+#applications {
 	float: right;
-	width: 50%;
+	width: 33%;
 }
 
 #footer {
+	color: #9a1123;
 	padding: 10px;
 	text-align: center;
 	font-style: italic;
 	font-size: x-small;
+}
+
+#applications ul {
+	overflow: hidden;
+	list-style: none;
+	margin: 0;
+	padding: 1em;	
+}
+
+#applications ul li {
+	display: block;
+	text-align: center;
+	border: 2px solid #d18335;
+	padding-bottom: 1em;
+	margin: 0.5em;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+	background-color: #ffca9a;
 }
 
 .title {
@@ -135,4 +158,9 @@ a:hover {
 .example-title {
 	height: 3em;
 	text-align: center;
+}
+
+.app-title {
+	padding: 0.5em 0em;
+	color: #9a1123;
 }

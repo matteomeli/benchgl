@@ -339,54 +339,49 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 			normalCoords = [],
       cube_index = 0,
       edges_index = 0,
-			cube_center = {
-				x : x*xstep + xstep / 2,
-				y : y*ystep + ystep / 2,
-				z : z*zstep + zstep / 2
-			},
 			vertex,
       point,
       triangles;	
 
 	cube_vertices[0] = {
-		x : cube_center.x - xstep / 2,
-		y : cube_center.y - ystep / 2,
-		z : cube_center.z - zstep / 2
+		x : x - xstep / 2,
+		y : y - ystep / 2,
+		z : z - zstep / 2
 	};
   cube_vertices[1] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[2] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[3] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x - xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[4] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x - xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[5] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[6] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[7] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + zstep / 2,
-    z : cube_center.z + ystep / 2
+    x : x - xstep / 2,
+    y : y + zstep / 2,
+    z : z + ystep / 2
   };
 	
   for (var i = 0; i < 8; i++) {
@@ -515,9 +510,9 @@ function compute(grid, time, isolevel, sampler) {
       normals = [],
 			result;
 			
-	for (var i = xstart; i < xend; i++) {
-		for (var j = ystart; j < yend; j++) {
-			for (var k = zstart; k < zend; k++) {
+	for (var i = xstart; i <= xend; i+=xstep) {
+		for (var j = ystart; j <= yend; j+=ystep) {
+			for (var k = zstart; k <= zend; k+=ystep) {
 				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
@@ -538,8 +533,27 @@ onmessage = function(e) {
   		grid = data.grid,
       time = data.time,
       isolevel = data.isolevel,
-      body = data.body,
-      sampler = new Function('x, y, z, t, s', body),
+      balls = data.balls,
+      sampler = function(x, y, z) {
+      	var result = 0;
+      	for (var i = 0, l = balls.length; i < l; i++) {
+      		var ball = balls[i],
+      				x0 = ball.pos.x,
+      				y0 = ball.pos.y,
+      				z0 = ball.pos.z;
+      		
+      		result += 1 / ((x - x0) * (x - x0) + (y - y0) * (y - y0) + (z - z0) * (z - z0)) || 1;
+      	}
+      	return result;
+      }/*,
+			sampler = function(x, y, z, t) {
+				var result = 0,
+						height = 20 * (0 + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+						
+				height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
+				result = (height - z) * 50;
+				return result;
+	  	},*/      
   		result = compute(grid, time, isolevel, sampler);
   		
   postMessage(result);

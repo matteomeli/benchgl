@@ -22,6 +22,7 @@ this.BenchGL = null;
 			effects : {
 			},
 			events  : {},
+			debug 	: false,
 			onError : $.empty,
 			onLoad : $.empty
 		}, options || {});
@@ -34,6 +35,10 @@ this.BenchGL = null;
 			options.onError();
 			return null;
 		}
+		
+		//if (options.debug) {
+		//	gl.setTracing(true);
+		//}
 		
 		canvas = new BenchGL.Canvas(gl.canvas, options.events);
 	
@@ -109,6 +114,8 @@ $.empty = function() {};
 
 /**
  * Provides requestAnimationFrame in a cross browser way.
+ * Copyright 2010, Google Inc.
+ * All rights reserved.
  */
 window.requestAnimFrame = (function() {
   return window.requestAnimationFrame ||

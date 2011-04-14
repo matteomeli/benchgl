@@ -1,0 +1,39 @@
+html, body {
+	font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+	width: 100%;
+}
+
+html, body, canvas {
+	background: black;
+}
+
+canvas {
+	width: 1000px;
+	height: 600px;
+	margin: 30px auto;
+}
+
+#outer {
+	width: 1000px;
+	margin: 0 auto;
+}
+
+#control {
+	font-size: larger;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 3;
+	color: gray;
+	background-color: rgba(0, 0, 200, 0.5);
+	border-radius: 10px;
+	padding: 10px;
+}
+
+#fps {
+	color: white;
+}
+
+.clickable {
+	cursor: pointer;
+};

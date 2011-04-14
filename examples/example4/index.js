@@ -56,8 +56,6 @@ function start() {
 					}),
 					rPyr = 0, rCube = 0;
 					
-			timer.start();
-					
 			function animate() {
 				var elapsed = timer.stop().lastDelta;
 				rPyr += (90 * elapsed) / 1000.0;
@@ -95,6 +93,7 @@ function start() {
 				info();
 			};
 			
+			timer.start();
 			tick();
 		}
 	});

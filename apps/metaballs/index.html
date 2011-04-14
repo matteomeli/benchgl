@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>BenchGL Engine - Example 14</title>
-<link rel="stylesheet" href="../../resources/example.css" type="text/css" />
+<title>BenchGL Engine - Metaballs simulation</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <script type="text/javascript" src="../../build/benchgl.js"></script>
+<script type="text/javascript" src="balls.js"></script>
 <script type="text/javascript" src="index.js"></script>
-
-<script id="per-fragment-lighting-fs" type="x-shader/x-fragment">
+    
+<script id="surfaces-fs" type="x-shader/x-fragment">
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -40,16 +41,11 @@ uniform vec3 u_lightColor4;
 uniform vec3 u_lightPosition4;
 uniform vec3 u_lightSpecularColor4;
 
+uniform vec4 u_matDiffuse;
 uniform float u_matShininess;
-
-uniform bool u_enableTexturing;
-uniform bool u_useTexture0;
-uniform sampler2D tex0;
 
 varying vec4 v_position;
 varying vec4 v_normal;
-varying vec4 v_color;
-varying vec2 v_texcoord;
 
 void main(void) {
 	vec3 lightFactor;
@@ -101,116 +97,51 @@ void main(void) {
 		lightFactor = u_ambientColor + directionalFactor + diffuseLight + specularLight;
 	}
 	
-	vec4 fragmentColor = v_color;
-	if (u_enableTexturing) {
-		if (u_useTexture0) {
-			fragmentColor = texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t));
-		}
-	}
-	
-	gl_FragColor = vec4(fragmentColor.rgb * lightFactor, fragmentColor.a);
+	gl_FragColor = vec4(u_matDiffuse.rgb * lightFactor, u_matDiffuse.a);
 }
 </script>
 
-<script id="per-fragment-lighting-vs" type="x-shader/x-vertex">
+<script id="surfaces-vs" type="x-shader/x-vertex">
 #ifdef GL_ES
 precision highp float;
 #endif
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
-attribute vec4 a_color;
-attribute vec2 a_texcoord;
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
+
 uniform mat4 u_normalMatrix;
 
 varying vec4 v_position;
 varying vec4 v_normal;
-varying vec4 v_color;
-varying vec2 v_texcoord;
 
 void main(void) {
 	v_position = u_modelViewMatrix * vec4(a_position, 1.0);
 	v_normal = u_normalMatrix * vec4(a_normal, 1.0);
-	v_color = a_color;
-	v_texcoord = a_texcoord;
 	
 	gl_Position = u_projectionMatrix * v_position;
 }
 </script>
-
 </head>
 
 <body onload="start();">
-	<div id="fps">0 fps</div>
+	<div id="control">
+		<div id="fps">Fps: 0</div>
+		<div>Number of balls:</div>
+		<div class="clickable" id="ball1">1</div>
+		<div class="clickable" id="ball2">2</div>
+		<div class="clickable" style="color: red" id="ball5">5</div>
+		<div class="clickable" id="ball10">10</div>
+		<div>Size of balls:</div>
+		<div class="clickable" id="size30">Tiny</div>
+		<div class="clickable" style="color: red" id="size10">Normal</div>
+		<div class="clickable" id="size5">Big</div>		
+	</div>
 	<div id="outer">
-		<div id="inner">
-  		<canvas id="example-canvas" width="500" height="500"></canvas>
-  		
-  		<div id="ui">
-  			<input type="checkbox" id="lighting" checked /> Use lighting<br/>
-  			<input type="checkbox" id="texturing" checked /> Use textures<br/>
-		    <h2>Material:</h2>
-		
-		    <table style="border: 0; padding: 10px;">
-		        <tr>
-		            <td><b>Shininess:</b>
-		            <td><input type="text" id="shininess" value="32.0" />
-		        </tr>
-		    </table>
-		    <h2>Point light:</h2>
-		    <table style="border: 0; padding: 10px;">
-		        <tr>
-		            <td>
-		                <b>Position:</b>
-		            </td>
-		            <td>
-		                X: <input type="text" id="lightX" value="-10.0" />
-		            </td>
-		            <td>
-		                Y: <input type="text" id="lightY" value="4.0" />
-		            </td>
-		            <td>
-		                Z: <input type="text" id="lightZ" value="-20.0" />
-		            </td>
-		        </tr>
-		        <tr>
-		            <td>
-		                <b>Colour:</b>
-		            </td>
-		            <td>
-		                R: <input type="text" id="lightR" value="0.8" />
-		            </td>
-		            <td>
-		                G: <input type="text" id="lightG" value="0.8" />
-		            </td>
-		            <td>
-		                B: <input type="text" id="lightB" value="0.8" />
-		            </td>
-		        </tr>
-		    </table>
-				<h2>Ambient light:</h2>
-		    <table style="border: 0; padding: 10px;">
-		        <tr>
-		            <td>
-		                <b>Colour:</b>
-		            </td>
-		            <td>
-		                R: <input type="text" id="ambientR" value="0.2" />
-		            </td>
-		            <td>
-		                G: <input type="text" id="ambientG" value="0.2" />
-		            </td>
-		            <td>
-		                B: <input type="text" id="ambientB" value="0.2" />
-		            </td>
-		        </tr>
-		    </table>
-	    </div>
-  	</div>
-  </div>
+		<canvas id="metaballs-canvas" width="1000" height="600"></canvas>
+	</div>
 </body>
 
 </html>

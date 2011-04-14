@@ -10,7 +10,7 @@ function start() {
 			lightZ = $('lightZ'),
 			sampler = $('sampler'),
 			workers = $('workers'),
-			grid = $('grid'),
+			step = $('step'),
 			iso = $('isolevel'),
 			timeEnabled = $('time'),
 			tFrom = $('timeFrom'),
@@ -21,15 +21,28 @@ function start() {
 			speed = $('speed'),
 			useTime = false,
 			toSample = true,
-			fps = +speed.value,
-			time = 0,
-			timeStep = 0,
-			size = +grid.value,
-			step = 1.0 / size,
-			parallelFactor = +workers.value,
-			partial = size / parallelFactor,
+			grid = {
+			  x: {
+			    start: 0,
+			    end: 1,
+			    step: 0.1
+			  },
+			  y: {
+			    start: 0,
+			    end: 1,
+			    step: 0.1
+			  },
+			  z: {
+			    start: 0,
+			    end: 1,
+			    step: 0.1
+			  }
+			},
+			samplingSteps = 10,
+			parallelization = +workers.value,
 			isolevel = +iso.value,
 			samplerIndex = +sampler.value,
+			time = 0, fps = +speed.value,
 			xRot = yRot = 0, z = -2.0, mouseDown = false,
 			samplers = [
 				function(x, y, z, t) {
@@ -199,7 +212,7 @@ function start() {
 						colorPerVertex : false,
 						dynamic : false
 					}),
-					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelFactor);
+					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelization);
 				
 			renderer.useLights(true);
 			renderer.material.setShininess(10);
@@ -240,16 +253,16 @@ function start() {
 						toSample = true;
 					}
 				}
-				if (+workers.value != parallelFactor) {
-					parallelFactor = +workers.value;
-					partial = size / parallelFactor;
-					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelFactor)
+				if (+workers.value != parallelization) {
+					parallelization = +workers.value;
+					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelization)
 					toSample = true;
 				}
-				if (+grid.value != size) {
-					size = +grid.value;
-					step = 1.0 / size;
-					partial = size / parallelFactor;
+				if (+step.value != samplingSteps) {
+					samplingSteps = +step.value;
+					grid.x.step = (grid.x.end - grid.x.start) / samplingSteps;
+					grid.y.step = (grid.y.end - grid.y.start) / samplingSteps;
+					grid.z.step = (grid.z.end - grid.z.start) / samplingSteps;
 					toSample = true;
 				}
 				if (+speed.value != fps) {
@@ -290,7 +303,22 @@ function start() {
 			
 			function sample() {
 				var start, end, elapsed,
-						body = samplers[+sampler.value].toString();
+						body = samplers[+sampler.value].toString(),
+			  		x = grid.x,
+			      xstart = x.start,
+			      xend = x.end,
+			      xstep = x.step,
+			      nx = ((xend - xstart) / parallelization),
+			      y = grid.y,
+			      ystart = y.start,
+			      yend = y.end,
+			      ystep = y.step,
+			      ny = ((yend - ystart) / parallelization),
+			      z = grid.z,
+			      zstart = z.start,
+			      zend = z.end,
+			      zstep = z.step,
+			      nz = ((zend - zstart) / parallelization);;
 						
 				// DEBUG
 				start = new Date().getTime();
@@ -301,19 +329,19 @@ function start() {
 			    var config = {
 						grid : {
 							x : {
-								start : 0,
-								end : size,
-								step : step
+								start : xstart,
+								end : xend,
+								step : xstep
 							},
 							y : {
-								start : 0,
-								end : size,
-								step : step,
+								start : ystart,
+								end : yend,
+								step : ystep,
 							},
 							z : {
-								start : i * partial,
-								end : i * partial + partial,
-								step : step
+								start : i * nz,
+								end : i * nz + nz,
+								step : zstep
 							}
 						},
 						time			: time,

@@ -339,54 +339,49 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 			normalCoords = [],
       cube_index = 0,
       edges_index = 0,
-			cube_center = {
-				x : x*xstep + xstep / 2,
-				y : y*ystep + ystep / 2,
-				z : z*zstep + zstep / 2
-			},
 			vertex,
       point,
       triangles;	
 
 	cube_vertices[0] = {
-		x : cube_center.x - xstep / 2,
-		y : cube_center.y - ystep / 2,
-		z : cube_center.z - zstep / 2
+		x : x - xstep / 2,
+		y : y - ystep / 2,
+		z : z - zstep / 2
 	};
   cube_vertices[1] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[2] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[3] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x - xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[4] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x - xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[5] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[6] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[7] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + zstep / 2,
-    z : cube_center.z + ystep / 2
+    x : x - xstep / 2,
+    y : y + zstep / 2,
+    z : z + ystep / 2
   };
 	
   for (var i = 0; i < 8; i++) {
@@ -515,9 +510,9 @@ function compute(grid, time, isolevel, sampler) {
       normals = [],
 			result;
 			
-	for (var i = xstart; i < xend; i++) {
-		for (var j = ystart; j < yend; j++) {
-			for (var k = zstart; k < zend; k++) {
+	for (var i = xstart; i <= xend; i+=xstep) {
+		for (var j = ystart; j <= yend; j+=ystep) {
+			for (var k = zstart; k <= zend; k+=ystep) {
 				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
