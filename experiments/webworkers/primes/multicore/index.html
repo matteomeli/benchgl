@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Worker tests: Multi-core computation</title>
+ </head>
+ <body>
+ 	<h1>Multi-core computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+		var numWorkers = 2, 
+				itemsPerWorker = 10000000 / numWorkers,
+				pendingWorkers = numWorkers,
+				start, time, last;
+		
+		start = new Date().getTime();
+		for (var i = 0; i < numWorkers; i++) {
+			time = new Date().getTime();
+			var worker = new Worker('worker.js');
+			last = time;
+			time = new Date().getTime();
+			console.log('Creation %d: %d', i, (time - last));
+			
+			worker.onmessage = function(e) {
+				var result = e.data,
+						id = result.id;
+				
+				time = new Date().getTime();
+				console.log('Dispatch %d: %d', id, (result.start - start));
+				console.log('Execution %d: %d', id, (result.end - result.start));
+				console.log('Reception %d: %d', id, (time - result.end));
+				
+				pendingWorkers--;
+				if (pendingWorkers == 0) {
+					console.log('Total time: %d', (time - start));
+				}
+			}
+			now = new Date().getTime();
+			worker.postMessage({
+				id 		: i,
+				from	:	i * itemsPerWorker + 1, 
+				to		:	(i + 1) * itemsPerWorker
+			});
+		}
+  </script>
+ </body>
+</html>

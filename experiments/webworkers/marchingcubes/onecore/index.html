@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Worker tests: Marching cubes</title>
+ </head>
+ <body>
+ 	<h1>Marching cubes computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+		var worker, result, start, now,
+				size = 64,
+  			step = 1.0 / size,
+  			time = 0,
+  			isolevel = 50,
+  			grid = {
+					x : {
+						start : 0,
+						end : size,
+						step : step
+					},
+					y : {
+						start : 0,
+						end : size,
+						step : step,
+					},
+					z : {
+						start : 0,
+						end : size,
+						step : step
+					}
+				},
+				sampler = function(x, y, z, t) {
+					var result = 0,
+							height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+							
+					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
+					result = (height - z) * 50;
+					return result;
+		  	},
+		  	body = sampler.toString();
+				
+		start = new Date().getTime();
+		worker = new Worker('marchingcubes.js');	// Create the Web Worker
+		now = new Date().getTime();
+		console.log('Creation: %d', (now - start));		
+		
+		worker.onmessage = function (e) {
+			result = e.data;
+			
+			now = new Date().getTime();
+			console.log('Dispatch: %d', (result.start - start));
+			console.log('Execution: %d', (result.end - result.start));
+			console.log('Reception: %d', (now - result.end));
+			console.log('Total time: %d', (now - start));
+		};
+		worker.postMessage({
+			grid : grid,
+			time : time,
+			isolevel : isolevel,
+			body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+		});
+  </script>
+ </body>
+</html>

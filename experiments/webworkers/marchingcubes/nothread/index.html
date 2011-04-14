@@ -1,0 +1,52 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Web Worker tests: No-thread computation</title>
+  <script type="text/javascript" src="marchingcubes.js"></script>
+ </head>
+ <body>
+ 	<h1>Marching cubes computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+  	var start, end, elapsed, result,
+  			size = 128,
+  			step = 1.0 / size,
+  			time = 0,
+  			isolevel = 50,
+  			grid = {
+					x : {
+						start : 0,
+						end : size,
+						step : step
+					},
+					y : {
+						start : 0,
+						end : size,
+						step : step,
+					},
+					z : {
+						start : 0,
+						end : size,
+						step : step
+					}
+				},
+				sampler = function(x, y, z, t) {
+					var result = 0,
+							height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+							
+					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
+					result = (height - z) * 50;
+					return result;
+		  	};
+  	
+  	start = new Date().getTime();
+  			
+		result = compute(grid, time, isolevel, sampler);
+		
+		end = new Date().getTime();
+		elapsed = end - start;
+		
+		console.log('Total time: ' + elapsed);
+  </script>
+ </body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Web Worker tests: No-thread computation</title>
+ </head>
+ <body>
+ 	<h1>No-thread computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+  	var start, end, elapsed;
+  	
+  	start = new Date().getTime();
+  			
+		for(var n = 0; n <= 1000000; n += 1) {
+			var found = false;
+			for (var i = 2; i <= Math.sqrt(n); i += 1) {
+				if (n % i == 0) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				// found a prime!		
+				//console.log(n);
+				// do nothing
+				;
+			}
+		}
+		
+		end = new Date().getTime();
+		elapsed = end - start;
+		
+		console.log('Total time: ' + elapsed);
+  </script>
+ </body>
+</html>

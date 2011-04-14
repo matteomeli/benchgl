@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Web Worker tests: Multi-core computation</title>
+ </head>
+ <body>
+ 	<h1>Multi-core computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+		var worker, result, start, time;
+				
+		start = new Date().getTime();
+		worker = new Worker('worker.js');	// Create the Web Worker
+		time = new Date().getTime();
+		console.log('Creation: %d', (time - start));		
+		
+		worker.onmessage = function (e) {
+			result = e.data;
+			
+			time = new Date().getTime();
+			console.log('Dispatch: %d', (result.start - start));
+			console.log('Execution: %d', (result.end - result.start));
+			console.log('Reception: %d', (time - result.end));
+			console.log('Total time: %d', (time - start));
+		};
+		worker.postMessage({from:1, to:1000000});
+  </script>
+ </body>
+</html>

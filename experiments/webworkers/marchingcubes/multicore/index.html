@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Worker tests: Marching cubes</title>
+ </head>
+ <body>
+ 	<h1>Marching cubes computation</h1>
+ 	<p>Watch the results on the console.</p>
+  <script type="text/javascript">
+		var worker,
+				numWorkers = 8,
+				pendingWorkers = numWorkers,
+				start, now, last,
+				size = 128,
+  			step = 1.0 / size,
+  			limit = size / numWorkers;
+  			time = 0,
+  			isolevel = 50,
+				sampler = function(x, y, z, t) {
+					var result = 0,
+							height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+							
+					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
+					result = (height - z) * 50;
+					return result;
+		  	},
+		  	body = sampler.toString();
+		
+		start = new Date().getTime();
+		for (var i = 0; i < numWorkers; i++) {
+			now = new Date().getTime();
+			worker = new Worker('marchingcubes.js');
+			last = now;
+			now = new Date().getTime();
+			console.log('Creation %d: %d', i, (now - last));
+			
+			worker.onmessage = function(e) {
+				var result = e.data,
+						id = result.id;
+				
+				now = new Date().getTime();
+				console.log('Dispatch %d: %d', id, (result.start - start));
+				console.log('Execution %d: %d', id, (result.end - result.start));
+				console.log('Reception %d: %d', id, (now - result.end));
+				
+				pendingWorkers--;
+				if (pendingWorkers == 0) {
+					console.log('Total time: %d', (now - start));
+				}
+			}
+			now = new Date().getTime();
+			worker.postMessage({
+				id : i,
+  			grid : {
+					x : {
+						start : 0,
+						end : size,
+						step : step
+					},
+					y : {
+						start : 0,
+						end : size,
+						step : step,
+					},
+					z : {
+						start : i * limit,
+						end : (i + 1) * limit,
+						step : step
+					}
+				},
+				time : time,
+				isolevel : isolevel,
+				body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+			});
+		}
+  </script>
+ </body>
+</html>
