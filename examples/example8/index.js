@@ -1,5 +1,8 @@
-// TODO : it's not displayed correctly!
-
+// TODO : it's not displayed correctly the blending!!!
+function $(id) {
+	return document.getElementById(id);
+};
+	
 function start() {
 	BenchGL.Shader.Fragment.Blend = [
 		"#ifdef GL_ES",
@@ -43,7 +46,7 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory(gl, 'cube'),
+					cube = BenchGL.Model.factory('cube'),
 					xRot = yRot = 0, z = -5.0,
 					xSpeed = 3, ySpeed = -3;
 					

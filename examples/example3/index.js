@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	BenchGL('example-canvas', {
 		onError : function() {
@@ -10,14 +14,14 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					triangle = BenchGL.Model.factory(gl, 'triangle', {
+					triangle = BenchGL.Model.factory('triangle', {
 						color : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
 							0.0, 0.0, 1.0, 1.0
 						]
 					}), 
-					square = BenchGL.Model.factory(gl, 'rectangle', {
+					square = BenchGL.Model.factory('rectangle', {
 						color : [0.5, 0.5, 1.0, 1.0]
 					}),
 					rTri = 0, rRect = 0;

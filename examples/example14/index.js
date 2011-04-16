@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	BenchGL('example-canvas', {
 		program : {
@@ -15,10 +19,9 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					teapot = BenchGL.Model.factory(gl, 'json', {
+					teapot = BenchGL.Model.factory('json', {
 						url : 'Teapot.json'
 					}),
-					//teapot = BenchGL.Model.factory(gl, 'cube'),
 					teapotAngle = 0;
 			
 			renderer.useLights(true);

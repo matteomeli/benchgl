@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	BenchGL('example-canvas', {
 		onError : function() {
@@ -10,7 +14,7 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory(gl, 'cube'),
+					cube = BenchGL.Model.factory('cube'),
 					xRot = yRot = zRot = 0;
 			
 			renderer.useTextures(true);

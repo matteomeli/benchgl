@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	BenchGL('example-canvas', {
 		onError : function() {
@@ -10,7 +14,7 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					pyramid = BenchGL.Model.factory(gl, 'pyramid', {
+					pyramid = BenchGL.Model.factory('pyramid', {
 						color : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
@@ -26,7 +30,7 @@ function start() {
 							0.0, 1.0, 0.0, 1.0
 						]
 					}), 
-					cube = BenchGL.Model.factory(gl, 'cube', {
+					cube = BenchGL.Model.factory('cube', {
 						color : [
 							1.0, 0.0, 0.0, 1.0,
 							1.0, 0.0, 0.0, 1.0,

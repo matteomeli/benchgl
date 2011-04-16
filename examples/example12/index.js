@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	BenchGL('example-canvas', {
 		onError : function() {
@@ -10,8 +14,8 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory(gl, 'cube'),
-					sphere = BenchGL.Model.factory(gl, 'sphere'),
+					cube = BenchGL.Model.factory('cube'),
+					sphere = BenchGL.Model.factory('sphere'),
 					cubeAngle = 0,
 					moonAngle = 180;
 			

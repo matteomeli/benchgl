@@ -178,7 +178,7 @@
 		this.mesh.render(program, mode);
 	};
 	
-	Model.factory = function(gl, type, options) {
+	Model.factory = function(type, options) {
 		type = $.capitalize(type);
 		
 		if (typeof Model[type] !== "function") {

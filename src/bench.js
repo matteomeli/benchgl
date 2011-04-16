@@ -23,7 +23,7 @@ this.BenchGL = null;
 			onLoad : $.empty
 		}, options || {});
 		
-		var gl, canvas, program, camera, renderer, handler;
+		var canvas, program, camera, renderer, handler;
 		
 		gl = new BenchGL.WebGL(canvasId, options.context).getContext();
 		
@@ -80,6 +80,10 @@ this.BenchGL = null;
 	};
 
 })();
+
+BenchGL.version = '0.1';
+
+var gl;
 
 // helper functions
 function $(id) {

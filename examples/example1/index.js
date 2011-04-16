@@ -9,8 +9,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					triangle = BenchGL.Model.factory(gl, 'triangle'), 
-					square = BenchGL.Model.factory(gl, 'rectangle');
+					triangle = BenchGL.Model.factory('triangle'), 
+					square = BenchGL.Model.factory('rectangle');
 			
 			renderer.background();
 			

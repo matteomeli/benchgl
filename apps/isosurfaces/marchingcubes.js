@@ -539,7 +539,7 @@ onmessage = function(e) {
       time = data.time,
       isolevel = data.isolevel,
       body = data.body,
-      sampler = new Function('x, y, z, t, s', body),
+      sampler = new Function('x, y, z, t', body),
   		result = compute(grid, time, isolevel, sampler);
   		
   postMessage(result);

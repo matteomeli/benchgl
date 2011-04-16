@@ -1,3 +1,7 @@
+function $(id) {
+	return document.getElementById(id);
+};
+
 function start() {
 	var xRot = yRot = 0,
 			mouseDown = false;
@@ -31,7 +35,7 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
-					sphere = BenchGL.Model.factory(gl, 'sphere');
+					sphere = BenchGL.Model.factory('sphere');
 			
 			renderer.useLights(true);
 			
