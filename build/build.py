@@ -7,7 +7,7 @@ files = [
   'trans.js',
   'skin.js',
   'request.js',
-  'mesh.js',
+  'model.js',
   'worker.js',
   'canvas.js',
   'camera.js',
