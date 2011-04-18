@@ -65,13 +65,15 @@ function start() {
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset();
+        
+        renderer.setupCamera();
+        renderer.setupTextures();        
 				
-				camera.transform.translate(0.0, 0.0, z);
-				camera.transform.rotate(xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				renderer.setTextures('crate');
+				cube.translate(0.0, 0.0, z);
+				cube.rotate(xRot, 1, 0, 0);
+				cube.rotate(yRot, 0, 1, 0);
+				cube.setTextures('crate');
 				renderer.renderModel(cube);
 			};
 			

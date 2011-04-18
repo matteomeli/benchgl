@@ -15,48 +15,45 @@ function start() {
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
 					triangle = BenchGL.Model.factory('triangle', {
-						color : [
+            dynamic : false,
+						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
 							0.0, 0.0, 1.0, 1.0
 						]
-					}), 
-					square = BenchGL.Model.factory('rectangle', {
-						color : [0.5, 0.5, 1.0, 1.0]
 					}),
-					rTri = 0, rRect = 0;
-					
-			timer.start();
-					
-			function animate() {
-				var elapsed = timer.stop().lastDelta;
-				rTri += (90 * elapsed) / 1000.0;
-        rRect += (75 * elapsed) / 1000.0;		
-			};
-			
-			function info() {
-				$('fps').innerHTML = timer.fps + ' fps';
-			};
+          square = BenchGL.Model.factory('rectangle', {
+            dynamic : false,
+            colors : [0.5, 0.5, 1.0, 1.0]
+          }),
+          triRot = 0, squareRot = 0;
+          
+      renderer.addModels(triangle, square);    
 			
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-
-				camera.transform.model().loadIdentity();
+        camera.reset();
+        camera.model.translate(0, 0, -7);
 				
-				camera.transform.translate(-1.5, 0.0, -7.0);
-				camera.transform.pushMatrix();
-				camera.transform.rotate(rTri, 0, 1, 0);
-				renderer.renderModel(triangle);
-				camera.transform.popMatrix();
+				triangle.translate(-1.5, 0, 0);
+				triangle.rotate(triRot, 0, 1, 0);
 				
-				camera.transform.pushMatrix();
-				camera.transform.translate(3.0, 0.0, 0.0);
-				camera.transform.rotate(rRect, 1, 0, 0);
-				renderer.renderModel(square);
-				camera.transform.popMatrix();
+				square.translate(1.5, 0, 0);
+				square.rotate(squareRot, 1, 0, 0);
+				
+        renderer.renderAll();
 			};
+
+      function animate() {
+        var elapsed = timer.stop().lastDelta;
+        triRot += (90 * elapsed) / 1000.0;
+        squareRot += (75 * elapsed) / 1000.0;   
+      };
+      
+      function info() {
+        $('fps').innerHTML = timer.fps + ' fps';
+      };
 			
 			function tick() {
 				requestAnimFrame(tick);
@@ -64,7 +61,8 @@ function start() {
 				animate();
 				info();
 			};
-			
+      
+      timer.start();			
 			tick();
 		}
 	});

@@ -15,7 +15,7 @@ function start() {
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
 					pyramid = BenchGL.Model.factory('pyramid', {
-						color : [
+						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
 							0.0, 0.0, 1.0, 1.0,
@@ -31,7 +31,7 @@ function start() {
 						]
 					}), 
 					cube = BenchGL.Model.factory('cube', {
-						color : [
+						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							1.0, 0.0, 0.0, 1.0,
 							1.0, 0.0, 0.0, 1.0,
@@ -58,37 +58,34 @@ function start() {
 							0.0, 0.0, 1.0, 1.0,
 						]
 					}),
-					rPyr = 0, rCube = 0;
-					
-			function animate() {
-				var elapsed = timer.stop().lastDelta;
-				rPyr += (90 * elapsed) / 1000.0;
-        rCube -= (75 * elapsed) / 1000.0;		
-			};
-			
-			function info() {
-				$('fps').innerHTML = timer.fps + ' fps';
-			};
+					pyrRot = 0, cubeRot = 0;
+          
+      renderer.addModels(pyramid, cube);
 			
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-
-				camera.transform.model().loadIdentity();
+				camera.reset();
+        camera.model.translate(0, 0, -8);
+        
+        pyramid.translate(-1.5, 0, 0);
+				pyramid.rotate(pyrRot, 0, 1, 0);
 				
-				camera.transform.translate(-1.5, 0.0, -8.0);
-				camera.transform.pushMatrix();
-				camera.transform.rotate(rPyr, 0, 1, 0);
-				renderer.renderModel(pyramid);
-				camera.transform.popMatrix();
+				cube.translate(1.5, 0, 0);
+				cube.rotate(cubeRot, 1, 1, 1);
 				
-				camera.transform.pushMatrix();
-				camera.transform.translate(3.0, 0.0, 0.0);
-				camera.transform.rotate(rCube, 1, 1, 1);
-				renderer.renderModel(cube);
-				camera.transform.popMatrix();
+        renderer.renderAll();
 			};
+      
+      function animate() {
+        var elapsed = timer.stop().lastDelta;
+        pyrRot += (90 * elapsed) / 1000.0;
+        cubeRot -= (75 * elapsed) / 1000.0;   
+      };
+      
+      function info() {
+        $('fps').innerHTML = timer.fps + ' fps';
+      };
 			
 			function tick() {
 				requestAnimFrame(tick);

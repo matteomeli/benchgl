@@ -10,26 +10,28 @@ function start() {
 					camera = handler.camera,
 					renderer = handler.renderer,
 					triangle = BenchGL.Model.factory('triangle', {
-						color : [
+						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
 							0.0, 0.0, 1.0, 1.0
 						]
 					}), 
 					square = BenchGL.Model.factory('rectangle', {
-						color : [0.5, 0.5, 1.0, 1.0]
+						colors : [0.5, 0.5, 1.0, 1.0]
 					});
 			
 			renderer.background();
 			
-			camera.transform.view().loadIdentity();
-			camera.transform.model().loadIdentity();
-			
-			camera.transform.translate(-1.5, 0.0, -7.0);
-			renderer.renderModel(triangle);
-			
-			camera.transform.translate(3, 0.0, 0.0);
-			renderer.renderModel(square);
+      camera.reset();
+      camera.model.translate(0, 0, -7);
+      
+      renderer.setupCamera();
+      
+      triangle.translate(-1.5, 0, 0);
+      renderer.renderModel(triangle);
+      
+      square.translate(1.5, 0, 0);
+      renderer.renderModel(square);
 		}
 	});
 };

@@ -14,13 +14,15 @@ function start() {
 			
 			renderer.background();
 			
-			camera.transform.view().loadIdentity();
-			camera.transform.model().loadIdentity();
+      camera.reset();
+      camera.model.translate(0, 0, -7);
+      
+      renderer.setupCamera();
 			
-			camera.transform.translate(-1.5, 0.0, -7.0);
+			triangle.translate(-1.5, 0, 0);
 			renderer.renderModel(triangle);
 			
-			camera.transform.translate(3, 0.0, 0.0);
+			square.translate(1.5, 0, 0);
 			renderer.renderModel(square);
 		}
 	});

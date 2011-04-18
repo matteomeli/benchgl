@@ -49,8 +49,6 @@ function start() {
 					cube = BenchGL.Model.factory('cube'),
 					xRot = yRot = 0, z = -5.0,
 					xSpeed = 3, ySpeed = -3;
-					
-			program.set
 			
 			renderer.useLights(true);
 			renderer.useTextures(true);
@@ -119,23 +117,26 @@ function start() {
 				if (blending) {
 					renderer.useAlphaBlending(true);
 				} else {
-					alpha = 1.0;
+					alpha = 1;
 					renderer.useAlphaBlending(false);
 				}
 				
-				renderer.setUniform('u_alpha', alpha);
+				program.bindUniform('u_alpha', alpha);
 			};
 			
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset();
+        
+        renderer.setupCamera();
+        renderer.setupLights();
+        renderer.setupTextures();
 				
-				camera.transform.translate(0.0, 0.0, z);
-				camera.transform.rotate(xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				renderer.setTextures('glass');
+				cube.translate(0.0, 0.0, z);
+				cube.rotate(xRot, 1, 0, 0);
+				cube.rotate(yRot, 0, 1, 0);
+				cube.setTextures('glass');
 				renderer.renderModel(cube);
 			};
 			

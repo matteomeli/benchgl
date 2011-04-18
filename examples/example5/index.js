@@ -38,14 +38,16 @@ function start() {
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset();
 				
-				camera.transform.translate(0.0, 0.0, -5.0);
-				camera.transform.rotate(xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				camera.transform.rotate(zRot, 0, 0, 1);
-				renderer.setTextures('nehe');
+        renderer.setupCamera();
+        renderer.setupTextures();
+        
+				cube.translate(0, 0, -5);
+				cube.rotate(xRot, 1, 0, 0);
+				cube.rotate(yRot, 0, 1, 0);
+				cube.rotate(zRot, 0, 0, 1);
+				cube.setTextures('nehe');
 				renderer.renderModel(cube);
 			};
 			

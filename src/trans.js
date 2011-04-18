@@ -2,12 +2,13 @@
 
 (function(){
 
-	var Vec3 = BenchGL.Vector3,
-			Mat4 = BenchGL.Matrix4,
-			pi = Math.PI;
+	var Mat4 = BenchGL.Matrix4,
+			pi = Math.PI,
+      MatrixStack,
+      TransformStack;
 	
-	var MatrixStack = function() {
-		this.stack = [],
+	MatrixStack = function() {
+		this.stack = [];
 		this.current = 0;
 		this.stack.push(new Mat4());
 	};
@@ -80,7 +81,7 @@
 		return this;
 	};
 	
-	var TransformStack = function() {
+	TransformStack = function() {
 		this.modelStack = new MatrixStack();
 		this.viewStack = new MatrixStack();
 		this.projStack = new MatrixStack();
@@ -223,6 +224,6 @@
 	BenchGL.MatrixStack = MatrixStack;
 	BenchGL.TransformStack = TransformStack;
 	
-})();
+}());
 
 

@@ -10,7 +10,7 @@
 		gl.shaderSource(shader, source);
 		gl.compileShader(shader);
 		
-		valid = gl.getShaderParameter(shader, gl.COMPILE_STATUS) != 0;		
+		valid = gl.getShaderParameter(shader, gl.COMPILE_STATUS) !== 0;		
 		log += gl.getShaderInfoLog(shader);
 		
 		this.source = source;
@@ -136,10 +136,10 @@
 			"	vec4 fColor = vec4(v_color.rgb * v_lightFactor, v_color.a);",
 			
 			"	if (u_enableTexturing) {",
-			" 	if (u_useTexture0) {",
+      "   if (u_useTexture0) {",
 			"			fColor = vec4(texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t)).rgb * v_lightFactor, 1.0);",
-			" 	}",
-			"	}",
+      "   }",
+      " }",
 			
 			"	gl_FragColor = fColor;",
 			"}"
@@ -148,5 +148,5 @@
 	
 	BenchGL.Shader = Shader;
 	
-})();
+}());
 

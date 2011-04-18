@@ -24,4 +24,4 @@
 	
 	BenchGL.WebGL = WebGL;
 
-})();
+}());

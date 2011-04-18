@@ -85,18 +85,17 @@ void main(void) {
 		}
 		
 		lightFactor = u_ambientColor + directionalFactor + 
-			lightFactor1 + lightFactor2 + lightFactor3 + lightFactor4;
-		
-		
-		vec4 fragmentColor = vec4(1.0, 1.0, 1.0, 1.0);
-		if (u_enableTexturing) {
-			if (u_useTexture0) {
-				fragmentColor = texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t));
-			}
+			lightFactor1 + lightFactor2 + lightFactor3 + lightFactor4;	
+  }
+  
+	vec4 fragmentColor = vec4(1.0, 1.0, 1.0, 1.0);
+	if (u_enableTexturing) {
+		if (u_useTexture0) {
+			fragmentColor = texture2D(tex0, vec2(v_texcoord.s, v_texcoord.t));
 		}
-		
-		gl_FragColor = vec4(fragmentColor.rgb * lightFactor, fragmentColor.a);
 	}
+	
+	gl_FragColor = vec4(fragmentColor.rgb * lightFactor, fragmentColor.a);
 }	
 </script>
 

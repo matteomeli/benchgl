@@ -8,7 +8,6 @@ files = [
   'skin.js',
   'request.js',
   'mesh.js',
-  'model.js',
   'worker.js',
   'canvas.js',
   'camera.js',
@@ -24,7 +23,7 @@ def build():
   license = open('../LICENSE', 'r').read()
   for file in files:
     body.append(open(path + file, 'r').read())
-  print '/**\n@preserve' + license + '*/\n\n' + '(function() { \n' + '\n'.join(body) + '\n})();'
+  print '/**\n@preserve' + license + '*/\n\n' + '(function() { \n' + '\n'.join(body) + '\n}());'
 
 if __name__ == '__main__':
   build()

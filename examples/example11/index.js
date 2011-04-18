@@ -71,13 +71,16 @@ function start() {
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset()
+        
+        renderer.setupCamera();
+        renderer.setupLights(); 
+        renderer.setupTextures();           
 				
-				camera.transform.translate(0.0, 0.0, -3.0);
-				camera.transform.rotate(-xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				renderer.setTextures('moon');
+				sphere.translate(0.0, 0.0, -3.0);
+				sphere.rotate(-xRot, 1, 0, 0);
+				sphere.rotate(yRot, 0, 1, 0);
+				sphere.setTextures('moon');
 				renderer.renderModel(sphere);
 			};
 			

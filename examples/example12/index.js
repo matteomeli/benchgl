@@ -18,6 +18,8 @@ function start() {
 					sphere = BenchGL.Model.factory('sphere'),
 					cubeAngle = 0,
 					moonAngle = 180;
+          
+      renderer.addModels(sphere, cube);    
 			
 			renderer.useLights(true);
 			renderer.setDirectionalColor(0.0, 0.0, 0.0);
@@ -74,26 +76,20 @@ function start() {
 			};
 			
 			function display() {
-				renderer.background();
-				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
-				
-				camera.transform.translate(0.0, 0.0, -20.0);
-				
-				camera.transform.pushMatrix();
-				camera.transform.rotate(moonAngle, 0, 1, 0);
-				camera.transform.translate(5.0, 0.0, 0.0);
-				renderer.setTextures('moon');
-				renderer.renderModel(sphere);
-				camera.transform.popMatrix();
-				
-				camera.transform.pushMatrix();
-				camera.transform.rotate(cubeAngle, 0, 1, 0);
-				camera.transform.translate(5.0, 0.0, 0.0);
-				renderer.setTextures('crate');
-				renderer.renderModel(cube);
-				camera.transform.popMatrix();
+        renderer.background();
+        
+        camera.reset();
+        camera.model.translate(0, 0, -20);
+        
+        sphere.rotate(moonAngle, 0, 1, 0);
+        sphere.translate(5, 0, 0);
+        sphere.setTextures('moon');
+        
+        cube.rotate(cubeAngle, 0, 1, 0);
+        cube.translate(5, 0, 0);
+        cube.setTextures('crate');
+        
+        renderer.renderAll();
 			};
 			
 			function tick() {

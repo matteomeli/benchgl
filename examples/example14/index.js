@@ -5,9 +5,9 @@ function $(id) {
 function start() {
 	BenchGL('example-canvas', {
 		program : {
-			type : 'scripts',
-			vertex : 'per-fragment-lighting-vs',
-			fragment : 'per-fragment-lighting-fs'
+			type : 'urls',
+			vertex : '../../shaders/lighting-pf.vertex',
+			fragment : '../../shaders/lighting-pf.fragment'
 		},
 		onError : function() {
 			alert('An error occured launching the application...');
@@ -23,6 +23,8 @@ function start() {
 						url : 'Teapot.json'
 					}),
 					teapotAngle = 0;
+      
+      renderer.addModels(teapot);    
 			
 			renderer.useLights(true);
 			renderer.setDirectionalColor(0.0, 0.0, 0.0);
@@ -73,22 +75,22 @@ function start() {
 				renderer.useLights(lightEnabled);
 				renderer.useTextures(textureEnabled);
 				renderer.setAmbientColor(ambientR, ambientG, ambientB);
-				renderer.material.setShininess(shininess);
 				light.setDiffuse(lightR, lightG, lightB);
 				light.setPosition(lightX, lightY, lightZ);
+        teapot.setMaterialShininess(shininess);
 			};
 			
 			function display() {
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
-
-				camera.transform.translate(0.0, 0.0, -40.0);
-				camera.transform.rotate(23.4, 1, 0, -1);
-				camera.transform.rotate(teapotAngle, 0, 1, 0);
-				renderer.setTextures('metal');
-				renderer.renderModel(teapot);
+				camera.reset()
+        camera.model.translate(0.0, 0.0, -40.0);
+				
+        teapot.rotate(23.4, 1, 0, -1);
+				teapot.rotate(teapotAngle, 0, 1, 0);
+				teapot.setTextures('metal');
+				
+        renderer.renderAll();
 			};
 			
 			function tick() {

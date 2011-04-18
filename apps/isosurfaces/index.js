@@ -1,3 +1,7 @@
+function $(id) {
+  return document.getElementById(id);
+};
+
 function start() {
 	var surfaceR = $('surfaceR'),
 			surfaceG = $('surfaceG'),
@@ -20,7 +24,8 @@ function start() {
 			stop = $('stop'),
 			speed = $('speed'),
 			useTime = false,
-			toSample = true,
+      toSample = false,
+      firstRun = true,
 			fps = +speed.value,
 			time = 0,
 			timeStep = 0,
@@ -128,9 +133,6 @@ function start() {
 		  		result += 1.0 / (dy*dy + dz*dz);
 		  		
 		  		return result;
-		  	},
-		  	function(x, y, z, t) {
-		  		// TODO
 		  	}
 		  ];
 	
@@ -161,9 +163,9 @@ function start() {
   // Start the application
 	BenchGL('surfaces-canvas', {
 		program : {
-			type : 'scripts',
-			vertex : 'surfaces-vs',
-			fragment : 'surfaces-fs'
+			type : 'urls',
+			vertex : '../../shaders/surfaces.vertex',
+			fragment : '../../shaders/surfaces.fragment'
 		},
 		events : {
 			onMouseDown : function(e, x, y) {
@@ -195,14 +197,14 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					surface = new BenchGL.Model(gl, {
-						colorPerVertex : false,
-						dynamic : false
+					surface = new BenchGL.Model({
+						useColors : false
 					}),
 					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelFactor);
-				
+			
+      surface.setMaterialShininess(10);
+      	
 			renderer.useLights(true);
-			renderer.material.setShininess(10);
 			renderer.setDirectionalColor(0.0, 0.0, 0.0);
 			renderer.addLight('light0', {
 				position 	: {
@@ -218,7 +220,7 @@ function start() {
 			});
 			
 			function handleSampling() {
-				toSample = false;
+        toSample = false;
 				if (+iso.value != isolevel) {
 					isolevel = +iso.value;
 					toSample = true;
@@ -255,36 +257,43 @@ function start() {
 				if (+speed.value != fps) {
 					fps = +speed.value;
 				}
+        surface.dynamic = firstRun || toSample;
+        firstRun = false;
 			};
 			
 			function handleControls() {
-				renderer.material.setDiffuse(+surfaceR.value, +surfaceG.value, +surfaceB.value);
+				surface.setMaterialDiffuse(+surfaceR.value, +surfaceG.value, +surfaceB.value);
 				renderer.lights['light0'].setPosition(+lightX.value, +lightY.value, +lightZ.value);
 				renderer.lights['light0'].setDiffuse(+lightR.value, +lightG.value, +lightB.value);
 			};
 			
 			function display() {
-				if (toSample) {
+        handleControls();
+        handleSampling();
+                
+				if (surface.dynamic) {
 					sample();
 				} else {
 					render();
 				}
-				
-				handleControls();
-				handleSampling();
 			};
 			
 			function render() {
+        if (!renderer.models.length) {
+          renderer.addModels(surface);
+        }
+        
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset();
+				camera.model.translate(0.0, 0.0, z);
+        
+				surface.rotate(-xRot, 1, 0, 0);
+				surface.rotate(yRot, 0, 1, 0);
+				surface.translate(-0.5, -0.5, -0.5);
 				
-				camera.transform.translate(0.0, 0.0, z);
-				camera.transform.rotate(-xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				camera.transform.translate(-0.5, -0.5, -0.5);
-				renderer.renderModel(surface);
+        renderer.renderAll();
+        
 				requestAnimFrame(display);
 			};
 			

@@ -1,3 +1,7 @@
+function $(id) {
+  return document.getElementById(id);
+};
+
 function start() {
 	var ball1 = $('ball1'),
 			ball2 = $('ball2'),

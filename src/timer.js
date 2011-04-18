@@ -4,9 +4,10 @@
 
 	var nowTime = 0,
 			lastTime = 0,
-			elapsedTime = 0;
+			elapsedTime = 0,
+      Timer;
 
-	var Timer = function() {
+	Timer = function() {
 		this.fps = 0;
 		this.lastDelta = 0;
 		this.maxSamples = 60;
@@ -21,17 +22,19 @@
 	};
 	
 	Timer.prototype.stop = function() {
-		var now = new Date().getTime()
-				lastTime = nowTime;
-				nowTime = now;
-				elapsedTime = nowTime - lastTime,
-				fps = 1000.0 / elapsedTime;
+		var now = new Date().getTime(),
+        sample, i, l, fps = 0;
+		
+    lastTime = nowTime;
+		nowTime = now;
+		elapsedTime = nowTime - lastTime;
+		sample = 1000.0 / elapsedTime;
 				
-		if (this.samples.unshift(fps) > this.maxSamples)
-			this.samples.pop();
-			
-		var fps = 0;
-		for (var i = 0, l = this.samples.length; i < l; i++) {
+		if (this.samples.unshift(sample) > this.maxSamples) {
+      this.samples.pop();     
+    }
+		
+		for (i = 0, l = this.samples.length; i < l; i++) {
 			fps += this.samples[i];
 		}
 		fps /= this.samples.length;
@@ -54,5 +57,5 @@
 	
 	BenchGL.Timer = Timer;
 
-})();
+}());
 

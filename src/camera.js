@@ -4,9 +4,9 @@
 	
 	var Vec3 = BenchGL.Vector3,
 			MatStack = BenchGL.MatrixStack,
-			TransformStack = BenchGL.TransformStack;
+      Camera;
 	
-	var Camera = function(options) {
+	Camera = function(options) {
 		var e = options.eye,
 				d = options.direction,
 				u = options.up,
@@ -19,35 +19,47 @@
 		this.aspect = aspect;
 		this.near = near;
 		this.far = far;
-		this.eye = e && new Vec3(e.x, e.y, e.z) || new Vec3();
-		this.direction = d && new Vec3(d.x, d.y, d.z) || new Vec3();
-		this.up = u && new Vec3(u.x, u.y, u.z) || new Vec3(0, 1, 0);
+		this.eye = (e && new Vec3(e.x, e.y, e.z)) || new Vec3();
+		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
+		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 			
-		this.transform = new TransformStack();
-		this.transform.projection();
-		this.transform.perspective(fovy, aspect, near, far);
+    this.proj = new MatStack();
+    this.view = new MatStack();
+    this.model = new MatStack();
+    
+    this.view.lookAt(this.eye, this.direction, this.up);
+		this.proj.perspective(fovy, aspect, near, far);
 	};
+  
+  Camera.prototype.getProj = function() {
+    return this.proj.top();
+  };
+  
+  Camera.prototype.getView = function() {
+    return this.view.top();
+  };
+  
+  Camera.prototype.getModelView = function() {
+    return this.view.top().multiplyMat4(this.model.top());
+  };
+  
+  Camera.prototype.reset = function() {
+    this.view.loadIdentity();
+    this.model.loadIdentity();
+  };
 	
-	Camera.prototype.update = function() {
-		this.transform.view();
-		this.transform.lookAt(this.eye, this.direction, this.up);
-		this.transform.model();
-	};
-	
-	Camera.prototype.move = function(options) {
-		options = options || {};
-		
+	Camera.prototype.set = function(options) {
 		var e = options.eye,
 				d = options.direction,
 				u = options.up;
 				
-		this.eye = e && new Vec3(e.x, e.y, e.z) || new Vec3();
-		this.direction = d && new Vec3(d.x, d.y, d.z) || new Vec3();
-		this.up = u && new Vec3(u.x, u.y, u.z) || new Vec3(0, 1, 0);
+		this.eye = (e && new Vec3(e.x, e.y, e.z)) || new Vec3();
+		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
+		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 		
-		this.update();
+		this.view.lookAt(this.eye, this.direction, this.up);
 	};
 	
 	BenchGL.Camera = Camera;
 	
-})();
+}());
