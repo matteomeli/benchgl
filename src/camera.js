@@ -23,29 +23,41 @@
 		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
 		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 			
-    this.proj = new MatStack();
-    this.view = new MatStack();
-    this.model = new MatStack();
+    this.projStack = new MatStack();
+    this.viewStack = new MatStack();
+    this.modelStack = new MatStack();
     
-    this.view.lookAt(this.eye, this.direction, this.up);
-		this.proj.perspective(fovy, aspect, near, far);
+    this.viewStack.lookAt(this.eye, this.direction, this.up);
+		this.projStack.perspective(fovy, aspect, near, far);
 	};
   
-  Camera.prototype.getProj = function() {
-    return this.proj.top();
+  Camera.prototype.proj = function() {
+    return this.projstack;
   };
   
-  Camera.prototype.getView = function() {
-    return this.view.top();
+  Camera.prototype.view = function() {
+    return this.viewStack;
   };
   
-  Camera.prototype.getModelView = function() {
-    return this.view.top().multiplyMat4(this.model.top());
+  Camera.prototype.model = function() {
+    return this.modelStack;
+  };
+  
+  Camera.prototype.projMatrix = function() {
+    return this.projStack.top();
+  };
+  
+  Camera.prototype.viewMatrix = function() {
+    return this.viewStack.top();
+  };
+  
+  Camera.prototype.modelViewMatrix = function() {
+    return this.viewStack.top().multiplyMat4(this.modelStack.top());
   };
   
   Camera.prototype.reset = function() {
-    this.view.loadIdentity();
-    this.model.loadIdentity();
+    this.viewStack.loadIdentity();
+    this.modelStack.loadIdentity();
   };
 	
 	Camera.prototype.set = function(options) {
@@ -57,7 +69,7 @@
 		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
 		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 		
-		this.view.lookAt(this.eye, this.direction, this.up);
+		this.viewStack.lookAt(this.eye, this.direction, this.up);
 	};
 	
 	BenchGL.Camera = Camera;

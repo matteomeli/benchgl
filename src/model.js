@@ -23,13 +23,13 @@
     this.drawType = options.drawType;
     this.useColors = options.useColors;
     this.dynamic = options.dynamic;
-    this.vertices = options && options.vertices && new Float32Array(options.vertices);
-    this.normals = options && options.normals && new Float32Array(options.normals);
-    this.texcoords = options && options.texcoords && new Float32Array(options.texcoords);
-    this.colors = options && options.colors && new Float32Array(options.colors);
-    this.indices = options && options.indices && new Uint16Array(options.indices);
+    this.vertices = options.vertices;
+    this.normals = options.normals;
+    this.texcoords = options.texcoords;
+    this.colors = options.colors;
+    this.indices = options.indices;
     
-    this.model = new MatStack();
+    this.modelStack = new MatStack();
     this.material = new Mat();
     this.uniforms = {};
     this.textureNames = [];
@@ -39,28 +39,32 @@
     }
   };
   
-  Model.prototype.getMatrix = function() {
-    return this.model.top();
+  Model.prototype.matrix = function() {
+    return this.modelStack.top();
   };
   
-  Model.prototype.getTextures = function() {
-    return this.textures;
+  Model.prototype.textures = function() {
+    return this.textureNames;
+  };
+  
+  Model.prototype.loadIdentity = function() {
+    this.modelStack.loadIdentity();
   };
   
   Model.prototype.translate = function(x, y, z) {
-    this.model.translate(x, y, z);
+    this.modelStack.translate(x, y, z);
   };
   
   Model.prototype.scale = function(x, y, z) {
-    this.model.scale(x, y, z);
+    this.modelStack.scale(x, y, z);
   };
   
   Model.prototype.rotate = function(angle, x, y, z) {
-    this.model.rotate(angle, x, y, z);
+    this.modelStack.rotate(angle, x, y, z);
   };
   
   Model.prototype.rotateXYZ = function(rx, ry, rz) {
-    this.model.rotateXYZ(rx, ry, rz);
+    this.modelStack.rotateXYZ(rx, ry, rz);
   };  
   
   Model.prototype.normalizeColors = function() {
@@ -77,27 +81,6 @@
       }
       this.colors = result;
     }    
-  };
-  
-  Model.prototype.setVertices = function(vertices) {
-    this.vertices = new Float32Array(vertices);
-  };
-  
-  Model.prototype.setNormals = function(normals) {
-    this.normals = new Float32Array(normals);
-  };
-  
-  Model.prototype.setTexcoords = function(texcoords) {
-    this.texcoords = new Float32Array(texcoords);
-  };  
-   
-  Model.prototype.setIndices = function(indices) {
-    this.indices = new Float32Array(indices);
-  };
-  
-  Model.prototype.setColors = function(colors) {
-    this.colors = new Float32Array(colors);
-    this.normalizeColors();
   };
   
   Model.prototype.setTextures = function() {
@@ -138,7 +121,7 @@
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-vertices', {
         name: 'a_position',
-        data: this.vertices,
+        data: new Float32Array(this.vertices),
         size: 3
       });
     } else {
@@ -152,7 +135,7 @@
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-normals', {
         name : 'a_normal',
-        data : this.normals,
+        data : new Float32Array(this.normals),
         size : 3
       });          
     } else {
@@ -166,7 +149,7 @@
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-texcoords', {
         name: 'a_texcoord',
-        data: this.texcoords,
+        data: new Float32Array(this.texcoords),
         size: 2
       });
     } else {
@@ -180,7 +163,7 @@
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-colors', {
         name : 'a_color',
-        data: this.colors,
+        data: new Float32Array(this.colors),
         size: 4
       });
     } else {
@@ -193,7 +176,7 @@
     
     program.bindAttribute('a_index', {
       attributeType : gl.ELEMENT_ARRAY_BUFFER,
-      data : this.indices,
+      data : new Uint16Array(this.indices),
     });     
   };
   
@@ -205,10 +188,10 @@
     var material = this.material,
         uniforms = {};
     
-    uniforms.u_matAmbient = material.ambient.toRGBAFloat32Array();
-    uniforms.u_matDiffuse = material.diffuse.toRGBAFloat32Array();
-    uniforms.u_matSpecular = material.specular.toRGBAFloat32Array();
-    uniforms.u_matEmissive = material.emissive.toRGBAFloat32Array();
+    uniforms.u_matAmbient = material.ambient.toRGBAArray();
+    uniforms.u_matDiffuse = material.diffuse.toRGBAArray();
+    uniforms.u_matSpecular = material.specular.toRGBAArray();
+    uniforms.u_matEmissive = material.emissive.toRGBAArray();
     uniforms.u_matShininess = material.shininess;
     
     program.bindUniforms(uniforms);
@@ -229,13 +212,15 @@
   
   Model.prototype.draw = function() {
     if (this.indices) {
+      // Draw the model with as an indexed vertex array
       gl.drawElements(this.drawType, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    } else {
+    } else if (this.vertices) {
+      // Draw the model with as a simple flat vertex array
       gl.drawArrays(this.drawType, 0, this.vertices.length / 3);
+      
+      // Reset transformation matrix
+      this.modelStack.loadIdentity();
     }
-    
-    // Reset transformation matrix
-    this.model.loadIdentity();
   };
   
   Model.factory = function(type, options){

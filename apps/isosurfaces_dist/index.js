@@ -1,8 +1,11 @@
+function $(id) {
+  return document.getElementById(id);
+};
+
 function start() {
-	var time = 0,
-			samplingLevel = 0,
-			requestedSamplingLevel = 32,
-			samplingStep = 1.0 / samplingLevel,
+	var status = $('status'),
+      level = 32,
+      time = 0,
 			isolevel = 50,
 			xRot = yRot = 0, z = -2.0, mouseDown = false, toSample = true,
 			sampler = function(x, y, z, t) {
@@ -17,9 +20,9 @@ function start() {
   // Start the application
 	BenchGL('surfaces-canvas', {
 		program : {
-			type : 'scripts',
-			vertex : 'surfaces-vs',
-			fragment : 'surfaces-fs'
+      type : 'urls',
+      vertex : '../../shaders/surfaces.vertex',
+      fragment : '../../shaders/surfaces.fragment'
 		},
 		events : {
 			onMouseDown : function(e, x, y) {
@@ -53,33 +56,44 @@ function start() {
 					renderer = handler.renderer,
 					surface = new BenchGL.Model(gl, {
 						colorPerVertex : false,
-						dynamic : false
+						dynamic : true
 					});
 			
-			// Server connection stuff (Web Worker)
+			// Node.js server connection stuff
 			var socket = new io.Socket('localhost', {
 			  port: 3333
 			});
-			socket.connect(); 
-			
+      
+      printStatus(new Date().getTime() + ': Connecting to remote server...');
+			socket.connect();
+		
 			socket.on('connect', function() {
-			  console.log('Client has connected to the server!');
+        printStatus(new Date().getTime() + ': Connected to remote server...');
+			  console.log('Connected!');
+        sample();
 			});
 			
 			socket.on('message', function(message) {
-			  console.log('Received a message from the server!', message);
-			  surface.setVertices(message.data.vertices);
-				surface.setNormals(message.data.normals);
-				samplingLevel = message.data.level;
+        console.log(new Date().getTime());
+        var data = message.data;
+        
+        console.timeEnd('Calculating geometry (level ' + data.level +')');    
+        printStatus(new Date().getTime() + ': Geometry received (level ' + data.level + ')!');
+        
+        surface.dynamic = true;
+        surface.vertices = data.vertices;
+        surface.normals = data.normals;
 			});
 			
 			socket.on('disconnect', function() {
-			  console.log('The client has disconnected!');
+        // TODO: Implement better reconnection logic!
+			  socket.connect();
 			});
 			
-			// Rendering stuff		
+			// Rendering stuff
+      surface.setMaterialDiffuse(0.8, 0.4, 0.4);  
+      surface.setMaterialShininess(10);
 			renderer.useLights(true);
-			renderer.material.setShininess(10);
 			renderer.setDirectionalColor(0.0, 0.0, 0.0);
 			renderer.addLight('light0', {
 				position 	: {
@@ -93,24 +107,29 @@ function start() {
 					b : 0.3
 				}
 			});
-			
-			function tick() {
-				requestAnimFrame(tick);
-				render();
-			};
 				
 			function render() {
-				renderer.background();
-				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
-				
-				camera.transform.translate(0.0, 0.0, z);
-				camera.transform.rotate(-xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				camera.transform.translate(-0.5, -0.5, -0.5);
-				renderer.renderModel(surface);			
-			};
+        if (!renderer.models.length) {
+          renderer.addModels(surface);
+        }
+        
+        renderer.background();
+        
+        camera.reset();
+        camera.model().translate(0.0, 0.0, z);
+        
+        surface.rotate(-xRot, 1, 0, 0);
+        surface.rotate(yRot, 0, 1, 0);
+        surface.translate(-0.5, -0.5, -0.5);
+        
+        renderer.renderAll();
+        
+        if (surface.dynamic) {
+          surface.dynamic = false;
+        }
+        
+        requestAnimFrame(render);
+			}
 			
 			function sample() {
 		    var body = sampler.toString(),
@@ -129,18 +148,22 @@ function start() {
 									end : 1
 								}
 							},
+              level : level,
 							time			: time,
 							isolevel 	: isolevel,
 							body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 						};
-				
-				//if (samplingLevel < requestedSamplingLevel) {
-					socket.send(config);
-				//}
-			};
-			
-			sample();
-			tick();
+            
+       printStatus(new Date().getTime() + ': Geometry requested (level ' + level + ')!');
+       console.time('Calculating geometry (level ' + level +')');		 
+			 socket.send(config);
+			}
+      
+      function printStatus(message) {
+        status.innerHTML += message + "<br/>";
+      }
+      
+      render();
 		}
 	});
 };

@@ -23,7 +23,7 @@ function start() {
 			renderer.background();
 			
       camera.reset();
-      camera.model.translate(0, 0, -7);
+      camera.model().translate(0, 0, -7);
       
       renderer.setupCamera();
       

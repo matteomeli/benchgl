@@ -97,8 +97,8 @@ function start() {
 				
 				camera.reset();
 				
-				camera.model.translate(0.0, 0.0, -5.0);
-				camera.model.rotate(30, 1, 0, 0);
+				camera.model().translate(0.0, 0.0, -5.0);
+				camera.model().rotate(30, 1, 0, 0);
 				
         sphere.rotate(moonAngle, 0, 1, 0);
 				sphere.translate(2.0, 0.0, 0.0);

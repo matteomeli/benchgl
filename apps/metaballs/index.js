@@ -116,9 +116,9 @@ function start() {
   // Start the application
 	BenchGL('metaballs-canvas', {
 		program : {
-			type : 'scripts',
-			vertex : 'surfaces-vs',
-			fragment : 'surfaces-fs'
+      type : 'urls',
+      vertex : '../../shaders/surfaces.vertex',
+      fragment : '../../shaders/surfaces.fragment'
 		},
 		events : {
 			onMouseDown : function(e, x, y) {
@@ -152,14 +152,15 @@ function start() {
 					renderer = handler.renderer,
 					timer = new BenchGL.Timer(),
 					surface = new BenchGL.Model(gl, {
-						colorPerVertex : false,
-						dynamic : false
+						useColors : false,
+						dynamic : true
 					}),
 					pool = new BenchGL.WorkerPool('worker.js', workers);
-				
+			
+      surface.setMaterialDiffuse(0.0, 0.4, 0.8);	
+      surface.setMaterialShininess(10);
+      
 			renderer.useLights(true);
-			renderer.material.setShininess(10);
-			renderer.material.setDiffuse(0.0, 0.4, 0.8);
 			renderer.setDirectionalColor(0.0, 0.0, 0.0);
 			renderer.addLight('light0', {
 				position 	: {
@@ -187,15 +188,19 @@ function start() {
 			};
 			
 			function render() {
+        if (!renderer.models.length) {
+          renderer.addModels(surface);
+        }
+        
 				renderer.background();
 				
-				camera.transform.view().loadIdentity();
-				camera.transform.model().loadIdentity();
+				camera.reset();
 				
-				camera.transform.translate(0.0, 0.0, z);
-				camera.transform.rotate(-xRot, 1, 0, 0);
-				camera.transform.rotate(yRot, 0, 1, 0);
-				renderer.renderModel(surface);
+				surface.translate(0.0, 0.0, z);
+				surface.rotate(-xRot, 1, 0, 0);
+				surface.rotate(yRot, 0, 1, 0);
+				
+        renderer.renderAll();
 			};
 			
 			function sample() {
@@ -256,9 +261,9 @@ function start() {
 					return total;
 				}, 
 				function(result) {
-				  surface.setVertices(result.vertices);
-					surface.setNormals(result.normals);
-					render();
+				  surface.vertices = result.vertices;
+					surface.normals = result.normals;
+          render();
 				}, {
 					vertices 	: [],
 					normals 	: []

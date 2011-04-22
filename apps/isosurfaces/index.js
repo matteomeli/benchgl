@@ -286,7 +286,7 @@ function start() {
 				renderer.background();
 				
 				camera.reset();
-				camera.model.translate(0.0, 0.0, z);
+				camera.model().translate(0.0, 0.0, z);
         
 				surface.rotate(-xRot, 1, 0, 0);
 				surface.rotate(yRot, 0, 1, 0);
@@ -349,8 +349,8 @@ function start() {
 					console.log(end + ': Sampling done! (Time elapsed: ' + elapsed + ' ms)');
 					// DEBUG
 					
-				  surface.setVertices(result.vertices);
-					surface.setNormals(result.normals);
+				  surface.vertices = result.vertices;
+					surface.normals = result.normals;
 					render();
 				}, {
 					vertices 	: [],

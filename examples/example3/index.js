@@ -34,7 +34,7 @@ function start() {
 				renderer.background();
 				
         camera.reset();
-        camera.model.translate(0, 0, -7);
+        camera.model().translate(0, 0, -7);
 				
 				triangle.translate(-1.5, 0, 0);
 				triangle.rotate(triRot, 0, 1, 0);

@@ -3,7 +3,7 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-var levels = [8, 16, 32];
+var levels = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
 
 var edgeTable = [
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -512,9 +512,9 @@ function compute(grid, time, isolevel, sampler, level) {
       normals = [],
 			result;
 			
-	for (var i = xstart; i <= xend; i+=xstep) {
-		for (var j = ystart; j <= yend; j+=ystep) {
-			for (var k = zstart; k <= zend; k+=ystep) {
+	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
+		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
+			for (var k = zstart+(zstep/2); k <= zend; k+=ystep) {
 				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
@@ -526,25 +526,37 @@ function compute(grid, time, isolevel, sampler, level) {
 	
 	return {
 		vertices  : vertices,
-		normals   : normals,
-		level 		: level
+		normals   : normals
 	};
 };
 
 onmessage = function(e) {
   var data = e.data,
+      level = data.level,
   		grid = data.grid,
       time = data.time,
       isolevel = data.isolevel,
       body = data.body,
       sampler = new Function('x, y, z, t', body);
       
-  for (var i = 0, l = levels.length; i < l; i++) {  			
-		result = compute(grid, time, isolevel, sampler, levels[i]);
-		postMessage(result);
-	}
-};
-
-onclose = function() {
-    sys.debug('Worker shutting down.');
+  /*for (var i = 0, l = levels.length; i < l; i++) {
+    if (levels[i] > baseLevel) {
+      postMessage({
+        type: 'partial',
+        level: levels[i]
+      });*/
+      result = compute(grid, time, isolevel, sampler, level);
+      /*postMessage({
+        type: 'result',
+        level: levels[i],
+        content: result
+      });
+    }
+	}*/
+  
+  postMessage({
+    level : level,
+    vertices : result.vertices,
+    normals : result.normals
+  });
 };

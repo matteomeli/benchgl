@@ -45,17 +45,17 @@
         break;
       case gl.BOOL_VEC2:
         this.func = function(v){
-          gl.uniform2iv(this.location, v);
+          gl.uniform2iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.BOOL_VEC3:
         this.func = function(v){
-          gl.uniform3iv(this.location, v);
+          gl.uniform3iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.BOOL_VEC4:
         this.func = function(v){
-          gl.uniform4iv(this.location, v);
+          gl.uniform4iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT:
@@ -65,17 +65,17 @@
         break;
       case gl.INT_VEC2:
         this.func = function(v){
-          gl.uniform2iv(this.location, v);
+          gl.uniform2iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT_VEC3:
         this.func = function(v){
-          gl.uniform3iv(this.location, v);
+          gl.uniform3iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT_VEC4:
         this.func = function(v){
-          gl.uniform4iv(this.location, v);
+          gl.uniform4iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.FLOAT:
@@ -85,32 +85,32 @@
         break;
       case gl.FLOAT_VEC2:
         this.func = function(v){
-          gl.uniform2fv(this.location, v);
+          gl.uniform2fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_VEC3:
         this.func = function(v){
-          gl.uniform3fv(this.location, v);
+          gl.uniform3fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_VEC4:
         this.func = function(v){
-          gl.uniform4fv(this.location, v);
+          gl.uniform4fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_MAT2:
         this.func = function(v){
-          gl.uniformMatrix2fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix2fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT3:
         this.func = function(v){
-          gl.uniformMatrix3fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix3fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT4:
         this.func = function(v){
-          gl.uniformMatrix4fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix4fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       default:

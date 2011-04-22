@@ -111,8 +111,8 @@
     var program = this.program,
         camera = this.camera;
     
-    program.bindUniform('u_projectionMatrix', camera.getProj().toFloat32Array());
-    program.bindUniform('u_viewMatrix', camera.getView().toFloat32Array());
+    program.bindUniform('u_projectionMatrix', camera.projMatrix());
+    program.bindUniform('u_viewMatrix', camera.viewMatrix());
   };
   
   Renderer.prototype.setupLights = function(){
@@ -120,16 +120,16 @@
         index = 0, l, light;
     
     uniforms.u_enableLighting = this.useLighting;
-    uniforms.u_ambientColor = this.ambientColor.toRGBFloat32Array();
-    uniforms.u_directionalColor = this.directionalColor.toRGBFloat32Array();
-    uniforms.u_lightingDirection = this.lightingDirection.toFloat32Array();
+    uniforms.u_ambientColor = this.ambientColor.toRGBArray();
+    uniforms.u_directionalColor = this.directionalColor.toRGBArray();
+    uniforms.u_lightingDirection = this.lightingDirection.toArray();
     
     for (l in this.lights) {
       light = this.lights[l];
       uniforms['u_enableLight' + (index + 1)] = light.active;
-      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBFloat32Array();
-      uniforms['u_lightPosition' + (index + 1)] = light.position.toFloat32Array();
-      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBFloat32Array();
+      uniforms['u_lightPosition' + (index + 1)] = light.position.toArray();
+      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBArray();
+      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBArray();
       index++;
     }
     
@@ -190,9 +190,9 @@
     model.bindTextures(program, textures);
     
     // Set modelView and normal matrices
-    modelView = camera.getModelView().multiplyMat4(model.getMatrix());
-    program.bindUniform('u_modelViewMatrix', modelView.toFloat32Array());
-    program.bindUniform('u_normalMatrix', modelView.invert().$transpose().toFloat32Array());    
+    modelView = camera.modelViewMatrix().multiplyMat4(model.matrix());
+    program.bindUniform('u_modelViewMatrix', modelView);
+    program.bindUniform('u_normalMatrix', modelView.invert().$transpose());    
     
     model.draw();
   };

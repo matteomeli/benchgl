@@ -23,14 +23,6 @@
     return [this.r, this.g, this.b, this.a];
   };
   
-  Color.prototype.toRGBFloat32Array = function(){
-    return new Float32Array([this.r, this.g, this.b]);
-  };
-  
-  Color.prototype.toRGBAFloat32Array = function(){
-    return new Float32Array([this.r, this.g, this.b, this.a]);
-  };
-  
   Material = function(options){
     options = $.mix({
       ambient: {

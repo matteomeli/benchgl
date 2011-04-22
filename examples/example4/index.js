@@ -66,7 +66,7 @@ function start() {
 				renderer.background();
 				
 				camera.reset();
-        camera.model.translate(0, 0, -8);
+        camera.model().translate(0, 0, -8);
         
         pyramid.translate(-1.5, 0, 0);
 				pyramid.rotate(pyrRot, 0, 1, 0);

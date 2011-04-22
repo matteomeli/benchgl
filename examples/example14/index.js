@@ -84,7 +84,7 @@ function start() {
 				renderer.background();
 				
 				camera.reset()
-        camera.model.translate(0.0, 0.0, -40.0);
+        camera.model().translate(0.0, 0.0, -40.0);
 				
         teapot.rotate(23.4, 1, 0, -1);
 				teapot.rotate(teapotAngle, 0, 1, 0);

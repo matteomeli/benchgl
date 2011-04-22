@@ -255,8 +255,8 @@ window.requestAnimFrame = (function(){
     return new Vector3(y * vz - z * vy, x * vz - z * vx, x * vy - y * vx);
   };
   
-  Vector3.prototype.toFloat32Array = function(){
-    return new Float32Array([this.x, this.y, this.z]);
+  Vector3.prototype.toArray = function(){
+    return [this.x, this.y, this.z];
   };
   
   
@@ -809,7 +809,7 @@ window.requestAnimFrame = (function(){
 	BenchGL.WebGL = WebGL;
 
 }());
-// trans.js
+// space.js
 
 (function(){
 
@@ -1064,14 +1064,6 @@ window.requestAnimFrame = (function(){
     return [this.r, this.g, this.b, this.a];
   };
   
-  Color.prototype.toRGBFloat32Array = function(){
-    return new Float32Array([this.r, this.g, this.b]);
-  };
-  
-  Color.prototype.toRGBAFloat32Array = function(){
-    return new Float32Array([this.r, this.g, this.b, this.a]);
-  };
-  
   Material = function(options){
     options = $.mix({
       ambient: {
@@ -1286,7 +1278,7 @@ window.requestAnimFrame = (function(){
   
 }());
 
-// request.js
+// io.js
 
 (function(){
   
@@ -1425,13 +1417,13 @@ window.requestAnimFrame = (function(){
     this.drawType = options.drawType;
     this.useColors = options.useColors;
     this.dynamic = options.dynamic;
-    this.vertices = options && options.vertices && new Float32Array(options.vertices);
-    this.normals = options && options.normals && new Float32Array(options.normals);
-    this.texcoords = options && options.texcoords && new Float32Array(options.texcoords);
-    this.colors = options && options.colors && new Float32Array(options.colors);
-    this.indices = options && options.indices && new Uint16Array(options.indices);
+    this.vertices = options.vertices;
+    this.normals = options.normals;
+    this.texcoords = options.texcoords;
+    this.colors = options.colors;
+    this.indices = options.indices;
     
-    this.model = new MatStack();
+    this.modelStack = new MatStack();
     this.material = new Mat();
     this.uniforms = {};
     this.textureNames = [];
@@ -1441,28 +1433,32 @@ window.requestAnimFrame = (function(){
     }
   };
   
-  Model.prototype.getMatrix = function() {
-    return this.model.top();
+  Model.prototype.matrix = function() {
+    return this.modelStack.top();
   };
   
-  Model.prototype.getTextures = function() {
-    return this.textures;
+  Model.prototype.textures = function() {
+    return this.textureNames;
+  };
+  
+  Model.prototype.loadIdentity = function() {
+    this.modelStack.loadIdentity();
   };
   
   Model.prototype.translate = function(x, y, z) {
-    this.model.translate(x, y, z);
+    this.modelStack.translate(x, y, z);
   };
   
   Model.prototype.scale = function(x, y, z) {
-    this.model.scale(x, y, z);
+    this.modelStack.scale(x, y, z);
   };
   
   Model.prototype.rotate = function(angle, x, y, z) {
-    this.model.rotate(angle, x, y, z);
+    this.modelStack.rotate(angle, x, y, z);
   };
   
   Model.prototype.rotateXYZ = function(rx, ry, rz) {
-    this.model.rotateXYZ(rx, ry, rz);
+    this.modelStack.rotateXYZ(rx, ry, rz);
   };  
   
   Model.prototype.normalizeColors = function() {
@@ -1479,27 +1475,6 @@ window.requestAnimFrame = (function(){
       }
       this.colors = result;
     }    
-  };
-  
-  Model.prototype.setVertices = function(vertices) {
-    this.vertices = new Float32Array(vertices);
-  };
-  
-  Model.prototype.setNormals = function(normals) {
-    this.normals = new Float32Array(normals);
-  };
-  
-  Model.prototype.setTexcoords = function(texcoords) {
-    this.texcoords = new Float32Array(texcoords);
-  };  
-   
-  Model.prototype.setIndices = function(indices) {
-    this.indices = new Float32Array(indices);
-  };
-  
-  Model.prototype.setColors = function(colors) {
-    this.colors = new Float32Array(colors);
-    this.normalizeColors();
   };
   
   Model.prototype.setTextures = function() {
@@ -1540,7 +1515,7 @@ window.requestAnimFrame = (function(){
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-vertices', {
         name: 'a_position',
-        data: this.vertices,
+        data: new Float32Array(this.vertices),
         size: 3
       });
     } else {
@@ -1554,7 +1529,7 @@ window.requestAnimFrame = (function(){
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-normals', {
         name : 'a_normal',
-        data : this.normals,
+        data : new Float32Array(this.normals),
         size : 3
       });          
     } else {
@@ -1568,7 +1543,7 @@ window.requestAnimFrame = (function(){
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-texcoords', {
         name: 'a_texcoord',
-        data: this.texcoords,
+        data: new Float32Array(this.texcoords),
         size: 2
       });
     } else {
@@ -1582,7 +1557,7 @@ window.requestAnimFrame = (function(){
     if (update || this.dynamic) {
       program.bindAttribute(this.id + '-colors', {
         name : 'a_color',
-        data: this.colors,
+        data: new Float32Array(this.colors),
         size: 4
       });
     } else {
@@ -1595,7 +1570,7 @@ window.requestAnimFrame = (function(){
     
     program.bindAttribute('a_index', {
       attributeType : gl.ELEMENT_ARRAY_BUFFER,
-      data : this.indices,
+      data : new Uint16Array(this.indices),
     });     
   };
   
@@ -1607,10 +1582,10 @@ window.requestAnimFrame = (function(){
     var material = this.material,
         uniforms = {};
     
-    uniforms.u_matAmbient = material.ambient.toRGBAFloat32Array();
-    uniforms.u_matDiffuse = material.diffuse.toRGBAFloat32Array();
-    uniforms.u_matSpecular = material.specular.toRGBAFloat32Array();
-    uniforms.u_matEmissive = material.emissive.toRGBAFloat32Array();
+    uniforms.u_matAmbient = material.ambient.toRGBAArray();
+    uniforms.u_matDiffuse = material.diffuse.toRGBAArray();
+    uniforms.u_matSpecular = material.specular.toRGBAArray();
+    uniforms.u_matEmissive = material.emissive.toRGBAArray();
     uniforms.u_matShininess = material.shininess;
     
     program.bindUniforms(uniforms);
@@ -1631,13 +1606,15 @@ window.requestAnimFrame = (function(){
   
   Model.prototype.draw = function() {
     if (this.indices) {
+      // Draw the model with as an indexed vertex array
       gl.drawElements(this.drawType, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    } else {
+    } else if (this.vertices) {
+      // Draw the model with as a simple flat vertex array
       gl.drawArrays(this.drawType, 0, this.vertices.length / 3);
+      
+      // Reset transformation matrix
+      this.modelStack.loadIdentity();
     }
-    
-    // Reset transformation matrix
-    this.model.loadIdentity();
   };
   
   Model.factory = function(type, options){
@@ -2097,29 +2074,41 @@ window.requestAnimFrame = (function(){
 		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
 		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 			
-    this.proj = new MatStack();
-    this.view = new MatStack();
-    this.model = new MatStack();
+    this.projStack = new MatStack();
+    this.viewStack = new MatStack();
+    this.modelStack = new MatStack();
     
-    this.view.lookAt(this.eye, this.direction, this.up);
-		this.proj.perspective(fovy, aspect, near, far);
+    this.viewStack.lookAt(this.eye, this.direction, this.up);
+		this.projStack.perspective(fovy, aspect, near, far);
 	};
   
-  Camera.prototype.getProj = function() {
-    return this.proj.top();
+  Camera.prototype.proj = function() {
+    return this.projstack;
   };
   
-  Camera.prototype.getView = function() {
-    return this.view.top();
+  Camera.prototype.view = function() {
+    return this.viewStack;
   };
   
-  Camera.prototype.getModelView = function() {
-    return this.view.top().multiplyMat4(this.model.top());
+  Camera.prototype.model = function() {
+    return this.modelStack;
+  };
+  
+  Camera.prototype.projMatrix = function() {
+    return this.projStack.top();
+  };
+  
+  Camera.prototype.viewMatrix = function() {
+    return this.viewStack.top();
+  };
+  
+  Camera.prototype.modelViewMatrix = function() {
+    return this.viewStack.top().multiplyMat4(this.modelStack.top());
   };
   
   Camera.prototype.reset = function() {
-    this.view.loadIdentity();
-    this.model.loadIdentity();
+    this.viewStack.loadIdentity();
+    this.modelStack.loadIdentity();
   };
 	
 	Camera.prototype.set = function(options) {
@@ -2131,7 +2120,7 @@ window.requestAnimFrame = (function(){
 		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
 		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
 		
-		this.view.lookAt(this.eye, this.direction, this.up);
+		this.viewStack.lookAt(this.eye, this.direction, this.up);
 	};
 	
 	BenchGL.Camera = Camera;
@@ -2338,17 +2327,17 @@ window.requestAnimFrame = (function(){
         break;
       case gl.BOOL_VEC2:
         this.func = function(v){
-          gl.uniform2iv(this.location, v);
+          gl.uniform2iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.BOOL_VEC3:
         this.func = function(v){
-          gl.uniform3iv(this.location, v);
+          gl.uniform3iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.BOOL_VEC4:
         this.func = function(v){
-          gl.uniform4iv(this.location, v);
+          gl.uniform4iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT:
@@ -2358,17 +2347,17 @@ window.requestAnimFrame = (function(){
         break;
       case gl.INT_VEC2:
         this.func = function(v){
-          gl.uniform2iv(this.location, v);
+          gl.uniform2iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT_VEC3:
         this.func = function(v){
-          gl.uniform3iv(this.location, v);
+          gl.uniform3iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.INT_VEC4:
         this.func = function(v){
-          gl.uniform4iv(this.location, v);
+          gl.uniform4iv(this.location, new Uint16Array(v));
         };
         break;
       case gl.FLOAT:
@@ -2378,32 +2367,32 @@ window.requestAnimFrame = (function(){
         break;
       case gl.FLOAT_VEC2:
         this.func = function(v){
-          gl.uniform2fv(this.location, v);
+          gl.uniform2fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_VEC3:
         this.func = function(v){
-          gl.uniform3fv(this.location, v);
+          gl.uniform3fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_VEC4:
         this.func = function(v){
-          gl.uniform4fv(this.location, v);
+          gl.uniform4fv(this.location, new Float32Array(v));
         };
         break;
       case gl.FLOAT_MAT2:
         this.func = function(v){
-          gl.uniformMatrix2fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix2fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT3:
         this.func = function(v){
-          gl.uniformMatrix3fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix3fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT4:
         this.func = function(v){
-          gl.uniformMatrix4fv(this.location, gl.FALSE, v);
+          gl.uniformMatrix4fv(this.location, gl.FALSE, v.toFloat32Array());
         };
         break;
       default:
@@ -2896,8 +2885,8 @@ window.requestAnimFrame = (function(){
     var program = this.program,
         camera = this.camera;
     
-    program.bindUniform('u_projectionMatrix', camera.getProj().toFloat32Array());
-    program.bindUniform('u_viewMatrix', camera.getView().toFloat32Array());
+    program.bindUniform('u_projectionMatrix', camera.projMatrix());
+    program.bindUniform('u_viewMatrix', camera.viewMatrix());
   };
   
   Renderer.prototype.setupLights = function(){
@@ -2905,16 +2894,16 @@ window.requestAnimFrame = (function(){
         index = 0, l, light;
     
     uniforms.u_enableLighting = this.useLighting;
-    uniforms.u_ambientColor = this.ambientColor.toRGBFloat32Array();
-    uniforms.u_directionalColor = this.directionalColor.toRGBFloat32Array();
-    uniforms.u_lightingDirection = this.lightingDirection.toFloat32Array();
+    uniforms.u_ambientColor = this.ambientColor.toRGBArray();
+    uniforms.u_directionalColor = this.directionalColor.toRGBArray();
+    uniforms.u_lightingDirection = this.lightingDirection.toArray();
     
     for (l in this.lights) {
       light = this.lights[l];
       uniforms['u_enableLight' + (index + 1)] = light.active;
-      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBFloat32Array();
-      uniforms['u_lightPosition' + (index + 1)] = light.position.toFloat32Array();
-      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBFloat32Array();
+      uniforms['u_lightPosition' + (index + 1)] = light.position.toArray();
+      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBArray();
+      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBArray();
       index++;
     }
     
@@ -2975,9 +2964,9 @@ window.requestAnimFrame = (function(){
     model.bindTextures(program, textures);
     
     // Set modelView and normal matrices
-    modelView = camera.getModelView().multiplyMat4(model.getMatrix());
-    program.bindUniform('u_modelViewMatrix', modelView.toFloat32Array());
-    program.bindUniform('u_normalMatrix', modelView.invert().$transpose().toFloat32Array());    
+    modelView = camera.modelViewMatrix().multiplyMat4(model.matrix());
+    program.bindUniform('u_modelViewMatrix', modelView);
+    program.bindUniform('u_normalMatrix', modelView.invert().$transpose());    
     
     model.draw();
   };

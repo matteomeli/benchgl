@@ -123,8 +123,8 @@
     return new Vector3(y * vz - z * vy, x * vz - z * vx, x * vy - y * vx);
   };
   
-  Vector3.prototype.toFloat32Array = function(){
-    return new Float32Array([this.x, this.y, this.z]);
+  Vector3.prototype.toArray = function(){
+    return [this.x, this.y, this.z];
   };
   
   

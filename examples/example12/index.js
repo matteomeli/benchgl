@@ -79,7 +79,7 @@ function start() {
         renderer.background();
         
         camera.reset();
-        camera.model.translate(0, 0, -20);
+        camera.model().translate(0, 0, -20);
         
         sphere.rotate(moonAngle, 0, 1, 0);
         sphere.translate(5, 0, 0);
