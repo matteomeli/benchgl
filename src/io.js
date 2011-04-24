@@ -1,7 +1,7 @@
 // io.js
-// Offers structures and methods to perform asynchronous IO operations.
+// Offers structures and functions to perform asynchronous IO operations.
 
-BenchGL.namespace('BenchGL.io');
+BenchGL.namespace('BenchGL.io.XHRequest');
 
 BenchGL.io.XHRequest = (function() {
   
@@ -123,6 +123,8 @@ BenchGL.io.XHRequest = (function() {
 	return XHRequest;
 	
 }());
+
+BenchGL.namespace('BenchGL.io.TextureRequest');
 
 BenchGL.io.TextureRequest = (function() {
 

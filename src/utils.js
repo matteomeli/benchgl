@@ -1,4 +1,5 @@
 // utils.js
+// General utility functions.
 
 function $(id) {
   return document.getElementById(id);

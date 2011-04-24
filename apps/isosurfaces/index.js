@@ -14,7 +14,7 @@ function start() {
 			lightZ = $('lightZ'),
 			sampler = $('sampler'),
 			workers = $('workers'),
-			grid = $('grid'),
+			sub = $('sub'),
 			iso = $('isolevel'),
 			timeEnabled = $('time'),
 			tFrom = $('timeFrom'),
@@ -29,10 +29,8 @@ function start() {
 			fps = +speed.value,
 			time = 0,
 			timeStep = 0,
-			size = +grid.value,
-			step = 1.0 / size,
-			parallelFactor = +workers.value,
-			partial = size / parallelFactor,
+			level = +sub.value,
+			parallelization = +workers.value,
 			isolevel = +iso.value,
 			samplerIndex = +sampler.value,
 			xRot = yRot = 0, z = -2.0, mouseDown = false,
@@ -200,7 +198,7 @@ function start() {
 					surface = new BenchGL.drawing.Model({
 						useColors : false
 					}),
-					pool = new BenchGL.extra.WorkerPool('marchingcubes.js', parallelFactor);
+					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization);
 			
       surface.setMaterialShininess(10);
       	
@@ -242,16 +240,13 @@ function start() {
 						toSample = true;
 					}
 				}
-				if (+workers.value != parallelFactor) {
-					parallelFactor = +workers.value;
-					partial = size / parallelFactor;
-					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelFactor)
+				if (+workers.value != parallelization) {
+					parallelization = +workers.value;
+					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization)
 					toSample = true;
 				}
-				if (+grid.value != size) {
-					size = +grid.value;
-					step = 1.0 / size;
-					partial = size / parallelFactor;
+				if (+sub.value != level) {
+					level = +sub.value;
 					toSample = true;
 				}
 				if (+speed.value != fps) {
@@ -299,41 +294,40 @@ function start() {
 			};
 			
 			function sample() {
-				var start, end, elapsed,
+				var partial = 1 / parallelization,
 						body = samplers[+sampler.value].toString();
-						
-				// DEBUG
-				start = new Date().getTime();
-				console.log(start + ': Sampling started!');
-				// DEBUG
 				
 				pool.map(function(i) {
+					/*var ratio = parallelization + 1,
+							idx = i % ratio,
+        			idy = ((i / ratio) >> 0) % ratio,
+        			idz = ((i / ratio / ratio) >> 0) % ratio;*/
+        
 			    var config = {
 						grid : {
 							x : {
 								start : 0,
-								end : size,
-								step : step
+								end : 1
 							},
 							y : {
 								start : 0,
-								end : size,
-								step : step,
+								end : 1
 							},
 							z : {
 								start : i * partial,
-								end : i * partial + partial,
-								step : step
+								end : i * partial + partial
 							}
 						},
-						time			: time,
-						isolevel 	: isolevel,
-						body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+						level : level,
+						time : time,
+						isolevel : isolevel,
+						body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 					};
 					
 					return config;
 				});
 				
+				console.time('Timing sampler');
 				pool.reduce(function(total, partial) {
 					var l = partial.vertices.length, i = 0;
 					while (i < l) {
@@ -344,12 +338,7 @@ function start() {
 					return total;
 				}, 
 				function(result) {
-					// DEBUG
-					end = new Date().getTime();
-					elapsed = end - start;
-					console.log(end + ': Sampling done! (Time elapsed: ' + elapsed + ' ms)');
-					// DEBUG
-					
+					console.timeEnd('Timing sampler');
 				  surface.vertices = result.vertices;
 					surface.normals = result.normals;
 					render();

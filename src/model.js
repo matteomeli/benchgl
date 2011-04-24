@@ -1,6 +1,7 @@
-// mesh.js
+// model.js
+// Modeule drawing: Provides a Model object to create and manipulate shapes.
 
-BenchGL.namespace('BenchGL.drawing');
+BenchGL.namespace('BenchGL.drawing.Model');
 
 BenchGL.drawing.Model = (function() {
   
@@ -93,7 +94,9 @@ BenchGL.drawing.Model = (function() {
     var textureNames = this.textureNames,
         i, l;
     for (i = 0, l = arguments.length; i < l; i ++) {
-      textureNames.push(arguments[i]);
+    	if (textureNames.indexOf(arguments[i]) < 0) {
+      	textureNames.push(arguments[i]);
+      }
     }
   };
 

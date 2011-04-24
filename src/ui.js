@@ -1,7 +1,7 @@
-// canvas.js
-// Gives a Canvas class to wrap a <canvas> HTML5 element and handle its events.
+// ui.js
+// The ui module handles user interaction and events.
 
-BenchGL.namespace('BenchGL.ui');
+BenchGL.namespace('BenchGL.ui.Canvas');
 
 BenchGL.ui.Canvas = (function() {
 
@@ -160,6 +160,8 @@ BenchGL.ui.Canvas = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.ui.Camera');
+
 BenchGL.ui.Camera = (function() {
 	
 	// Dependencies
@@ -281,6 +283,8 @@ BenchGL.ui.Camera = (function() {
 	
 }());
 
+BenchGL.namespace('BenchGL.ui.Logger');
+
 BenchGL.ui.Logger = (function() {
   
   // Private properties and methods
@@ -301,6 +305,8 @@ BenchGL.ui.Logger = (function() {
 	return Logger;
 	
 }());
+
+BenchGL.namespace('BenchGL.ui.Timer');
 
 BenchGL.ui.Timer = (function() {
 

@@ -20,7 +20,10 @@ function start() {
 					renderer = handler.renderer,
 					timer = new BenchGL.ui.Timer(),
 					teapot = BenchGL.drawing.Model.factory('json', {
-						url : 'Teapot.json'
+						url : 'Teapot.json',
+						model : {
+							dynamic : false
+						}
 					}),
 					teapotAngle = 0;
       

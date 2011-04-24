@@ -1,6 +1,7 @@
 // renderer.js
+// Module drawing: Implements the core of the rendering engine.
 
-BenchGL.namespace('BenchGL.drawing');
+BenchGL.namespace('BenchGL.drawing.Renderer');
 
 BenchGL.drawing.Renderer = (function() {
 
@@ -16,8 +17,7 @@ BenchGL.drawing.Renderer = (function() {
       // Private properties and methods 
       Renderer;
   
-  Renderer = function(gl, program, camera, effects){
-    this.gl = gl;
+  Renderer = function(program, camera, effects){
     this.program = program;
     this.camera = camera;
     this.effects = effects;
@@ -45,9 +45,9 @@ BenchGL.drawing.Renderer = (function() {
   Renderer.prototype.background = function(){
     var color = this.clearColor;
     
-    this.gl.clearColor(color.r, color.g, color.b, color.a);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    this.gl.enable(this.gl.DEPTH_TEST);
+   	gl.clearColor(color.r, color.g, color.b, color.a);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
   };
   
   Renderer.prototype.useLights = function(lighting){
@@ -60,17 +60,17 @@ BenchGL.drawing.Renderer = (function() {
   
   Renderer.prototype.useAlphaBlending = function(blending, options){
     options = $.mix({
-      src: this.gl.SRC_ALPHA,
-      dest: this.gl.ONE
+      src: gl.SRC_ALPHA,
+      dest: gl.ONE
     }, options || {});
     
     if (blending) {
-      this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
-      this.gl.enable(this.gl.BLEND);
-      this.gl.disable(this.gl.DEPTH_TEST);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      gl.enable(gl.BLEND);
+      gl.disable(gl.DEPTH_TEST);
     } else {
-      this.gl.disable(this.gl.BLEND);
-      this.gl.enable(this.gl.DEPTH_TEST);
+      gl.disable(gl.BLEND);
+      gl.enable(gl.DEPTH_TEST);
     }
   };
   
@@ -95,7 +95,7 @@ BenchGL.drawing.Renderer = (function() {
   };
   
   Renderer.prototype.addTexture = function(name, options){
-    this.textures[name] = new Texture(this.gl, options);
+    this.textures[name] = new Texture(options);
   };
   
   Renderer.prototype.addTextures = function(options){

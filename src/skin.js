@@ -1,6 +1,7 @@
 // skin.js
+// The skin module has the tools to manipulate colors, materials, lights and textures.
 
-BenchGL.namespace('BenchGL.skin');
+BenchGL.namespace('BenchGL.skin.Color');
 
 BenchGL.skin.Color = (function() {
 
@@ -28,6 +29,8 @@ BenchGL.skin.Color = (function() {
   return Color;
   
 }());
+
+BenchGL.namespace('BenchGL.skin.Material');
 
 BenchGL.skin.Material = (function() {
 
@@ -98,8 +101,11 @@ BenchGL.skin.Material = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.skin.Light');
+
 BenchGL.skin.Light = (function() {
   
+  // Dependencies
   var Vec3 = BenchGL.math.Vector3,
   		Color = BenchGL.skin.Color,
   		Material = BenchGL.skin.Material,
@@ -209,12 +215,14 @@ BenchGL.skin.Light = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.skin.Texture');
+
 BenchGL.skin.Texture = (function() {
   
   // Private properties and methods
   var Texture;
   
-  Texture = function(gl, options){
+  Texture = function(options){
     options = $.mix({
       level: 0,
       verticalFlip: true,
@@ -229,7 +237,6 @@ BenchGL.skin.Texture = (function() {
     
     var texture = gl.createTexture();
     
-    this.gl = gl;
     this.options = options;
     this.handler = texture;
     
@@ -245,24 +252,24 @@ BenchGL.skin.Texture = (function() {
   };
   
   Texture.prototype.destroy = function(){
-    this.gl.deleteTexture(this.handler);
+    gl.deleteTexture(this.handler);
     return this;
   };
   
   Texture.prototype.bind = function(unit){
-    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-    this.gl.bindTexture(this.options.target, this.handler);
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(this.options.target, this.handler);
     return this;
   };
   
   Texture.prototype.unbind = function(unit){
-    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-    this.gi.bindTexture(this.options.target, null);
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(this.options.target, null);
     return this;
   };
   
   Texture.prototype.generateMipmap = function(){
-    this.gl.generateMipmap(this.options.target);
+    gl.generateMipmap(this.options.target);
     return this;
   };
   

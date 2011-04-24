@@ -1,6 +1,7 @@
 // worker.js
+// Part of the extra module, provides support to Web Workers.
 
-BenchGL.namespace('BenchGL.extra');
+BenchGL.namespace('BenchGL.extra.WorkerPool');
 
 BenchGL.extra.WorkerPool = (function() {
 	

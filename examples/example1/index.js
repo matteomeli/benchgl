@@ -26,6 +26,7 @@ function start() {
 			//square.reset();
 			square.translate(1.5, 0, 0);
 			renderer.renderModel(square);
-		}
+		},
+		debug : true
 	});
 };

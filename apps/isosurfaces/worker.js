@@ -1,8 +1,3 @@
-//
-//  Bench - A WebGL-based javascript graphic engine.
-//  Copyright (c) 2010 Matteo Meli.  
-//
-
 var edgeTable = [
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -339,54 +334,49 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 			normalCoords = [],
       cube_index = 0,
       edges_index = 0,
-			cube_center = {
-				x : x*xstep + xstep / 2,
-				y : y*ystep + ystep / 2,
-				z : z*zstep + zstep / 2
-			},
 			vertex,
       point,
       triangles;	
 
 	cube_vertices[0] = {
-		x : cube_center.x - xstep / 2,
-		y : cube_center.y - ystep / 2,
-		z : cube_center.z - zstep / 2
+		x : x - xstep / 2,
+		y : y - ystep / 2,
+		z : z - zstep / 2
 	};
   cube_vertices[1] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[2] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[3] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z - zstep / 2
+    x : x - xstep / 2,
+    y : y + ystep / 2,
+    z : z - zstep / 2
   };
   cube_vertices[4] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x - xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[5] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y - ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y - ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[6] = {
-    x : cube_center.x + xstep / 2,
-    y : cube_center.y + ystep / 2,
-    z : cube_center.z + zstep / 2
+    x : x + xstep / 2,
+    y : y + ystep / 2,
+    z : z + zstep / 2
   };
   cube_vertices[7] = {
-    x : cube_center.x - xstep / 2,
-    y : cube_center.y + zstep / 2,
-    z : cube_center.z + ystep / 2
+    x : x - xstep / 2,
+    y : y + ystep / 2,
+    z : z + zstep / 2
   };
 	
   for (var i = 0; i < 8; i++) {
@@ -501,23 +491,23 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 	}
 };
 
-function compute(grid, time, isolevel, sampler) {
+function compute(grid, time, isolevel, sampler, level) {
 	var xstart = grid.x.start,
 			ystart = grid.y.start,
 			zstart = grid.z.start,
 			xend = grid.x.end,
 			yend = grid.y.end,
 			zend = grid.z.end,
-			xstep = grid.x.step,
-			ystep = grid.y.step,
-			zstep = grid.z.step,
+			xstep = (xend - xstart) / level,
+			ystep = (yend - ystart) / level,
+			zstep = (zend - zstart) / level,
 			vertices = [],
       normals = [],
 			result;
 			
-	for (var i = xstart; i < xend; i++) {
-		for (var j = ystart; j < yend; j++) {
-			for (var k = zstart; k < zend; k++) {
+	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
+		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
+			for (var k = zstart+(zstep/2); k <= zend; k+=zstep) {
 				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
@@ -535,13 +525,13 @@ function compute(grid, time, isolevel, sampler) {
 
 onmessage = function(e) {
   var data = e.data,
+      level = data.level,
   		grid = data.grid,
       time = data.time,
       isolevel = data.isolevel,
       body = data.body,
       sampler = new Function('x, y, z, t', body),
-  		result = compute(grid, time, isolevel, sampler);
-  		
+      result = compute(grid, time, isolevel, sampler, level);
+
   postMessage(result);
 };
-

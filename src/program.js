@@ -1,6 +1,7 @@
 // program.js
+// Module webgl: Gives shader program support.
 
-BenchGL.namespace('BenchGL.webgl');
+BenchGL.namespace('BenchGL.webgl.ProgramAttribute');
 
 BenchGL.webgl.ProgramAttribute = (function() {
 
@@ -15,18 +16,20 @@ BenchGL.webgl.ProgramAttribute = (function() {
     this.location = location;
   };
   
-  ProgramAttribute.prototype.setIndex = function(n){
+  ProgramAttribute.prototype.setIndex = function(n) {
     this.program.gl.bindAttribLocation(this.program.handler, n, this.name);
     this.location = n;
   }; 
   
-  ProgramAttribute.prototype.getIndex = function(){
+  ProgramAttribute.prototype.getIndex = function() {
     return this.location;
   };
   
   return ProgramAttribute;
   
 }());
+
+BenchGL.namespace('BenchGL.webgl.ProgramUniform');
 
 BenchGL.webgl.ProgramUniform = (function() {
 
@@ -41,8 +44,6 @@ BenchGL.webgl.ProgramUniform = (function() {
     this.location = location;
     this.func = null;
     this.value = null;
-    
-    var gl = program.gl;
     
     switch (type) {
       case gl.BOOL:
@@ -107,17 +108,17 @@ BenchGL.webgl.ProgramUniform = (function() {
         break;
       case gl.FLOAT_MAT2:
         this.func = function(v){
-          gl.uniformMatrix2fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix2fv(this.location, false, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT3:
         this.func = function(v){
-          gl.uniformMatrix3fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix3fv(this.location, false, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT4:
         this.func = function(v){
-          gl.uniformMatrix4fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix4fv(this.location, false, v.toFloat32Array());
         };
         break;
       default:
@@ -140,6 +141,8 @@ BenchGL.webgl.ProgramUniform = (function() {
   return ProgramUniform;
   
 }());
+
+BenchGL.namespace('BenchGL.webgl.ProgramSampler');
 
 BenchGL.webgl.ProgramSampler = (function() {
 
@@ -168,6 +171,8 @@ BenchGL.webgl.ProgramSampler = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.webgl.Program');
+
 BenchGL.webgl.Program = (function() {
 
 	// Dependencies
@@ -180,7 +185,7 @@ BenchGL.webgl.Program = (function() {
       // Private properties and methods
       Program;
   
-  Program = function(gl, vertex, fragment){
+  Program = function(vertex, fragment){
     var program = gl.createProgram(), valid = false, log = '';
     
     gl.attachShader(program, vertex.handler);
@@ -197,7 +202,6 @@ BenchGL.webgl.Program = (function() {
       log += "\n";
     }
     
-    this.gl = gl;
     this.vertex = vertex;
     this.fragment = fragment;
     this.handler = program;
@@ -215,8 +219,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.build = function(){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         attributes = this.attributes, 
         uniforms = this.uniforms, 
         samplers = this.samplers, 
@@ -252,8 +255,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setVertexShader = function(shader){
-    var gl = this.gl, 
-        program = this.handler,
+    var program = this.handler,
         valid = false, 
         log = '';
     
@@ -285,8 +287,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setFragmentShader = function(shader){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         valid = false, 
         log = '';
     
@@ -318,8 +319,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setShaders = function(vertex, fragment){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         valid = false, 
         log = '';
     
@@ -354,21 +354,21 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.link = function(){
-    this.gl.linkProgram(this.handler);
+    gl.linkProgram(this.handler);
   };
   
   Program.prototype.destroy = function(){
-    this.gl.deleteProgram(this.handler);
+  	gl.deleteProgram(this.handler);
     this.vertex.destroy();
     this.fragment.destroy();
   };
   
   Program.prototype.bind = function(){
-    this.gl.useProgram(this.handler);
+    gl.useProgram(this.handler);
   };
   
   Program.prototype.unbind = function(){
-    this.gl.useProgram(null);
+    gl.useProgram(null);
   };
   
   Program.prototype.bindAttribute = function(name, options) {
@@ -449,7 +449,7 @@ BenchGL.webgl.Program = (function() {
     return this;
   };
   
-  Program.factory = function(gl, options){
+  Program.factory = function(options){
     var type = (options && options.type) || 'defaults', 
         method = 'From' + $.capitalize(type);
     
@@ -460,10 +460,10 @@ BenchGL.webgl.Program = (function() {
       };
     }
     
-    return Program[method](gl, options);
+    return Program[method](options);
   };
   
-  Program.FromUrls = function(gl, options){
+  Program.FromUrls = function(options){
     options = $.mix({
       vertex: '',
       fragment: '',
@@ -483,7 +483,7 @@ BenchGL.webgl.Program = (function() {
             options.onError(e);
           },
           onSuccess: function(fs){
-            options.onSuccess(Program.FromSources(gl, {
+            options.onSuccess(Program.FromSources({
               vertex: vs,
               fragment: fs
             }));
@@ -493,28 +493,28 @@ BenchGL.webgl.Program = (function() {
     }).send();
   };
   
-  Program.FromScripts = function(gl, options){
+  Program.FromScripts = function(options){
     var vs = options.vertex, 
         fs = options.fragment, 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, $(vs).innerHTML), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, $(fs).innerHTML);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, $(vs).innerHTML), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, $(fs).innerHTML);
+    return new Program(vertex, fragment);
   };
   
-  Program.FromSources = function(gl, options){
+  Program.FromSources = function(options){
     var vs = options.vertex, 
         fs = options.fragment, 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, vs), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, fs);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, vs), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, fs);
+    return new Program(vertex, fragment);
   };
   
-  Program.FromDefaults = function(gl, options){
+  Program.FromDefaults = function(options){
     var vs = (options && $.capitalize(options.vertex)) || 'Default', 
         fs = (options && $.capitalize(options.fragment)) || 'Default', 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, Shader.Vertex[vs]), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, Shader.Fragment[fs]);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, Shader.Vertex[vs]), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, Shader.Fragment[fs]);
+    return new Program(vertex, fragment);
   };
   
   return Program;

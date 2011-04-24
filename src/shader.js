@@ -1,13 +1,14 @@
 // shader.js
+// Module webgl: Offers WebGL shader encapsulation.
 
-BenchGL.namespace('BenchGL.webgl');
+BenchGL.namespace('BenchGL.webgl.Shader');
 
 BenchGL.webgl.Shader = (function() {
 
 	// Private properties and methods
 	var Shader;
 	
-	Shader = function(gl, type, source) {
+	Shader = function(type, source) {
 		var shader = gl.createShader(type),
 				valid = false,
 				log = '';
@@ -26,7 +27,7 @@ BenchGL.webgl.Shader = (function() {
 	};
 	
 	Shader.prototype.destroy = function() {
-		this.gl.deleteShader(this.handler);
+		gl.deleteShader(this.handler);
 	};
 	
 	Shader.Vertex = {

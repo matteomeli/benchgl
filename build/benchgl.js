@@ -8,7 +8,8 @@ Copyright (c) 2010-2011 Matteo Meli.
 
 (function() {
 
-// core.js
+// benchgl.js
+// Contains the global variable representing the framework and some utilities.
 
 // Unique global variable repesenting the framework
 this.BenchGL = this.BenchGL || {};
@@ -32,7 +33,17 @@ BenchGL.namespace = function(name) {
 	return parent;
 };
 
+// Globalize BenchGL library
+BenchGL.globalize = function() {
+	for (var module in BenchGL) {
+		for (var object in BenchGL[module]) {
+			window[object] = BenchGL[module][object];
+		}
+	}
+};
+
 // utils.js
+// General utility functions.
 
 function $(id) {
   return document.getElementById(id);
@@ -88,9 +99,9 @@ window.requestAnimFrame = (function() {
 }());
 
 // math.js
-// Provides a 3D-oriented math library to handle Vectors, Matrices and Quaternions.
+// Provides a math library to handle 3D vectors, matrices and quaternions.
 
-BenchGL.namespace('BenchGL.math');
+BenchGL.namespace('BenchGL.math.Vector3');
 
 BenchGL.math.Vector3 = (function() {
 	
@@ -324,6 +335,8 @@ BenchGL.math.Vector3 = (function() {
   return Vector3;
   
 }());
+
+BenchGL.namespace('BenchGL.math.Matrix4');
 
 BenchGL.math.Matrix4 = (function() {
 
@@ -941,6 +954,8 @@ BenchGL.math.Matrix4 = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.math.Quaternion');
+
 BenchGL.math.Quaternion = (function() {
   
   // Dependencies
@@ -1073,9 +1088,7 @@ BenchGL.math.Quaternion = (function() {
   
 }());
 
-// space.js
-
-BenchGL.namespace('BenchGL.math');
+BenchGL.namespace('BenchGL.math.MatrixStack');
 
 BenchGL.math.MatrixStack = (function() {
 
@@ -1163,7 +1176,9 @@ BenchGL.math.MatrixStack = (function() {
 	
 	return MatrixStack;
 	
-}());	
+}());
+
+BenchGL.namespace('BenchGL.math.TransformStack');
 
 BenchGL.math.TransformStack = (function() {
 
@@ -1315,8 +1330,9 @@ BenchGL.math.TransformStack = (function() {
 }());
 
 // skin.js
+// The skin module has the tools to manipulate colors, materials, lights and textures.
 
-BenchGL.namespace('BenchGL.skin');
+BenchGL.namespace('BenchGL.skin.Color');
 
 BenchGL.skin.Color = (function() {
 
@@ -1344,6 +1360,8 @@ BenchGL.skin.Color = (function() {
   return Color;
   
 }());
+
+BenchGL.namespace('BenchGL.skin.Material');
 
 BenchGL.skin.Material = (function() {
 
@@ -1414,8 +1432,11 @@ BenchGL.skin.Material = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.skin.Light');
+
 BenchGL.skin.Light = (function() {
   
+  // Dependencies
   var Vec3 = BenchGL.math.Vector3,
   		Color = BenchGL.skin.Color,
   		Material = BenchGL.skin.Material,
@@ -1525,12 +1546,14 @@ BenchGL.skin.Light = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.skin.Texture');
+
 BenchGL.skin.Texture = (function() {
   
   // Private properties and methods
   var Texture;
   
-  Texture = function(gl, options){
+  Texture = function(options){
     options = $.mix({
       level: 0,
       verticalFlip: true,
@@ -1545,7 +1568,6 @@ BenchGL.skin.Texture = (function() {
     
     var texture = gl.createTexture();
     
-    this.gl = gl;
     this.options = options;
     this.handler = texture;
     
@@ -1561,24 +1583,24 @@ BenchGL.skin.Texture = (function() {
   };
   
   Texture.prototype.destroy = function(){
-    this.gl.deleteTexture(this.handler);
+    gl.deleteTexture(this.handler);
     return this;
   };
   
   Texture.prototype.bind = function(unit){
-    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-    this.gl.bindTexture(this.options.target, this.handler);
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(this.options.target, this.handler);
     return this;
   };
   
   Texture.prototype.unbind = function(unit){
-    this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-    this.gi.bindTexture(this.options.target, null);
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(this.options.target, null);
     return this;
   };
   
   Texture.prototype.generateMipmap = function(){
-    this.gl.generateMipmap(this.options.target);
+    gl.generateMipmap(this.options.target);
     return this;
   };
   
@@ -1587,9 +1609,9 @@ BenchGL.skin.Texture = (function() {
 }());
 
 // io.js
-// Offers structures and methods to perform asynchronous IO operations.
+// Offers structures and functions to perform asynchronous IO operations.
 
-BenchGL.namespace('BenchGL.io');
+BenchGL.namespace('BenchGL.io.XHRequest');
 
 BenchGL.io.XHRequest = (function() {
   
@@ -1712,6 +1734,8 @@ BenchGL.io.XHRequest = (function() {
 	
 }());
 
+BenchGL.namespace('BenchGL.io.TextureRequest');
+
 BenchGL.io.TextureRequest = (function() {
 
 	var TextureRequest;
@@ -1751,10 +1775,10 @@ BenchGL.io.TextureRequest = (function() {
   
 }());
 
-// canvas.js
-// Gives a Canvas class to wrap a <canvas> HTML5 element and handle its events.
+// ui.js
+// The ui module handles user interaction and events.
 
-BenchGL.namespace('BenchGL.ui');
+BenchGL.namespace('BenchGL.ui.Canvas');
 
 BenchGL.ui.Canvas = (function() {
 
@@ -1913,6 +1937,8 @@ BenchGL.ui.Canvas = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.ui.Camera');
+
 BenchGL.ui.Camera = (function() {
 	
 	// Dependencies
@@ -2034,6 +2060,8 @@ BenchGL.ui.Camera = (function() {
 	
 }());
 
+BenchGL.namespace('BenchGL.ui.Logger');
+
 BenchGL.ui.Logger = (function() {
   
   // Private properties and methods
@@ -2054,6 +2082,8 @@ BenchGL.ui.Logger = (function() {
 	return Logger;
 	
 }());
+
+BenchGL.namespace('BenchGL.ui.Timer');
 
 BenchGL.ui.Timer = (function() {
 
@@ -2116,8 +2146,9 @@ BenchGL.ui.Timer = (function() {
 }());
 
 // worker.js
+// Part of the extra module, provides support to Web Workers.
 
-BenchGL.namespace('BenchGL.extra');
+BenchGL.namespace('BenchGL.extra.WorkerPool');
 
 BenchGL.extra.WorkerPool = (function() {
 	
@@ -2182,15 +2213,16 @@ BenchGL.extra.WorkerPool = (function() {
 }());
 
 // shader.js
+// Module webgl: Offers WebGL shader encapsulation.
 
-BenchGL.namespace('BenchGL.webgl');
+BenchGL.namespace('BenchGL.webgl.Shader');
 
 BenchGL.webgl.Shader = (function() {
 
 	// Private properties and methods
 	var Shader;
 	
-	Shader = function(gl, type, source) {
+	Shader = function(type, source) {
 		var shader = gl.createShader(type),
 				valid = false,
 				log = '';
@@ -2209,7 +2241,7 @@ BenchGL.webgl.Shader = (function() {
 	};
 	
 	Shader.prototype.destroy = function() {
-		this.gl.deleteShader(this.handler);
+		gl.deleteShader(this.handler);
 	};
 	
 	Shader.Vertex = {
@@ -2339,8 +2371,9 @@ BenchGL.webgl.Shader = (function() {
 }());
 
 // program.js
+// Module webgl: Gives shader program support.
 
-BenchGL.namespace('BenchGL.webgl');
+BenchGL.namespace('BenchGL.webgl.ProgramAttribute');
 
 BenchGL.webgl.ProgramAttribute = (function() {
 
@@ -2355,18 +2388,20 @@ BenchGL.webgl.ProgramAttribute = (function() {
     this.location = location;
   };
   
-  ProgramAttribute.prototype.setIndex = function(n){
+  ProgramAttribute.prototype.setIndex = function(n) {
     this.program.gl.bindAttribLocation(this.program.handler, n, this.name);
     this.location = n;
   }; 
   
-  ProgramAttribute.prototype.getIndex = function(){
+  ProgramAttribute.prototype.getIndex = function() {
     return this.location;
   };
   
   return ProgramAttribute;
   
 }());
+
+BenchGL.namespace('BenchGL.webgl.ProgramUniform');
 
 BenchGL.webgl.ProgramUniform = (function() {
 
@@ -2381,8 +2416,6 @@ BenchGL.webgl.ProgramUniform = (function() {
     this.location = location;
     this.func = null;
     this.value = null;
-    
-    var gl = program.gl;
     
     switch (type) {
       case gl.BOOL:
@@ -2447,17 +2480,17 @@ BenchGL.webgl.ProgramUniform = (function() {
         break;
       case gl.FLOAT_MAT2:
         this.func = function(v){
-          gl.uniformMatrix2fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix2fv(this.location, false, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT3:
         this.func = function(v){
-          gl.uniformMatrix3fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix3fv(this.location, false, v.toFloat32Array());
         };
         break;
       case gl.FLOAT_MAT4:
         this.func = function(v){
-          gl.uniformMatrix4fv(this.location, gl.FALSE, v.toFloat32Array());
+          gl.uniformMatrix4fv(this.location, false, v.toFloat32Array());
         };
         break;
       default:
@@ -2480,6 +2513,8 @@ BenchGL.webgl.ProgramUniform = (function() {
   return ProgramUniform;
   
 }());
+
+BenchGL.namespace('BenchGL.webgl.ProgramSampler');
 
 BenchGL.webgl.ProgramSampler = (function() {
 
@@ -2508,6 +2543,8 @@ BenchGL.webgl.ProgramSampler = (function() {
   
 }());
 
+BenchGL.namespace('BenchGL.webgl.Program');
+
 BenchGL.webgl.Program = (function() {
 
 	// Dependencies
@@ -2520,7 +2557,7 @@ BenchGL.webgl.Program = (function() {
       // Private properties and methods
       Program;
   
-  Program = function(gl, vertex, fragment){
+  Program = function(vertex, fragment){
     var program = gl.createProgram(), valid = false, log = '';
     
     gl.attachShader(program, vertex.handler);
@@ -2537,7 +2574,6 @@ BenchGL.webgl.Program = (function() {
       log += "\n";
     }
     
-    this.gl = gl;
     this.vertex = vertex;
     this.fragment = fragment;
     this.handler = program;
@@ -2555,8 +2591,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.build = function(){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         attributes = this.attributes, 
         uniforms = this.uniforms, 
         samplers = this.samplers, 
@@ -2592,8 +2627,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setVertexShader = function(shader){
-    var gl = this.gl, 
-        program = this.handler,
+    var program = this.handler,
         valid = false, 
         log = '';
     
@@ -2625,8 +2659,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setFragmentShader = function(shader){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         valid = false, 
         log = '';
     
@@ -2658,8 +2691,7 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.setShaders = function(vertex, fragment){
-    var gl = this.gl, 
-        program = this.handler, 
+    var program = this.handler, 
         valid = false, 
         log = '';
     
@@ -2694,21 +2726,21 @@ BenchGL.webgl.Program = (function() {
   };
   
   Program.prototype.link = function(){
-    this.gl.linkProgram(this.handler);
+    gl.linkProgram(this.handler);
   };
   
   Program.prototype.destroy = function(){
-    this.gl.deleteProgram(this.handler);
+  	gl.deleteProgram(this.handler);
     this.vertex.destroy();
     this.fragment.destroy();
   };
   
   Program.prototype.bind = function(){
-    this.gl.useProgram(this.handler);
+    gl.useProgram(this.handler);
   };
   
   Program.prototype.unbind = function(){
-    this.gl.useProgram(null);
+    gl.useProgram(null);
   };
   
   Program.prototype.bindAttribute = function(name, options) {
@@ -2789,7 +2821,7 @@ BenchGL.webgl.Program = (function() {
     return this;
   };
   
-  Program.factory = function(gl, options){
+  Program.factory = function(options){
     var type = (options && options.type) || 'defaults', 
         method = 'From' + $.capitalize(type);
     
@@ -2800,10 +2832,10 @@ BenchGL.webgl.Program = (function() {
       };
     }
     
-    return Program[method](gl, options);
+    return Program[method](options);
   };
   
-  Program.FromUrls = function(gl, options){
+  Program.FromUrls = function(options){
     options = $.mix({
       vertex: '',
       fragment: '',
@@ -2823,7 +2855,7 @@ BenchGL.webgl.Program = (function() {
             options.onError(e);
           },
           onSuccess: function(fs){
-            options.onSuccess(Program.FromSources(gl, {
+            options.onSuccess(Program.FromSources({
               vertex: vs,
               fragment: fs
             }));
@@ -2833,37 +2865,38 @@ BenchGL.webgl.Program = (function() {
     }).send();
   };
   
-  Program.FromScripts = function(gl, options){
+  Program.FromScripts = function(options){
     var vs = options.vertex, 
         fs = options.fragment, 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, $(vs).innerHTML), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, $(fs).innerHTML);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, $(vs).innerHTML), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, $(fs).innerHTML);
+    return new Program(vertex, fragment);
   };
   
-  Program.FromSources = function(gl, options){
+  Program.FromSources = function(options){
     var vs = options.vertex, 
         fs = options.fragment, 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, vs), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, fs);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, vs), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, fs);
+    return new Program(vertex, fragment);
   };
   
-  Program.FromDefaults = function(gl, options){
+  Program.FromDefaults = function(options){
     var vs = (options && $.capitalize(options.vertex)) || 'Default', 
         fs = (options && $.capitalize(options.fragment)) || 'Default', 
-        vertex = new Shader(gl, gl.VERTEX_SHADER, Shader.Vertex[vs]), 
-        fragment = new Shader(gl, gl.FRAGMENT_SHADER, Shader.Fragment[fs]);
-    return new Program(gl, vertex, fragment);
+        vertex = new Shader(gl.VERTEX_SHADER, Shader.Vertex[vs]), 
+        fragment = new Shader(gl.FRAGMENT_SHADER, Shader.Fragment[fs]);
+    return new Program(vertex, fragment);
   };
   
   return Program;
   
 }());
 
-// mesh.js
+// model.js
+// Modeule drawing: Provides a Model object to create and manipulate shapes.
 
-BenchGL.namespace('BenchGL.drawing');
+BenchGL.namespace('BenchGL.drawing.Model');
 
 BenchGL.drawing.Model = (function() {
   
@@ -2956,7 +2989,9 @@ BenchGL.drawing.Model = (function() {
     var textureNames = this.textureNames,
         i, l;
     for (i = 0, l = arguments.length; i < l; i ++) {
-      textureNames.push(arguments[i]);
+    	if (textureNames.indexOf(arguments[i]) < 0) {
+      	textureNames.push(arguments[i]);
+      }
     }
   };
 
@@ -3302,8 +3337,9 @@ BenchGL.drawing.Model = (function() {
 }());
 
 // renderer.js
+// Module drawing: Implements the core of the rendering engine.
 
-BenchGL.namespace('BenchGL.drawing');
+BenchGL.namespace('BenchGL.drawing.Renderer');
 
 BenchGL.drawing.Renderer = (function() {
 
@@ -3319,8 +3355,7 @@ BenchGL.drawing.Renderer = (function() {
       // Private properties and methods 
       Renderer;
   
-  Renderer = function(gl, program, camera, effects){
-    this.gl = gl;
+  Renderer = function(program, camera, effects){
     this.program = program;
     this.camera = camera;
     this.effects = effects;
@@ -3348,9 +3383,9 @@ BenchGL.drawing.Renderer = (function() {
   Renderer.prototype.background = function(){
     var color = this.clearColor;
     
-    this.gl.clearColor(color.r, color.g, color.b, color.a);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    this.gl.enable(this.gl.DEPTH_TEST);
+   	gl.clearColor(color.r, color.g, color.b, color.a);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
   };
   
   Renderer.prototype.useLights = function(lighting){
@@ -3363,17 +3398,17 @@ BenchGL.drawing.Renderer = (function() {
   
   Renderer.prototype.useAlphaBlending = function(blending, options){
     options = $.mix({
-      src: this.gl.SRC_ALPHA,
-      dest: this.gl.ONE
+      src: gl.SRC_ALPHA,
+      dest: gl.ONE
     }, options || {});
     
     if (blending) {
-      this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
-      this.gl.enable(this.gl.BLEND);
-      this.gl.disable(this.gl.DEPTH_TEST);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      gl.enable(gl.BLEND);
+      gl.disable(gl.DEPTH_TEST);
     } else {
-      this.gl.disable(this.gl.BLEND);
-      this.gl.enable(this.gl.DEPTH_TEST);
+      gl.disable(gl.BLEND);
+      gl.enable(gl.DEPTH_TEST);
     }
   };
   
@@ -3398,7 +3433,7 @@ BenchGL.drawing.Renderer = (function() {
   };
   
   Renderer.prototype.addTexture = function(name, options){
-    this.textures[name] = new Texture(this.gl, options);
+    this.textures[name] = new Texture(options);
   };
   
   Renderer.prototype.addTextures = function(options){
@@ -3524,10 +3559,10 @@ BenchGL.drawing.Renderer = (function() {
   
 }());
 
-// bench.js
-// The core module for the library, provides the main entry point for external applications.
+// core.js
+// The core module provides the main entry point for the library.
 
-BenchGL.namespace('BenchGL.core');
+BenchGL.namespace('BenchGL.core.WebGL');
 
 BenchGL.core.WebGL = (function() {
 
@@ -3536,6 +3571,7 @@ BenchGL.core.WebGL = (function() {
 
 	WebGL = function(canvas, options) {
 		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
+				options = options || {},
 				gl = canvas.getContext('experimental-webgl', options);
 		
 		if (!gl) {
@@ -3557,6 +3593,8 @@ BenchGL.core.WebGL = (function() {
 	return WebGL;
 
 }());
+
+BenchGL.namespace('BenchGL.core.Engine');
 
 BenchGL.core.Engine = (function() {
 
@@ -3647,6 +3685,11 @@ BenchGL.core.Engine = (function() {
       return null;
     }
     
+    // Use webgl-trace.js library to trace webgl calls
+    if (options.debug && WebGLDebugUtils) {
+    	gl = WebGLDebugUtils.makeDebugContext(gl);
+    }
+    
     // Create a canvas wrapper to handle user events
     canvas = new Canvas(gl.canvas, eventsOptions);
     
@@ -3656,11 +3699,11 @@ BenchGL.core.Engine = (function() {
     }));
     
     // Set up the shader program asynchronously
-    program = Program.factory(gl, $.mix({
+    program = Program.factory($.mix({
       onSuccess : function(program) {
-        start(gl, program, function(application) {
+        start(program, function(application) {
           options.onLoad(application);
-        });
+        }, options.debug);
       },
       onError : function(e) {
         options.onError(e);
@@ -3669,18 +3712,22 @@ BenchGL.core.Engine = (function() {
     
     // If the program has loaded correctly, call the onLoad callback
     if (program) {
-      start(gl, program, function(application) {
+      start(program, function(application) {
         options.onLoad(application);
-      });
+      }, options.debug);
     }
     
     // Calls the user application
-    function start(gl, program, callback) {
+    function start(program, callback, debug) {
     	// Binds the loaded program for rendering
       program.bind();
       
       // Create a renderer
-      renderer = new Renderer(gl, program, camera, effectsOptions);
+      renderer = new Renderer(program, camera, effectsOptions);
+      
+      if (debug) {
+      	gl.setTracing(true);
+      }
       
       // Call the application with library handlers references 
       callback({
@@ -3689,7 +3736,11 @@ BenchGL.core.Engine = (function() {
         program: program,
         camera: camera,
         renderer: renderer
-      });      
+      });
+      
+      if (debug) {
+      	gl.setTracing(false);
+      }    
     }
   };
   

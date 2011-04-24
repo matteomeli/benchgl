@@ -1,10 +1,9 @@
 path = '../src/'
 
 files = [
-	'core.js',
+	'benchgl.js',
   'utils.js',
   'math.js',
-  'space.js',
   'skin.js',
   'io.js',
   'ui.js',
@@ -13,7 +12,7 @@ files = [
   'program.js',
   'model.js',
   'renderer.js',
-  'bench.js'
+  'core.js'
 ]
 
 def build():
