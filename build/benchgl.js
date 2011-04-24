@@ -6,94 +6,49 @@ Copyright (c) 2010-2011 Matteo Meli.
  
 */
 
-(function() { 
-// bench.js
+(function() {
 
-this.BenchGL = null;
+// core.js
 
-(function(){
+// Unique global variable repesenting the framework
+this.BenchGL = this.BenchGL || {};
 
-  BenchGL = function(canvasId, options){
-    options = $.mix({
-      context: {},
-      program: {
-        type: 'defaults' // Defaults, Scripts, Sources, Urls
-      },
-      camera: {
-        fovy: 45,
-        near: 0.1,
-        far: 100
-      },
-      effects: {},
-      events: {},
-      debug: false,
-      onError: $.empty,
-      onLoad: $.empty
-    }, options || {});
-    
-    var contextOptions = options.context,
-        eventsOptions = options.events,
-        cameraOptions = options.camera,
-        programOptions = options.program,
-        effectsOptions = options.effects,
-        canvas, program, camera, renderer;
-    
-    gl = new BenchGL.WebGL(canvasId, contextOptions).getContext();
-    
-    if (!gl) {
-      options.onError();
-      return null;
-    }
-    
-    canvas = new BenchGL.Canvas(gl.canvas, eventsOptions);
-    
-    camera = new BenchGL.Camera($.mix(cameraOptions, {
-      aspect: gl.canvas.width / gl.canvas.height
-    }));
-    
-    program = BenchGL.Program.factory(gl, $.mix({
-      onSuccess : function(program) {
-        start(gl, program, function(application) {
-          options.onLoad(application);
-        });
-      },
-      onError : function(e) {
-        options.onError(e);
-      }
-    }, programOptions));
-    
-    if (program) {
-      start(gl, program, function(application) {
-        options.onLoad(application);
-      });
-    }
-    
-    function start(gl, program, callback) {
-      program.bind();
-      renderer = new BenchGL.Renderer(gl, program, camera, effectsOptions);
-      callback({
-        gl: gl,
-        canvas: canvas,
-        program: program,
-        camera: camera,
-        renderer: renderer
-      });      
-    }
-  };
-  
-}());
-
-BenchGL.version = '0.1';
-
-// WebGL context container
-var gl;
-
-// helper functions
-function $(id){
-  return document.getElementById(id);
+// Special function to create namespaces
+BenchGL.namespace = function(name) {
+	var parts = name.split('.'),
+			parent = BenchGL;
+			
+	if (parts[0] === 'BenchGL') {
+		parts = parts.slice(1);
+	}
+	
+	for (var i = 0; i < parts.length; i++) {
+		if (typeof parent[parts[i]] === 'undefined') {
+			parent[parts[i]] = {};
+		}
+		parent = parent[parts[i]];
+	}
+	
+	return parent;
 };
 
-$.mix = function(){
+// utils.js
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+$.inherit = (function() {
+	var F = function() {};
+	return function(C, P) {
+		F.prototype = P.prototype;
+		C.prototype = new F();
+		C.uber = P.prototype;
+		C.prototype.constructor = C;
+	}
+}());
+
+$.mix = function() {
   var i, object, key, mix = {};
   for (i = 0, l = arguments.length; i < l; i++) {
     object = arguments[i];
@@ -106,87 +61,132 @@ $.mix = function(){
   return mix;
 };
 
-$.capitalize = function(text){
+$.capitalize = function(text) {
   if (text && text.length > 0) {
     text = text.charAt(0).toUpperCase() + text.slice(1);
   }
   return text;
 };
 
-$.empty = function(){
-};
+$.empty = function() {};
 
 /**
  * Provides requestAnimationFrame in a cross browser way.
+ * Copyright 2010, Google Inc.
+ * All rights reserved.
+ * @ignore
  */
-window.requestAnimFrame = (function(){
+window.requestAnimFrame = (function() {
   return window.requestAnimationFrame ||
   window.webkitRequestAnimationFrame ||
   window.mozRequestAnimationFrame ||
   window.oRequestAnimationFrame ||
   window.msRequestAnimationFrame ||
-  function(/* function FrameRequestCallback */callback, /* DOMElement Element */ element){
+  function(callback, element) {
     window.setTimeout(callback, 1000 / 60);
   };
 }());
 
 // math.js
+// Provides a 3D-oriented math library to handle Vectors, Matrices and Quaternions.
 
-(function(){
+BenchGL.namespace('BenchGL.math');
 
-  var sin = Math.sin, 
-      cos = Math.cos, 
-      sqrt = Math.sqrt, 
-      acos = Math.acos, 
-      tan = Math.tan, 
-      pi = Math.PI,
-      Vector3, Matrix4, Quaternion;
+BenchGL.math.Vector3 = (function() {
+	
+	// Dependencies
+  var acos = Math.acos,
+  		sqrt = Math.sqrt,
+			
+			// Private properties and methods
+      Vector3;
   
-  Vector3 = function(x, y, z){
+  /**
+   * Creates a new Vector3.
+   * @class Represents a vector in homogeneous 3D space.
+   * @param {Number} [x=0] The x coordinate.
+   * @param {Number} [y=0] The y coordinate.
+   * @param {Number} [z=0] The z coordinate.  
+   */
+  Vector3 = function(x, y, z) {
     this.x = x || 0;
     this.y = y || 0;
     this.z = z || 0;
   };
   
-  Vector3.prototype.copy = function(){
+  /**
+   * Copies this Vector3 in a new one.
+   * @returns {Vector3} A copy of this Vector3. 
+   */
+  Vector3.prototype.copy = function() {
     return new Vector3(this.x, this.y, this.z);
   };
   
-  Vector3.prototype.set = function(x, y, z){
+  /**
+   * Sets this Vector3 coordinates.
+   * @param {Number} [x=0] The x coordinate to set.
+   * @param {Number} [y=0] The y coordinate to set.
+   * @param {Number} [z=0] The z coordinate to set.
+   */
+  Vector3.prototype.set = function(x, y, z) {
     this.x = x;
     this.y = y;
     this.z = z;
   };
   
-  Vector3.prototype.norm = function(){
+  /**
+   * Gets the norm of this Vector3.
+   * @returns {Number} The norm of this Vector3.
+   */
+  Vector3.prototype.norm = function() {
     var x = this.x, y = this.y, z = this.z;
     return sqrt(x * x + y * y + z * z);
   };
   
-  Vector3.prototype.normSqr = function(){
+  /**
+   * Gets the squared norm of this Vector3.
+   * @returns {Number} The squared norm of this Vector3. 
+   */
+  Vector3.prototype.normSqr = function() {
     var x = this.x, y = this.y, z = this.z;
     return (x * x + y * y + z * z);
   };
   
-  Vector3.prototype.negate = function(){
+  /**
+   * Negates this Vector3. Does not affect this Vector3.
+   * @returns {Vector3} A new vector representing the negation of this Vector3.
+   */
+  Vector3.prototype.negate = function() {
     return new Vector3(-this.x, -this.y, -this.z);
   };
-  
-  Vector3.prototype.$negate = function(){
+ 	
+ 	/**
+ 	 * Negates this Vector3. Affects this Vector3.
+ 	 * @returns {Vector3} The negated version of this Vector3.
+ 	 */
+  Vector3.prototype.$negate = function() {
     this.x = -this.x;
     this.y = -this.y;
     this.z = -this.z;
     return this;
   };
   
-  Vector3.prototype.unit = function(){
+  /**
+   * Normalizes this Vector3. Does not affect this Vector3.
+   * @returns {Vector3} A new vector representing the normalized version of this Vector3.
+   */
+  Vector3.prototype.unit = function() {
     var x = this.x, y = this.y, z = this.z, d = sqrt(x * x + y * y + z * z);
     if (d > 0) {
       return new Vector3(x / d, y / d, z / d);
     }
     return this.copy();
   };
-  
+
+  /**
+   * Normalizes this Vector3. Affects this Vector3.
+   * @returns {Vector3} The normalized version of this Vector3.
+   */  
   Vector3.prototype.$unit = function(){
     var x = this.x, y = this.y, z = this.z, d = sqrt(x * x + y * y + z * z);
     if (d > 0) {
@@ -195,75 +195,173 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
-  Vector3.prototype.add = function(vector){
-    var x = this.x + vector.x, y = this.y + vector.y, z = this.z + vector.z;
+  /**
+   * Adds another Vector3 to this Vector3. Does not affect this Vector3.
+   * @param {Vector3} vector The Vector3 to add.
+   * @returns {Vector3} A new vector representing the addition.
+   */
+  Vector3.prototype.add = function(vector) {
+    var x = this.x + vector.x, 
+    		y = this.y + vector.y, 
+    		z = this.z + vector.z;
     return new Vector3(x, y, z);
   };
-  
-  Vector3.prototype.$add = function(vector){
+
+  /**
+   * Adds another Vector3 to this Vector3. Affects this Vector3.
+   * @param {Vector3} vector The Vector3 to add.
+   * @returns {Vector3} This Vector3 now stores the sum.
+   */  
+  Vector3.prototype.$add = function(vector) {
     this.x += vector.x;
     this.y += vector.y;
     this.z += vector.z;
     return this;
   };
-  
-  Vector3.prototype.sub = function(vector){
+
+  /**
+   * Subtracts another Vector3 to this Vector3. Does not affect this Vector3.
+   * @param {Vector3} vector The Vector3 to add.
+   * @returns {Vector3} A new vector representing the subtraction.
+   */    
+  Vector3.prototype.sub = function(vector) {
     var x = this.x - vector.x, y = this.y - vector.y, z = this.z - vector.z;
     return new Vector3(x, y, z);
   };
-  
-  Vector3.prototype.$sub = function(vector){
+
+  /**
+   * Subtracts another Vector3 to this Vector3. Affects this Vector3.
+   * @param {Vector3} vector The Vector3 to add.
+   * @returns {Vector3} This Vector3 now stores the subtraction.
+   */    
+  Vector3.prototype.$sub = function(vector) {
     this.x -= vector.x;
     this.y -= vector.y;
     this.z -= vector.z;
     return this;
   };
   
-  Vector3.prototype.scale = function(f){
+  /**
+   * Scales this Vector3 by a factor. Does not affect this Vector3.
+   * @param {Number} f The factor to scale this Vector3 with.
+   * @returns {Vector3} A new vector representing the scaled version of this Vector3.
+   */
+  Vector3.prototype.scale = function(f) {
     var x = this.x * f, y = this.y * f, z = this.z * f;
     return new Vector3(x, y, z);
   };
-  
-  Vector3.prototype.$scale = function(f){
+
+  /**
+   * Scales this Vector3 by a factor. Affects this Vector3
+   * @param {Number} f The factor to scale this Vector3 with.
+   * @returns {Vector3} This Vector3 now is scaled.
+   */  
+  Vector3.prototype.$scale = function(f) {
     this.x *= f;
     this.y *= f;
     this.z *= f;
     return this;
   };
   
-  Vector3.prototype.angleWith = function(vector){
+  /**
+   * Calculates the angle between this and another Vector3.
+   * @param {Vector3} vector The other Vector3 to calculate the angle with.
+   * @returns {Number} The angle between the two Vector3.
+   */
+  Vector3.prototype.angleWith = function(vector) {
     var dot = this.dot(vector), normThis = this.norm(), normThat = vector.norm();
     return acos(dot / (normThis * normThat));
   };
   
-  Vector3.prototype.distTo = function(vector){
+  /**
+   * Calculates the distance between this and another Vector3.
+   * @param {Vector3} vector The other Vector3 to calculate the distance with.
+   * @returns {Number} The distance between the two Vector3.
+   */
+  Vector3.prototype.distTo = function(vector) {
     var x = this.x - vector.x, y = this.y - vector.y, z = this.z - vector.z;
     return sqrt(x * x + y * y + z * z);
   };
-  
-  Vector3.prototype.distToSqr = function(vector){
+
+  /**
+   * Calculates the squared distance between this and another Vector3.
+   * @param {Vector3} vector The other Vector3 to calculate the distance with.
+   * @returns {Number} The squared distance between the two Vector3.
+   */  
+  Vector3.prototype.distToSqr = function(vector) {
     var x = this.x - vector.x, y = this.y - vector.y, z = this.z - vector.z;
     return (x * x + y * y + z * z);
   };
   
-  Vector3.prototype.dot = function(vector){
+  /**
+   * Computes the dot product between this and another Vector3.
+   * @param {Vector3} vector The other Vector3 to compute the dot product with.
+   * @returns {Number} The dot product.
+   */
+  Vector3.prototype.dot = function(vector) {
     return (this.x * vector.x + this.y * vector.y + this.z * vector.z);
   };
-  
-  Vector3.prototype.cross = function(vector){
+
+  /**
+   * Computes the cross product between this and another Vector3. 
+   * Does not affect this Vector3.
+   * @param {Vector3} vector The other Vector3 to compute the dot product with.
+   * @returns {Vector3} A new vector representing the croos product.
+   */  
+  Vector3.prototype.cross = function(vector) {
     var x = this.x, y = this.y, z = this.z, vx = vector.x, vy = vector.y, vz = vector.z;
     return new Vector3(y * vz - z * vy, x * vz - z * vx, x * vy - y * vx);
   };
   
-  Vector3.prototype.toArray = function(){
+  /**
+   * Gets the array version of this Vector3.
+   * @returns {Array} An array representation of this Vector3.
+   */
+  Vector3.prototype.toArray = function() {
     return [this.x, this.y, this.z];
   };
   
+  return Vector3;
   
+}());
+
+BenchGL.math.Matrix4 = (function() {
+
+	// Dependencies
+	var sin = Math.sin, 
+      cos = Math.cos, 
+      sqrt = Math.sqrt,
+      tan = Math.tan, 
+      pi = Math.PI,
+      Vec3 = BenchGL.math.Vector3,
+      
+      // Private properties and methods
+			Matrix4;
+  
+  /**
+   * Creates a new Matrix4. If no argumnets are supplied returns the identity matrix.
+   * @class Represents a four by four matrix.
+   * @param {Number} [m11=1] The element at row 1 column 1.
+   * @param {Number} [m12=0] The element at row 1 column 2.
+   * @param {Number} [m13=0] The element at row 1 column 3.
+   * @param {Number} [m14=0] The element at row 1 column 4.
+   * @param {Number} [m21=0] The element at row 2 column 1.
+   * @param {Number} [m22=1] The element at row 2 column 2. 
+   * @param {Number} [m23=0] The element at row 2 column 3. 
+   * @param {Number} [m24=0] The element at row 2 column 4. 
+   * @param {Number} [m31=0] The element at row 3 column 1. 
+   * @param {Number} [m32=0] The element at row 3 column 2. 
+   * @param {Number} [m33=1] The element at row 3 column 3. 
+   * @param {Number} [m34=0] The element at row 3 column 4. 
+   * @param {Number} [m41=0] The element at row 4 column 1.
+   * @param {Number} [m42=0] The element at row 4 column 2. 
+   * @param {Number} [m43=0] The element at row 4 column 3. 
+   * @param {Number} [m44=1] The element at row 4 column 4.    
+   */
   Matrix4 = function(m11, m12, m13, m14, 
-                         m21, m22, m23, m24, 
-                         m31, m32, m33, m34, 
-                         m41, m42, m43, m44){
+                     m21, m22, m23, m24, 
+                     m31, m32, m33, m34, 
+                     m41, m42, m43, m44) {
     if (typeof m11 !== "undefined") {
       this.set(m11, m12, m13, m14, 
                m21, m22, m23, m24, 
@@ -271,19 +369,33 @@ window.requestAnimFrame = (function(){
                m41, m42, m43, m44);
     }
     else {
-      this.identity();
+	    this.m11 = this.m22 = this.m33 = this.m44 = 1; 
+	    this.m12 = this.m13 = this.m14 = 0;
+	    this.m21 = this.m23 = this.m24 = 0; 
+	    this.m31 = this.m32 = this.m34 = 0; 
+	    this.m41 = this.m42 = this.m43 = 0;
     }
   };
-  
-  Matrix4.prototype.identity = function(){
-    this.m11 = this.m22 = this.m33 = this.m44 = 1; 
-    this.m12 = this.m13 = this.m14 = 0;
-    this.m21 = this.m23 = this.m24 = 0; 
-    this.m31 = this.m32 = this.m34 = 0; 
-    this.m41 = this.m42 = this.m43 = 0;
-    return this;
-  };
-  
+
+  /**
+   * Sets the elements of this Matrix4.
+   * @param {Number} m11 The element at row 1 column 1.
+   * @param {Number} m12 The element at row 1 column 2.
+   * @param {Number} m13 The element at row 1 column 3.
+   * @param {Number} m14 The element at row 1 column 4.
+   * @param {Number} m21 The element at row 2 column 1.
+   * @param {Number} m22 The element at row 2 column 2. 
+   * @param {Number} m23 The element at row 2 column 3. 
+   * @param {Number} m24 The element at row 2 column 4. 
+   * @param {Number} m31 The element at row 3 column 1. 
+   * @param {Number} m32 The element at row 3 column 2. 
+   * @param {Number} m33 The element at row 3 column 3. 
+   * @param {Number} m34 The element at row 3 column 4. 
+   * @param {Number} m41 The element at row 4 column 1.
+   * @param {Number} m42 The element at row 4 column 2. 
+   * @param {Number} m43 The element at row 4 column 3. 
+   * @param {Number} m44 The element at row 4 column 4.    
+   */  
   Matrix4.prototype.set = function(m11, m12, m13, m14, 
                                    m21, m22, m23, m24, 
                                    m31, m32, m33, m34, 
@@ -307,7 +419,24 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
-  Matrix4.prototype.copy = function(){
+  /**
+   * Sets this Matrix4 to the identity matrix. Affects this Matrix4.
+   * @returns {Matrix4} This Matrix4 is now an identity matrix.
+   */
+  Matrix4.prototype.$identity = function() {
+    this.m11 = this.m22 = this.m33 = this.m44 = 1; 
+    this.m12 = this.m13 = this.m14 = 0;
+    this.m21 = this.m23 = this.m24 = 0; 
+    this.m31 = this.m32 = this.m34 = 0; 
+    this.m41 = this.m42 = this.m43 = 0;
+	  return this;    
+  };
+  
+  /**
+   * Copies this Matrix4 in another one.
+   * @returns {Matrix4} A copy of this Matrix4.
+   */
+  Matrix4.prototype.copy = function() {
     var m11 = this.m11, m12 = this.m12, m13 = this.m13, m14 = this.m14, 
         m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24, 
         m31 = this.m31, m32 = this.m32, m33 = this.m33, m34 = this.m34, 
@@ -319,7 +448,12 @@ window.requestAnimFrame = (function(){
                        m41, m42, m43, m44);
   };
   
-  Matrix4.prototype.add = function(m){
+  /**
+   * Adds this Matrix4 to another one. Does not affect this Matrix4.
+   * @param {Matrix4} m The Matrix4 to add.
+   * @returns {Matrix4} A new matrix containing the addition.
+   */
+  Matrix4.prototype.add = function(m) {
     var r = new Matrix4();
     
     r.m11 = this.m11 + m.m11;
@@ -341,7 +475,12 @@ window.requestAnimFrame = (function(){
     
     return r;
   };
-  
+
+  /**
+   * Adds this Matrix4 to another one. Affects this Matrix4.
+   * @param {Matrix4} m The Matrix4 to add.
+   * @returns {Matrix4} This Matrix4 now contains the addition.
+   */  
   Matrix4.prototype.$add = function(m){
     this.m11 += m.m11;
     this.m12 += m.m12;
@@ -361,7 +500,12 @@ window.requestAnimFrame = (function(){
     this.m44 += m.m44;
     return this;
   };
-  
+
+  /**
+   * Subtracts this Matrix4 to another one. Does not affect this Matrix4.
+   * @param {Matrix4} m The Matrix4 to add.
+   * @returns {Matrix4} A new matrix containing the subtraction.
+   */  
   Matrix4.prototype.sub = function(m){
     var r = new Matrix4();
     
@@ -384,7 +528,12 @@ window.requestAnimFrame = (function(){
     
     return r;
   };
-  
+
+  /**
+   * Subtracts this Matrix4 to another one. Affects this Matrix4.
+   * @param {Matrix4} m The Matrix4 to add.
+   * @returns {Matrix4} This Matrix4 now contains the subtraction.
+   */   
   Matrix4.prototype.$sub = function(m){
     this.m11 -= m.m11;
     this.m12 -= m.m12;
@@ -404,14 +553,26 @@ window.requestAnimFrame = (function(){
     this.m44 -= m.m44;
     return this;
   };
-  
-  Matrix4.prototype.multiplyVec3 = function(vector){
-    var vx = vector.x, vy = vector.y, vz = vector.z;
+
+	/**
+	 * Multiplies a Vector3 by this Matrix4. (r = M*v)
+	 * @returns {Vector3} A new vector with the result of the multiplication.
+	 */
+  Matrix4.prototype.multiplyVec3 = function(vector) {
+    var vx = vector.x, 
+    		vy = vector.y, 
+    		vz = vector.z;
     
-    return new Vector3(this.m11 * vx + this.m12 * vy + this.m13 * vz + this.m14, this.m21 * vx + this.m22 * vy + this.m23 * vz + this.m24, this.m31 * vx + this.m32 * vy + this.m33 * vz + this.m34);
+    return new Vec3(this.m11 * vx + this.m12 * vy + this.m13 * vz + this.m14, 
+    									 this.m21 * vx + this.m22 * vy + this.m23 * vz + this.m24, 
+    									 this.m31 * vx + this.m32 * vy + this.m33 * vz + this.m34);
   };
   
-  Matrix4.prototype.multiplyMat4 = function(m){
+	/**
+	 * Multiplies this Matrix4 by another one. Does not affect this Matrix4.
+	 * @returns {Matrix4} A new matrix with the result of the multiplication.
+	 */  
+  Matrix4.prototype.multiplyMat4 = function(m) {
     var a11 = this.m11, a12 = this.m12, a13 = this.m13, a14 = this.m14, 
         a21 = this.m21, a22 = this.m22, a23 = this.m23, a24 = this.m24, 
         a31 = this.m31, a32 = this.m32, a33 = this.m33, a34 = this.m34, 
@@ -450,7 +611,11 @@ window.requestAnimFrame = (function(){
                        m31, m32, m33, m34, 
                        m41, m42, m43, m44);
   };
-  
+
+	/**
+	 * Multiplies this Matrix4 by another one. Affects this Matrix4.
+	 * @returns {Matrix4} This Matrix4 now stores the result of the multiplication.
+	 */   
   Matrix4.prototype.$multiplyMat4 = function(m){
     var a11 = this.m11, a12 = this.m12, a13 = this.m13, a14 = this.m14, 
         a21 = this.m21, a22 = this.m22, a23 = this.m23, a24 = this.m24, 
@@ -493,6 +658,10 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
+  /**
+   * Transpose this Matrix4. Does not affect this Matrix4.
+   * @returns {Matrix4} A new matrix representing the transpose of this Matrix4.
+   */
   Matrix4.prototype.transpose = function(){
     var m11 = this.m11, m12 = this.m12, m13 = this.m13, m14 = this.m14, 
         m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24, 
@@ -504,7 +673,11 @@ window.requestAnimFrame = (function(){
                        m13, m23, m33, m43, 
                        m14, m24, m34, m44);
   };
-  
+
+  /**
+   * Transpose this Matrix4. Affects this Matrix4.
+   * @returns {Matrix4} This Matrix4 is now transposed.
+   */  
   Matrix4.prototype.$transpose = function(){
     var m11 = this.m11, m12 = this.m12, m13 = this.m13, m14 = this.m14, 
         m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24, 
@@ -518,8 +691,12 @@ window.requestAnimFrame = (function(){
     
     return this;
   };
-  
-  Matrix4.prototype.invert = function(){
+
+  /**
+   * Inverts this Matrix4. Does not affect this Matrix4.
+   * @returns {Matrix4} A new matrix representing the inverted of this MAtrix4.
+   */  
+  Matrix4.prototype.invert = function() {
     var m11 = this.m11, m12 = this.m12, m13 = this.m13, m14 = this.m14, 
         m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24, 
         m31 = this.m31, m32 = this.m32, m33 = this.m33, m34 = this.m34, 
@@ -562,8 +739,12 @@ window.requestAnimFrame = (function(){
                        a31 / det, a32 / det, a33 / det, a34 / det, 
                        a41 / det, a42 / det, a43 / det, a44 / det);
   };
-  
-  Matrix4.prototype.$invert = function(){
+
+  /**
+   * Inverts this Matrix4. Affects this Matrix4.
+   * @returns {Matrix4} This Matrix4 is now inverted.
+   */    
+  Matrix4.prototype.$invert = function() {
     var m11 = this.m11, m12 = this.m12, m13 = this.m13, m14 = this.m14, 
         m21 = this.m21, m22 = this.m22, m23 = this.m23, m24 = this.m24, 
         m31 = this.m31, m32 = this.m32, m33 = this.m33, m34 = this.m34, 
@@ -609,29 +790,63 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
-  Matrix4.prototype.toFloat32Array = function(){
+  /**
+   * Gets a Float32Array representation of this Matrix4.
+   * @returns {Float32Array} A new Float32Array containing the elements of this Matrix.
+   */
+  Matrix4.prototype.toFloat32Array = function() {
     return new Float32Array([this.m11, this.m21, this.m31, this.m41, 
                              this.m12, this.m22, this.m32, this.m42, 
                              this.m13, this.m23, this.m33, this.m43, 
                              this.m14, this.m24, this.m34, this.m44]);
   };
   
+  /**
+   * Creates the identity matrix.
+   * @returns {Matrix4} The identity matrix.
+   */
+  Matrix4.Identity = function() {
+  	return new Matrix4();
+  };
+  
+  /**
+   * Creates a translation matrix.
+   * @param {Number} x The translation on x coordinate.
+   * @param {Number} y The translation on y coordinate.
+   * @param {Number} z The translation on z coordinate.      
+   * @returns {Matrix4} A translation matrix.
+   */
   Matrix4.Translate = function(x, y, z){
     return new Matrix4(1, 0, 0, x, 
                        0, 1, 0, y, 
                        0, 0, 1, z, 
                        0, 0, 0, 1);
   };
-  
+
+  /**
+   * Creates a scale matrix.
+   * @param {Number} x The scale on x coordinate.
+   * @param {Number} y The scale on y coordinate.
+   * @param {Number} z The scale on z coordinate.      
+   * @returns {Matrix4} A scale matrix.
+   */  
   Matrix4.Scale = function(x, y, z){
     return new Matrix4(x, 0, 0, 0, 
                        0, y, 0, 0, 
                        0, 0, z, 0, 
                        0, 0, 0, 1);
   };
-  
-  Matrix4.Rotate = function(angle, x, y, z){
-    var axis = new Vector3(x, y, z).$unit(), 
+
+  /**
+   * Creates a general rotation matrix around an axis.
+   * @param {Number} angle The rotation angle in radians.
+   * @param {Number} x The axis x coordinate.
+   * @param {Number} y The axis y coordinate.
+   * @param {Number} z The axis z coordinate.      
+   * @returns {Matrix4} A general rotation matrix.
+   */   
+  Matrix4.Rotate = function(angle, x, y, z) {
+    var axis = new Vec3(x, y, z).$unit(), 
         ax = axis.x, ay = axis.y, az = axis.z, 
         s = sin(angle), c = cos(angle), t = 1 - c;
     return new Matrix4(t * ax * ax + c, t * ax * ay - az * s, t * ax * az + ay * s, 0, 
@@ -639,8 +854,15 @@ window.requestAnimFrame = (function(){
                        t * ax * az - ay * s, t * ay * az + ax * s, t * az * az + c, 0, 
                        0, 0, 0, 1);
   };
-  
-  Matrix4.RotateXYZ = function(rx, ry, rz){
+
+  /**
+   * Creates a rotation matrix around an x, y and z axis.
+   * @param {Number} rx The rotation angle around x axis.
+   * @param {Number} ry The rotation angle around y axis.
+   * @param {Number} rz The rotation angle around z axis.    
+   * @returns {Matrix4} A XYZ rotation matrix.
+   */  
+  Matrix4.RotateXYZ = function(rx, ry, rz) {
     var sx = sin(rx), cx = cos(rx), 
         sy = sin(ry), cy = cos(ry), 
         sz = sin(rz), cz = cos(rz);
@@ -650,7 +872,14 @@ window.requestAnimFrame = (function(){
                        -sy, sx * cy, cx * cy, 0, 
                        0, 0, 0, 1);
   };
-  
+
+  /**
+   * Creates a lookAt matrix.
+   * @param {Vector3} eye The eye vector.
+   * @param {Vector3} direction The direction vector.
+   * @param {Vector3} up The up vector.    
+   * @returns {Matrix4} A lookAt Matrix4.
+   */   
   Matrix4.LookAt = function(eye, direction, up){
     var x, y, z;
     
@@ -666,7 +895,17 @@ window.requestAnimFrame = (function(){
                        z.x, z.y, z.z, -z.dot(eye), 
                        0, 0, 0, 1);
   };
-  
+
+  /**
+   * Creates a frustum matrix.
+   * @param {Number} left The left clipping plane.
+   * @param {Number} right The right clipping plane.
+   * @param {Number} bottom The bottom clipping plane.
+   * @param {Number} top The top clipping plane.
+   * @param {Number} near The near clipping plane.
+   * @param {Number} far The far clipping plane.  
+   * @returns {Matrix4} A frustum matrix.
+   */  
   Matrix4.Frustum = function(left, right, bottom, top, near, far){
     var x = 2.0 * near / (right - left), 
         y = 2.0 * near / (top - bottom),
@@ -680,7 +919,15 @@ window.requestAnimFrame = (function(){
                        0, 0,  c, d, 
                        0, 0, -1, 0);
   };
-  
+
+  /**
+   * Creates a perspective matrix.
+   * @param {Number} fovy The vertical field of view angle.
+   * @param {Number} aspect The aspect ratio aka the horizontal field of view angle.
+   * @param {Number} near The near clipping plane.
+   * @param {Number} far The far clipping plane.  
+   * @returns {Matrix4} A perspective matrix.
+   */    
   Matrix4.Perspective = function(fovy, aspect, near, far){
     var ymax = near * tan(fovy * pi / 360.0),
         ymin = -ymax,
@@ -689,12 +936,29 @@ window.requestAnimFrame = (function(){
     
     return Matrix4.Frustum(xmin, xmax, ymin, ymax, near, far);
   };
+
+	return Matrix4;
   
-  Matrix4.Ortho = function(){
-    // TODO
-  };
+}());
+
+BenchGL.math.Quaternion = (function() {
   
-  Quaternion = function(a, b, c, d){
+  // Dependencies
+  var sin = Math.sin,
+  		cos = Math.cos,
+  		Mat4 = BenchGL.math.Matrix4,
+  		
+  		// Private properties and methods
+  		Quaternion;
+  /**
+   * Creates a new Quaternion.
+   * @class	Represents a quaternion.
+   * @param {Number} a The scalar part.
+   * @param {Number} b The i component of the vector part.
+   * @param {Number} c The j component of the vector part.
+   * @param {Number} d The k component of the vector part.
+   */
+  Quaternion = function(a, b, c, d) {
     if (typeof a !== "undefined") {
       this.a = a;
       this.b = b;
@@ -702,15 +966,31 @@ window.requestAnimFrame = (function(){
       this.d = d;
     }
     else {
-      this.identity();
+      this.a = 1;
+      this.b = 0;
+      this.c = 0;
+      this.d = 0;
     }
   };
   
-  Quaternion.prototype.identity = function(){
-    return new Quaternion(1, 0, 0, 0);
+  /**
+   * Sets this Quaternion as the identity quaternion.
+   * @returns {Quaternion} This Quaternion is now the identity quaternion.
+   */
+  Quaternion.prototype.identity = function() {
+    this.a = 1;
+    this.b = 0;
+    this.c = 0;
+    this.d = 0;
+    return this;
   };
   
-  Quaternion.prototype.multiply = function(quat){
+  /**
+   * Multiplies this Quaternion with another one. Does not affect this Quaternion.
+   * @param {Quaternion} quat The Quaternion to multiply with.
+   * @returns {Quaternion} A new quaternion containing the multiplication's result.
+   */
+  Quaternion.prototype.multiply = function(quat) {
     var a1 = this.m, 
         b1 = this.b, 
         c1 = this.c, 
@@ -727,8 +1007,13 @@ window.requestAnimFrame = (function(){
     
     return new Quaternion(a, b, c, d);
   };
-  
-  Quaternion.prototype.$multiply = function(quat){
+
+  /**
+   * Multiplies this Quaternion with another one. Affects this Quaternion.
+   * @param {Quaternion} quat The Quaternion to multiply with.
+   * @returns {Quaternion} This Quaternion now stores the result of the multiplication.
+   */  
+  Quaternion.prototype.$multiply = function(quat) {
     var a1 = this.m, 
         b1 = this.b, 
         c1 = this.c, 
@@ -751,17 +1036,25 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
-  Quaternion.prototype.toMatrix4 = function(){
+  /**
+   * Gets a Matrix4 representing this Quaternion.
+   * @returns {Matrix4} A matrix representing this Quaternion.
+   */
+  Quaternion.prototype.toMatrix4 = function() {
     var a = this.m, b = this.b, c = this.c, d = this.d, 
         b2 = b * b, c2 = c * c, d2 = d * d, 
         bc = b * c, bd = b * d, cd = c * d, ab = a * b, ac = a * c, ad = a * d;
     
-    return new Matrix4(1 - 2 * c2 - 2 * d2, 2 * bc - 2 * ad, 2 * ac + 2 * bd, 0, 
+    return new Mat4(1 - 2 * c2 - 2 * d2, 2 * bc - 2 * ad, 2 * ac + 2 * bd, 0, 
                        2 * bc + 2 * ad, 1 - 2 * b2 - 2 * d2, 2 * cd - 2 * ab, 0, 
                        2 * bd - 2 * ac, 2 * ab + 2 * cd, 1 - 2 * b2 - 2 * c2, 0, 
                        0, 0, 0, 1);
   };
   
+  /**
+   * Creates a new quaternion from euler angles.
+   * @returns {Quaternion} A new quaternion from the euler angles.
+   */
   Quaternion.FromEulerAngles = function(pitch, roll, yaw){
     var p = pitch * 0.5, y = yaw * 0.5, r = roll * 0.5, 
         cp = cos(p), sp = sin(p), 
@@ -776,52 +1069,27 @@ window.requestAnimFrame = (function(){
     return new Quaternion(a, b, c, d);
   };
   
-  BenchGL.Vector3 = Vector3;
-  BenchGL.Matrix4 = Matrix4;
-  BenchGL.Quaternion = Quaternion;
+  return Quaternion;
   
 }());
 
-// webgl.js
-
-(function() {
-
-	var WebGL = function(canvas, options) {
-		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
-				gl = canvas.getContext('experimental-webgl', options);
-		
-		if (!gl) {
-			gl = canvas.getContext('webgl', options);
-		}
-		
-		this.context = gl;
-		this.canvas = canvas;
-	};
-	
-	WebGL.prototype.getContext = function() {
-		return this.context;
-	};
-	
-	WebGL.prototype.getCanvas = function() {
-		return this.canvas;
-	};
-	
-	BenchGL.WebGL = WebGL;
-
-}());
 // space.js
 
-(function(){
+BenchGL.namespace('BenchGL.math');
 
-	var Mat4 = BenchGL.Matrix4,
+BenchGL.math.MatrixStack = (function() {
+
+	// Dependencies
+	var Mat4 = BenchGL.math.Matrix4,
 			pi = Math.PI,
-      MatrixStack,
-      TransformStack;
+			
+			// Private properties and methods
+      MatrixStack;
 	
 	MatrixStack = function() {
 		this.stack = [];
 		this.current = 0;
-		this.stack.push(new Mat4());
+		this.stack.push(Mat4.Identity());
 	};
 	
 	MatrixStack.prototype.top = function() {
@@ -848,7 +1116,7 @@ window.requestAnimFrame = (function(){
 	};
 	
 	MatrixStack.prototype.loadIdentity = function() {
-		this.stack[this.current] = new Mat4();
+		this.stack[this.current] = Mat4.Identity();
 		return this;
 	};
 	
@@ -863,7 +1131,8 @@ window.requestAnimFrame = (function(){
 	};
 	
 	MatrixStack.prototype.rotateXYZ = function(rx, ry, rz) {
-		this.multiply(Mat4.RotateXYZ(rx, ry, rz));
+		var conversion = pi / 180;
+		this.multiply(Mat4.RotateXYZ(rx * conversion, ry * conversion, rz * conversion));
 		return this;
 	};
 	
@@ -891,6 +1160,15 @@ window.requestAnimFrame = (function(){
 		this.multiply(Mat4.Frustum(left, rigth, bottom, top, near, far));
 		return this;
 	};
+	
+	return MatrixStack;
+	
+}());	
+
+BenchGL.math.TransformStack = (function() {
+
+	// Private properties and methods
+	var TransformStack;
 	
 	TransformStack = function() {
 		this.modelStack = new MatrixStack();
@@ -1032,22 +1310,21 @@ window.requestAnimFrame = (function(){
 		return this;
 	};
 	
-	BenchGL.MatrixStack = MatrixStack;
-	BenchGL.TransformStack = TransformStack;
+	return TransformStack;
 	
 }());
 
-
-
 // skin.js
 
-(function(){
+BenchGL.namespace('BenchGL.skin');
 
-  var Vec3 = BenchGL.Vector3, 
-      Color, 
-      Material, 
-      Light, 
-      Texture;
+BenchGL.skin.Color = (function() {
+
+	// Dependencies
+  var Vec3 = BenchGL.math.Vector3, 
+  
+  		// Private properties and methods
+      Color;
   
   Color = function(r, g, b, a){
     this.r = r;
@@ -1063,6 +1340,18 @@ window.requestAnimFrame = (function(){
   Color.prototype.toRGBAArray = function(){
     return [this.r, this.g, this.b, this.a];
   };
+  
+  return Color;
+  
+}());
+
+BenchGL.skin.Material = (function() {
+
+	// Dependencies
+	var Color = BenchGL.skin.Color,
+			
+			// Private properties and methods
+			Material;
   
   Material = function(options){
     options = $.mix({
@@ -1120,6 +1409,19 @@ window.requestAnimFrame = (function(){
   Material.prototype.setShininess = function(shininess){
     this.shininess = shininess;
   };
+  
+  return Material;
+  
+}());
+
+BenchGL.skin.Light = (function() {
+  
+  var Vec3 = BenchGL.math.Vector3,
+  		Color = BenchGL.skin.Color,
+  		Material = BenchGL.skin.Material,
+  
+  		// Private properties and methods
+  		Light;
   
   Light = function(options){
     options = $.mix({
@@ -1219,6 +1521,15 @@ window.requestAnimFrame = (function(){
     this.active = active;
   };
   
+  return Light;
+  
+}());
+
+BenchGL.skin.Texture = (function() {
+  
+  // Private properties and methods
+  var Texture;
+  
   Texture = function(gl, options){
     options = $.mix({
       level: 0,
@@ -1271,22 +1582,36 @@ window.requestAnimFrame = (function(){
     return this;
   };
   
-  BenchGL.Color = Color;
-  BenchGL.Light = Light;
-  BenchGL.Material = Material;
-  BenchGL.Texture = Texture;
+  return Texture;
   
 }());
 
 // io.js
+// Offers structures and methods to perform asynchronous IO operations.
 
-(function(){
+BenchGL.namespace('BenchGL.io');
+
+BenchGL.io.XHRequest = (function() {
   
-  var XHRequest, TextureRequest;
-
-  XHRequest = function(options){
+  var XHRequest;
+	
+	/**
+	 * Creates a new XHRequest.
+	 * @class Wraps an XMLHttpRequest object to load resources asynchronously. 
+	 * @param {Object} [options] The request's options.
+	 * @param {String} [options.url] The url for the request.
+	 * @param {String} [options.method] The method for the request.
+	 * @param {Boolean} [options.async] Is the request asynchronous?
+	 * @param {Boolean} [options.binary] Is the response in binary format?
+	 * @param {Function} [options.onProgress] Callback to call during request processing.
+	 * @param {Function} [options.onLoad] Callback to call after request loading.
+	 * @param {Function} [options.onError] Callback to call in case of error.
+	 * @param {Function} [options.onAbort] Callback to call if the request is aborted.
+	 * @param {Function} [options.onSuccess] Callback to call in case of success.         
+	 */
+  XHRequest = function(options) {
     options = $.mix({
-      url: 'www.google.com',
+      url: 'www.webrendering.sourceforge.net',
       method: 'GET',
       async: true,
       binary: false,
@@ -1302,27 +1627,29 @@ window.requestAnimFrame = (function(){
     this.options = options;
     this.request = new XMLHttpRequest();
     
-    this.request.addEventListener("progress", function(e){
-      myself.onProgress(e);
-    }, false);
-    this.request.addEventListener("load", function(e){
-      myself.onLoad(e);
-    }, false);
-    this.request.addEventListener("error", function(e){
-      myself.onError(e);
-    }, false);
-    this.request.addEventListener("abort", function(e){
-      myself.onAbort(e);
-    }, false);
+    this.request.addEventListener('progress', function(e) { myself.onProgress(e); }, false);
+    this.request.addEventListener('load', function(e) { myself.onLoad(e); }, false);
+    this.request.addEventListener('error', function(e) { myself.onError(e); }, false);
+    this.request.addEventListener('abort', function(e) { myself.onAbort(e); }, false);
   };
   
-  XHRequest.prototype.send = function(){
-    var options = this.options, url = this.options.url, method = this.options.method, async = this.options.async, binary = this.options.binary, request = this.request;
+  /**
+   * Executes the request wrapped in this XHRequest.
+   */
+  XHRequest.prototype.send = function() {
+    var options = this.options, 
+    		url = this.options.url, 
+    		method = this.options.method, 
+    		async = this.options.async, 
+    		binary = this.options.binary, 
+    		request = this.request;
     
+    // Opens the request
     request.open(method, url, async);
     
+    // Handle async requests
     if (async) {
-      request.onreadystatechange = function(e){
+      request.onreadystatechange = function(e) {
         if (request.readyState === 4) {
           if (request.status === 200) {
             options.onSuccess(request.responseText);
@@ -1334,6 +1661,7 @@ window.requestAnimFrame = (function(){
       };
     }
     
+    // Handles binary requests
     if (binary) {
       request.sendAsBinary(null);
     }
@@ -1341,6 +1669,7 @@ window.requestAnimFrame = (function(){
       request.send(null);
     }
     
+    // If not async wait for the response
     if (!async) {
       if (request.status === 200) {
         options.onSuccess(request.responseText);
@@ -1351,490 +1680,451 @@ window.requestAnimFrame = (function(){
     }
   };
   
-  XHRequest.prototype.onProgress = function(e){
+  /**
+   * Handles the 'onprogress' event of this XHRequest.
+   */
+  XHRequest.prototype.onProgress = function(e) {
     this.options.onProgress(e);
   };
-  
-  XHRequest.prototype.onError = function(e){
+
+  /**
+   * Handles the 'onerror' event of this XHRequest.
+   */  
+  XHRequest.prototype.onError = function(e) {
     this.options.onError(e);
   };
-  
-  XHRequest.prototype.onAbort = function(e){
+
+  /**
+   * Handles the 'onabort' event of this XHRequest.
+   */  
+  XHRequest.prototype.onAbort = function(e) {
     this.options.onAbort(e);
   };
   
-  XHRequest.prototype.onLoad = function(e){
+  /**
+   * Handles the 'onload' event of this XHRequest.
+   */  
+  XHRequest.prototype.onLoad = function(e) {
     this.options.onLoad(e);
   };
   
-  TextureRequest = function(renderer, options){
-    this.textures = options;
-    this.renderer = renderer;
+	return XHRequest;
+	
+}());
+
+BenchGL.io.TextureRequest = (function() {
+
+	var TextureRequest;
+  
+  /**
+   * Creates a new TextureRequest.
+   * @class Represents multiple asynchronous requests for images to build up Texture objects.
+   * @param {Object} options Information about the requested textures.
+   */
+  TextureRequest = function(options) {
+    this.texturesReqs = options;
   };
   
-  TextureRequest.prototype.send = function(){
-    var textures = this.textures, 
-        renderer = this.renderer, 
-        keys = Object.keys(this.textures);
+  /**
+   * Executes all the request of this TextureRequest, 
+   * using a callback function to handle each one of them on completion.
+   * @param {Function} callback A callback function to handle results on completion.
+   */
+  TextureRequest.prototype.send = function(callback) {
+    var texturesReqs = this.texturesReqs,
+        keys = Object.keys(texturesReqs);
     
-    keys.map(function(key){
-      var textureOpt = textures[key];
+    // Each key of texturesReqs is a request
+    keys.map(function(key) {
+      var textureOpt = texturesReqs[key];
       textureOpt.image = new Image();
-      textureOpt.image.onload = function(){
-        renderer.addTexture(key, textureOpt);
+      textureOpt.image.onload = function() {
+      	if (callback) {
+        	callback(key, textureOpt);
+        }
       };
       textureOpt.image.src = textureOpt.src;
     });
   };
   
-  BenchGL.XHRequest = XHRequest;
-  BenchGL.TextureRequest = TextureRequest;
+  return TextureRequest;
   
 }());
 
-// mesh.js
+// canvas.js
+// Gives a Canvas class to wrap a <canvas> HTML5 element and handle its events.
 
-(function(){
-  
-  var MatStack = BenchGL.MatrixStack,
-      Mat = BenchGL.Material,
-      XHR = BenchGL.XHRequest,
-      sin = Math.sin,
-      cos = Math.cos,
-      pi = Math.PI,
-      id = 0,
-      Model;
-  
-  Model = function(options) {
+BenchGL.namespace('BenchGL.ui');
+
+BenchGL.ui.Canvas = (function() {
+
+	var Canvas;
+	
+	/**
+	 * Creates a new Canvas.
+	 * @class Represents a wrap object for a canvas HTML5 element.
+	 * @param {HTMLCanvasElement} canvas The canvas element.
+	 * @options {Object} options Contains callback functions to handle events occurring in the browser.
+	 */
+  Canvas = function(canvas, options) {
     options = $.mix({
-      drawType : gl.TRIANGLES,
-      useColors : true,
-      dynamic : true,
-      colors : [1, 1, 1, 1]
+      onKeyDown: $.empty,
+      onKeyUp: $.empty,
+      onMouseDown: $.empty,
+      onMouseUp: $.empty,
+      onMouseMove: $.empty,
+      onMouseWheel: $.empty,
+      onMouseOut: $.empty
     }, options || {});
     
-    this.id = options.id || id++;
-    this.drawType = options.drawType;
-    this.useColors = options.useColors;
-    this.dynamic = options.dynamic;
-    this.vertices = options.vertices;
-    this.normals = options.normals;
-    this.texcoords = options.texcoords;
-    this.colors = options.colors;
-    this.indices = options.indices;
+    //canvas.contentEditable = true;
     
-    this.modelStack = new MatStack();
-    this.material = new Mat();
-    this.uniforms = {};
-    this.textureNames = [];
-        
-    if (this.useColors) {
-      this.normalizeColors();
-    }
-  };
-  
-  Model.prototype.matrix = function() {
-    return this.modelStack.top();
-  };
-  
-  Model.prototype.textures = function() {
-    return this.textureNames;
-  };
-  
-  Model.prototype.loadIdentity = function() {
-    this.modelStack.loadIdentity();
-  };
-  
-  Model.prototype.translate = function(x, y, z) {
-    this.modelStack.translate(x, y, z);
-  };
-  
-  Model.prototype.scale = function(x, y, z) {
-    this.modelStack.scale(x, y, z);
-  };
-  
-  Model.prototype.rotate = function(angle, x, y, z) {
-    this.modelStack.rotate(angle, x, y, z);
-  };
-  
-  Model.prototype.rotateXYZ = function(rx, ry, rz) {
-    this.modelStack.rotateXYZ(rx, ry, rz);
-  };  
-  
-  Model.prototype.normalizeColors = function() {
-    if (!this.vertices) return;
+    this.canvas = canvas;
+    this.events = options;
+    this.keysDown = {};
+    this.mouseDown = {};
+    this.mousePosition = {
+      x: 0.0,
+      y: 0.0
+    };
+    this.mouseLastPosition = {
+      x: 0.0,
+      y: 0.0
+    };
+    this.mouseDelta = {
+      x: 0.0,
+      y: 0.0
+    };
     
-    var colors = this.colors,
-        totalLength = this.vertices.length * 4 / 3,
-        count = totalLength / colors.length,
-        result = new Float32Array(totalLength);
-    
-    if (colors.length < totalLength) {
-      while (count--) {
-        result.set(colors, count * colors.length);
-      }
-      this.colors = result;
-    }    
+    var myself = this;
+    document.addEventListener('keydown', function(e) { myself.onKeyDown(e); }, false);
+    document.addEventListener('keyup', function(e) { myself.onKeyUp(e); }, false);
+    canvas.addEventListener('mousedown', function(e) { myself.onMouseDown(e); }, false);
+    canvas.addEventListener('mouseup', function(e) { myself.onMouseUp(e); }, false);
+    canvas.addEventListener('mousemove', function(e) { myself.onMouseMove(e); }, false);
+    canvas.addEventListener('mousewheel', function(e) { myself.onMouseWheel(e); }, false);
+    canvas.addEventListener('DOMMouseScroll', function(e) { myself.onMouseWheel(e); }, false);
   };
   
-  Model.prototype.setTextures = function() {
-    var textureNames = this.textureNames,
-        i, l;
-    for (i = 0, l = arguments.length; i < l; i ++) {
-      textureNames.push(arguments[i]);
-    }
+  /**
+   * Handles the 'keydown' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */
+  Canvas.prototype.onKeyDown = function(e){
+    this.keysDown[e.keyCode] = true;
+    this.events.onKeyDown(e);
   };
 
-  Model.prototype.setMaterialAmbient = function(r, g, b) {
-    this.material.setAmbient(r, g, b);
-  };
-    
-  Model.prototype.setMaterialDiffuse = function(r, g, b) {
-    this.material.setDiffuse(r, g, b);    
-  };
-  
-  Model.prototype.setMaterialSpecular = function(r, g, b) {
-    this.material.setSpecular(r, g, b);    
-  };
-  
-  Model.prototype.setMaterialEmissive = function(r, g, b) {
-    this.material.setEmissive(r, g, b);    
+  /**
+   * Handles the 'keyup' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */  
+  Canvas.prototype.onKeyUp = function(e){
+    this.keysDown[e.keyCode] = false;
+    this.events.onKeyUp(e);
   };
 
-  Model.prototype.setMaterialShininess = function(shininess) {
-    this.material.setShininess(shininess);
-  };   
-  
-  Model.prototype.setUniform = function(name, value) {
-    this.uniforms[name] = value;
-  };
-  
-  Model.prototype.bindVertices = function(program, update) {
-    if (!this.vertices) return;
+  /**
+   * Handles the 'mousedown' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */   
+  Canvas.prototype.onMouseDown = function(e){
+    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
     
-    if (update || this.dynamic) {
-      program.bindAttribute(this.id + '-vertices', {
-        name: 'a_position',
-        data: new Float32Array(this.vertices),
-        size: 3
-      });
-    } else {
-      program.bindAttribute(this.id + '-vertices');
-    }
-  };
-  
-  Model.prototype.bindNormals = function(program, update) {
-    if (!this.normals) return;
+    this.mousePosition.x = x;
+    this.mousePosition.y = y;
+    this.mouseLastPosition.x = x;
+    this.mouseLastPosition.y = y;
+    this.mouseDelta.x = 0.0;
+    this.mouseDelta.y = 0.0;
+    this.mouseDown[e.button] = true;
     
-    if (update || this.dynamic) {
-      program.bindAttribute(this.id + '-normals', {
-        name : 'a_normal',
-        data : new Float32Array(this.normals),
-        size : 3
-      });          
-    } else {
-      program.bindAttribute(this.id + '-normals');
-    }
-  };
-  
-  Model.prototype.bindTexcoords = function(program, update) {
-    if (!this.texcoords) return;
-    
-    if (update || this.dynamic) {
-      program.bindAttribute(this.id + '-texcoords', {
-        name: 'a_texcoord',
-        data: new Float32Array(this.texcoords),
-        size: 2
-      });
-    } else {
-      program.bindAttribute(this.id + '-texcoords');
-    }
+    this.events.onMouseDown(e, x, y);
   };
 
-  Model.prototype.bindColors = function(program, update) {
-    if (!this.colors || !this.useColors) return;
+  /**
+   * Handles the 'mouseup' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */   
+  Canvas.prototype.onMouseUp = function(e){
+    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
     
-    if (update || this.dynamic) {
-      program.bindAttribute(this.id + '-colors', {
-        name : 'a_color',
-        data: new Float32Array(this.colors),
-        size: 4
-      });
-    } else {
-      program.bindAttribute(this.id + '-colors');
+    this.mousePosition.x = x;
+    this.mousePosition.y = y;
+    this.mouseLastPosition.x = x;
+    this.mouseLastPosition.y = y;
+    this.mouseDelta.x = 0.0;
+    this.mouseDelta.y = 0.0;
+    this.mouseDown[e.button] = false;
+    
+    this.events.onMouseUp(e, x, y);
+  };
+
+  /**
+   * Handles the 'mousemove' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */   
+  Canvas.prototype.onMouseMove = function(e){
+    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
+    
+    this.mouseLastPosition.x = this.mousePosition.x;
+    this.mouseLastPosition.y = this.mousePosition.y;
+    this.mousePosition.x = x;
+    this.mousePosition.y = y;
+    this.mouseDelta.x = this.mousePosition.x - this.mouseLastPosition.x;
+    this.mouseDelta.y = this.mousePosition.y - this.mouseLastPosition.y;
+    
+    this.events.onMouseMove(e, this.mouseDelta.x, this.mouseDelta.y);
+  };
+
+  /**
+   * Handles the 'mousewheel' event, if supplied.
+   * @param {Event} e Information about the event occured.
+   */     
+  Canvas.prototype.onMouseWheel = function(e) {
+    var x = e.clientX, y = this.canvas.height - e.clientY - 1, delta = 0;
+    
+    this.mouseLastPosition.x = this.mousePosition.x;
+    this.mouseLastPosition.y = this.mousePosition.y;
+    this.mousePosition.x = x;
+    this.mousePosition.y = y;
+    this.mouseDelta.x = 0;
+    this.mouseDelta.y = 0;
+    
+    if (!e) {
+      e = window.event;
     }
-  };
-   
-  Model.prototype.bindIndices = function(program, update) {
-    if (!this.indices) return;
-    
-    program.bindAttribute('a_index', {
-      attributeType : gl.ELEMENT_ARRAY_BUFFER,
-      data : new Uint16Array(this.indices),
-    });     
-  };
-  
-  Model.prototype.bindUniforms = function(program) {
-    program.bindUniforms(this.uniforms);
-  };
-  
-  Model.prototype.bindMaterial = function(program) {
-    var material = this.material,
-        uniforms = {};
-    
-    uniforms.u_matAmbient = material.ambient.toRGBAArray();
-    uniforms.u_matDiffuse = material.diffuse.toRGBAArray();
-    uniforms.u_matSpecular = material.specular.toRGBAArray();
-    uniforms.u_matEmissive = material.emissive.toRGBAArray();
-    uniforms.u_matShininess = material.shininess;
-    
-    program.bindUniforms(uniforms);
-  };
-  
-  Model.prototype.bindTextures = function(program, textures) {
-    var textureNames = this.textureNames,
-        i, l, texture;
-    for (i = 0, l = textureNames.length; i < l; i++) {
-      texture = textures[textureNames[i]];
-      if (texture) {
-        program.bindUniform('u_useTexture' + i, true);
-        program.bindSamplers('tex' + i, i);
-        texture.bind(i);
-      }
-    }    
-  };
-  
-  Model.prototype.draw = function() {
-    if (this.indices) {
-      // Draw the model with as an indexed vertex array
-      gl.drawElements(this.drawType, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    } else if (this.vertices) {
-      // Draw the model with as a simple flat vertex array
-      gl.drawArrays(this.drawType, 0, this.vertices.length / 3);
-      
-      // Reset transformation matrix
-      this.modelStack.loadIdentity();
-    }
-  };
-  
-  Model.factory = function(type, options){
-    type = $.capitalize(type);
-    
-    if (typeof Model[type] !== "function") {
-      throw {
-        name: "UnknownModelType",
-        message: "Method '" + type + "' does not exist."
-      };
-    }
-    
-    return Model[type](options);
-  };
-  
-  Model.Triangle = function(options){
-    return new Model($.mix({
-      vertices: [0, 1, 0, -1, -1, 0, 1, -1, 0],
-      normals: [0, 0, 1, 0, 0, 1, 0, 0, 1],
-      texcoords: [1, 1, 0, 0, 1, 0],
-      colors: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    }, options || {}));
-  };
-  
-  Model.Rectangle = function(options){
-    return new Model($.mix({
-      vertices: [-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0],
-      normals: [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-      texcoords: [0, 0, 1, 0, 0, 1, 1, 1],
-      colors: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      indices: [0, 1, 2, 3, 1, 2]
-    }, options || {}));
-  };
-  
-  Model.Circle = function(options){
-    var n = (options) ? options.slices || 16 : 16, 
-        r = (options) ? options.radius || 1 : 1, 
-        vertexCoords = [0, 0, 0], 
-        normalCoords = [0, 0, 1], 
-        textureCoords = [0.5, 0.5],
-        i, angle, x, y, u, v;
-    
-    for (i = 0; i <= n; i++) {
-      angle = pi * i / n;
-      x = r * cos(angle);
-      y = r * sin(angle);
-      u = (cos(angle) + 1) * 0.5;
-      v = (sin(angle) + 1) * 0.5;
-      
-      vertexCoords.push(x);
-      vertexCoords.push(y);
-      vertexCoords.push(0);
-      normalCoords.push(0);
-      normalCoords.push(0);
-      normalCoords.push(1);
-      textureCoords.push(u);
-      textureCoords.push(v);
-    }
-    
-    return new Model($.mix({
-      drawType : gl.TRIANGLE_FAN,
-      vertices: vertexCoords,
-      normals: normalCoords,
-      texcoords: textureCoords,
-      colors: [1, 1, 1, 1]
-    }, options || {}));
-  };
-  
-  Model.Cube = function(options){
-    return new Model($.mix({
-      vertices: [
-      -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1,
-      -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1,
-      -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1,
-      -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1,
-      1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1,
-      -1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1],
-      normals: [
-      0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-      0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
-      0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-      0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
-      1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-      -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0],
-      texcoords: [
-      0, 0, 1, 0, 1, 1, 0, 1,
-      1, 0, 1, 1, 0, 1, 0, 0,
-      0, 1, 0, 0, 1, 0, 1, 1,
-      1, 1, 0, 1, 0, 0, 1, 0,
-      1, 0, 1, 1, 0, 1, 0, 0,
-      0, 0, 1, 0, 1, 1, 0, 1 ],
-      colors: [
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]
-    }, options || {}));
-  };
-  
-  Model.Pyramid = function(options){
-    return new Model($.mix({
-      vertices: [
-      0, 1, 0, -1, -1, 1, 1, -1, 1,
-      0, 1, 0, 1, -1, -1, -1, -1, -1,
-      0, 1, 0, 1, -1, 1, 1, -1, -1,
-      0, 1, 0, -1, -1, -1, -1, -1, 1],
-      normals: [
-      0, 1, 0, -1, -1, 1, 1, -1, 1,
-      0, 1, 0, 1, -1, -1, -1, -1, -1,
-      0, 1, 0, 1, -1, 1, 1, -1, -1,
-      0, 1, 0, -1, -1, -1, -1, -1, 1],
-      texcoords: [
-      1, 1, 0, 0, 1, 0,
-      1, 1, 0, 0, 1, 0,
-      1, 1, 0, 0, 1, 0,
-      1, 1, 0, 0, 1, 0],
-      colors: [
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    }, options || {}));
-  };
-  
-  Model.Sphere = function(options){
-    var n = (options) ? options.slices || 32 : 32, 
-        m = (options) ? options.stacks || 32 : 32, 
-        r = (options) ? options.radius || 1.0 : 1.0, 
-        vertexCoords = [], 
-        normalCoords = [],
-        textureCoords = [], 
-        indices = [],
-        pi2 = pi * 2,
-        i, j, theta, phi, sint, cost, sinp, cosp,
-        x, y, z, u, v, first, second;
-    
-    for (i = 0; i <= n; i++) {
-      theta = pi * i / n;
-      sint = sin(theta);
-      cost = cos(theta);
-      for (j = 0; j <= m; j++) {
-        phi = pi2 * j / m;
-        sinp = sin(phi);
-        cosp = cos(phi);
-        x = r * sint * cosp;
-        y = r * cost;
-        z = r * sint * sinp;
-        u = 1 - j / m;
-        v = 1 - i / n;
-        
-        vertexCoords.push(x);
-        vertexCoords.push(y);
-        vertexCoords.push(z);
-        normalCoords.push(x);
-        normalCoords.push(y);
-        normalCoords.push(z);
-        textureCoords.push(u);
-        textureCoords.push(v);
+    if (e.wheelDelta) {
+      delta = e.wheelDelta / 120;
+      if (window.opera) {
+        delta = -delta;
       }
     }
-    
-    for (i = 0; i < n; i++) {
-      for (j = 0; j < m; j++) {
-        first = i * (m + 1) + j;
-        second = first + m + 1;
-        
-        indices.push(first);
-        indices.push(second);
-        indices.push(first + 1);
-        indices.push(second);
-        indices.push(second + 1);
-        indices.push(first + 1);
-      }
+    else if (e.detail){
+      delta = -e.detail / 3;
     }
     
-    return new Model($.mix({
-      vertices: vertexCoords,
-      normals: normalCoords,
-      texcoords: textureCoords,
-      colors: [1.0, 1.0, 1.0, 1.0],
-      indices: indices
-    }, options || {}));
+    if (delta) {
+      this.events.onMouseWheel(e, delta);
+    }
   };
   
-  Model.Json = function(options){
-    var modelOptions = options.model,
-        model;
-    
-    new XHR({
-      url: options.url,
-      async: false,
-      onSuccess: function(response){
-        var json = JSON.parse(response), 
-            options = $.mix({
-              vertices: json.vertexPositions,
-              normals: json.vertexNormals,
-              texcoords: json.vertexTextureCoords,
-              indices: json.indices
-            }, modelOptions || {});
-        
-        model = new Model(options);
-      }
-    }).send();
-    
-    return model;
-  };
-  
-  BenchGL.Model = Model;
+  return Canvas;
   
 }());
 
+BenchGL.ui.Camera = (function() {
+	
+	// Dependencies
+	var Vec3 = BenchGL.math.Vector3,
+			MatStack = BenchGL.math.MatrixStack,
+			
+			// Private properties and methods
+      Camera;
+	
+	/**
+	 * Creates a new Camera.
+	 * @class Represents a camera with a point of view over a 3D scene.
+	 * @param {Object} options The options to set up this Camera.
+	 * @param {Number} options.fovy The field of view vertical angle.
+	 * @param {Number} options.aspect The aspect ratio.
+	 * @param {Number} options.near The near clipping plane.
+	 * @param {Number} options.far The far clipping plane.
+	 * @param {Number[]} [options.eye] The position vector of this Camera.
+	 * @param {Number[]} [options.direction] The viewing direction vector of this Camera.
+	 * @param {Number[]} [options.up] The up vector of this Camera. 
+	 */
+	Camera = function(options) {
+		var e = options.eye,
+				d = options.direction,
+				u = options.up,
+				fovy = options.fovy,
+				aspect = options.aspect,
+				near = options.near,
+				far = options.far;
+		
+		this.fovy = fovy;
+		this.aspect = aspect;
+		this.near = near;
+		this.far = far;
+		this.eye = (e && new Vec3(e.x, e.y, e.z)) || new Vec3(0, 0, 0);
+		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3(0, 0, -1);
+		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
+			
+    this.projStack = new MatStack();
+    this.viewStack = new MatStack();
+    this.modelStack = new MatStack();
+    
+    this.viewStack.lookAt(this.eye, this.direction, this.up);
+		this.projStack.perspective(fovy, aspect, near, far);
+	};
+  
+  /**
+   * Gets this Camera's projection stack.
+   * @returns {MatrixStack} A projection matrix stack.
+   */
+  Camera.prototype.proj = function() {
+    return this.projstack;
+  };
+  
+	/**
+	 * Gets this Camera's view stack.
+	 * @returns {MatrixStack} A view matrix stack
+	 */
+  Camera.prototype.view = function() {
+    return this.viewStack;
+  };
+  
+	/**
+	 * Gets this Camera's model stack.
+	 * @returns {MatrixStack} A model matrix stack
+	 */  
+  Camera.prototype.model = function() {
+    return this.modelStack;
+  };
+
+  /**
+   * Gets the projection matrix of this Camera.
+   * @returns {Matrix4} A matrix representing a projective transformation.
+   */  
+  Camera.prototype.projMatrix = function() {
+    return this.projStack.top();
+  };
+
+  /**
+   * Gets the view matrix of this Camera.
+   * @returns {Matrix4} A matrix representing a transformation from world to camera space.
+   */  
+  Camera.prototype.viewMatrix = function() {
+    return this.viewStack.top();
+  };
+  
+  /**
+   * Gets the model matrix of this Camera.
+   * @returns {Matrix4} A matrix representing a common transformation to apply to the scene.
+   */
+  Camera.prototype.modelMatrix = function() {
+    return this.modelStack.top();
+  };
+
+	/**
+	 * Gets the modelView matrix of this Camera.
+	 * @returns {Matrix4} A matrix representing the full tranformation from object to camera space.
+	 */
+  Camera.prototype.modelViewMatrix = function() {
+    return this.viewStack.top().multiplyMat4(this.modelStack.top());
+  };
+  
+  /**
+   * Resets this Camera, loading identity matrices on top of the view and model stacks.
+   */
+  Camera.prototype.reset = function() {
+    this.viewStack.loadIdentity();
+    this.modelStack.loadIdentity();
+  };
+	
+	/**
+	 * Updates this Camera's local reference frame.
+	 */
+	Camera.prototype.update = function() {
+		this.viewStack.lookAt(this.eye, this.direction, this.up);
+	};
+	
+	return Camera;
+	
+}());
+
+BenchGL.ui.Logger = (function() {
+  
+  // Private properties and methods
+  var instance, 
+  		Logger;
+
+  Logger = function Logger() {
+    if (instance) {
+      return instance;
+    }
+    instance = this;
+  };
+  
+  Logger.prototype.log = function(message) {
+    console.log(message);
+  };
+
+	return Logger;
+	
+}());
+
+BenchGL.ui.Timer = (function() {
+
+	// Private properties and methods
+	var nowTime = 0,
+			lastTime = 0,
+			elapsedTime = 0,
+      Timer;
+
+	Timer = function() {
+		this.fps = 0;
+		this.lastDelta = 0;
+		this.maxSamples = 60;
+		this.samples = [];
+	};
+	
+	Timer.prototype.start = function() {
+		nowTime = new Date().getTime();
+		lastTime = nowTime;
+		elapsedTime = 0;
+		return this;
+	};
+	
+	Timer.prototype.stop = function() {
+		var now = new Date().getTime(),
+        sample, i, l, fps = 0;
+		
+    lastTime = nowTime;
+		nowTime = now;
+		elapsedTime = nowTime - lastTime;
+		sample = 1000.0 / elapsedTime;
+				
+		if (this.samples.unshift(sample) > this.maxSamples) {
+      this.samples.pop();     
+    }
+		
+		for (i = 0, l = this.samples.length; i < l; i++) {
+			fps += this.samples[i];
+		}
+		fps /= this.samples.length;
+		
+		this.fps = Math.round(fps);
+		this.lastDelta = elapsedTime;
+		return this;
+	};
+	
+	Timer.prototype.clear = function() {
+		nowTime = 0;
+		lastTime = 0;
+		elapsedTime = 0;
+		
+		this.fps = 0;
+		this.lastDelta = 0;
+		this.samples = [];
+		return this;
+	};
+	
+	return Timer;
+	
+}());
 
 // worker.js
 
-(function(){
+BenchGL.namespace('BenchGL.extra');
 
-  var WorkerPool = function(filename, n){
+BenchGL.extra.WorkerPool = (function() {
+	
+	// Private properties and methods
+	var WorkerPool;
+	
+  WorkerPool = function(filename, n){
     this.workers = [];
     this.configs = [];
     while (n--) {
@@ -1887,251 +2177,20 @@ window.requestAnimFrame = (function(){
     this.configs = [];
   };
   
-  BenchGL.WorkerPool = WorkerPool;
+  return WorkerPool;
   
-}());
-
-// canvas.js
-
-(function(){
-
-  var Canvas = function(canvas, options){
-    options = $.mix({
-      onKeyDown: $.empty,
-      onKeyUp: $.empty,
-      onMouseDown: $.empty,
-      onMouseUp: $.empty,
-      onMouseMove: $.empty,
-      onMouseWheel: $.empty,
-      onMouseOut: $.empty
-    }, options || {});
-    
-    //canvas.contentEditable = true;
-    
-    this.canvas = canvas;
-    this.events = options;
-    this.keysDown = {};
-    this.mouseDown = {};
-    this.mousePosition = {
-      x: 0.0,
-      y: 0.0
-    };
-    this.mouseLastPosition = {
-      x: 0.0,
-      y: 0.0
-    };
-    this.mouseDelta = {
-      x: 0.0,
-      y: 0.0
-    };
-    
-    var myself = this;
-    document.addEventListener("keydown", function(e){
-      myself.onKeyDown(e);
-    }, false);
-    document.addEventListener("keyup", function(e){
-      myself.onKeyUp(e);
-    }, false);
-    canvas.addEventListener("mousedown", function(e){
-      myself.onMouseDown(e);
-    }, false);
-    canvas.addEventListener("mouseup", function(e){
-      myself.onMouseUp(e);
-    }, false);
-    canvas.addEventListener("mousemove", function(e){
-      myself.onMouseMove(e);
-    }, false);
-    canvas.addEventListener("mousewheel", function(e){
-      myself.onMouseWheel(e);
-    }, false);
-    canvas.addEventListener("DOMMouseScroll", function(e){
-      myself.onMouseWheel(e);
-    }, false);
-    canvas.addEventListener("mouseout", function(e){
-      myself.onMouseOut(e);
-    }, false);
-  };
-  
-  Canvas.prototype.onKeyDown = function(e){
-    this.keysDown[e.keyCode] = true;
-    this.events.onKeyDown(e);
-  };
-  
-  Canvas.prototype.onKeyUp = function(e){
-    this.keysDown[e.keyCode] = false;
-    this.events.onKeyUp(e);
-  };
-  
-  Canvas.prototype.onMouseDown = function(e){
-    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
-    
-    this.mousePosition.x = x;
-    this.mousePosition.y = y;
-    this.mouseLastPosition.x = x;
-    this.mouseLastPosition.y = y;
-    this.mouseDelta.x = 0.0;
-    this.mouseDelta.y = 0.0;
-    this.mouseDown[e.button] = true;
-    
-    this.events.onMouseDown(e, x, y);
-  };
-  
-  Canvas.prototype.onMouseUp = function(e){
-    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
-    
-    this.mousePosition.x = x;
-    this.mousePosition.y = y;
-    this.mouseLastPosition.x = x;
-    this.mouseLastPosition.y = y;
-    this.mouseDelta.x = 0.0;
-    this.mouseDelta.y = 0.0;
-    this.mouseDown[e.button] = false;
-    
-    this.events.onMouseUp(e, x, y);
-  };
-  
-  Canvas.prototype.onMouseMove = function(e){
-    var x = e.clientX, y = this.canvas.height - e.clientY - 1;
-    
-    this.mouseLastPosition.x = this.mousePosition.x;
-    this.mouseLastPosition.y = this.mousePosition.y;
-    this.mousePosition.x = x;
-    this.mousePosition.y = y;
-    this.mouseDelta.x = this.mousePosition.x - this.mouseLastPosition.x;
-    this.mouseDelta.y = this.mousePosition.y - this.mouseLastPosition.y;
-    
-    this.events.onMouseMove(e, this.mouseDelta.x, this.mouseDelta.y);
-  };
-  
-  Canvas.prototype.onMouseWheel = function(e){
-    var x = e.clientX, y = this.canvas.height - e.clientY - 1, delta = 0;
-    
-    this.mouseLastPosition.x = this.mousePosition.x;
-    this.mouseLastPosition.y = this.mousePosition.y;
-    this.mousePosition.x = x;
-    this.mousePosition.y = y;
-    this.mouseDelta.x = 0;
-    this.mouseDelta.y = 0;
-    
-    if (!e) /* For IE. */ {
-      e = window.event;
-    }
-    if (e.wheelDelta) /* IE/Opera. */ {
-      delta = e.wheelDelta / 120;
-      /* In Opera 9, delta differs in sign as compared to IE.
-       */
-      if (window.opera) {
-        delta = -delta;
-      }
-    }
-    else 
-      if (e.detail) /** Mozilla case. */ {
-        /** In Mozilla, sign of delta is different than in IE.
-       * Also, delta is multiple of 3.
-       */
-        delta = -e.detail / 3;
-      }
-    /* If delta is nonzero, handle it.
-     * Basically, delta is now positive if wheel was scrolled up,
-     * and negative, if wheel was scrolled down.
-     */
-    if (delta) {
-      this.events.onMouseWheel(e, delta);
-    }
-  };
-  
-  Canvas.prototype.onMouseOut = function(e){
-    // TODO
-    this.events.onMouseOut(e);
-  };
-  
-  BenchGL.Canvas = Canvas;
-  
-}());
-
-// camera.js
-
-(function () {
-	
-	var Vec3 = BenchGL.Vector3,
-			MatStack = BenchGL.MatrixStack,
-      Camera;
-	
-	Camera = function(options) {
-		var e = options.eye,
-				d = options.direction,
-				u = options.up,
-				fovy = options.fovy,
-				aspect = options.aspect,
-				near = options.near,
-				far = options.far;
-		
-		this.fovy = fovy;
-		this.aspect = aspect;
-		this.near = near;
-		this.far = far;
-		this.eye = (e && new Vec3(e.x, e.y, e.z)) || new Vec3();
-		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
-		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
-			
-    this.projStack = new MatStack();
-    this.viewStack = new MatStack();
-    this.modelStack = new MatStack();
-    
-    this.viewStack.lookAt(this.eye, this.direction, this.up);
-		this.projStack.perspective(fovy, aspect, near, far);
-	};
-  
-  Camera.prototype.proj = function() {
-    return this.projstack;
-  };
-  
-  Camera.prototype.view = function() {
-    return this.viewStack;
-  };
-  
-  Camera.prototype.model = function() {
-    return this.modelStack;
-  };
-  
-  Camera.prototype.projMatrix = function() {
-    return this.projStack.top();
-  };
-  
-  Camera.prototype.viewMatrix = function() {
-    return this.viewStack.top();
-  };
-  
-  Camera.prototype.modelViewMatrix = function() {
-    return this.viewStack.top().multiplyMat4(this.modelStack.top());
-  };
-  
-  Camera.prototype.reset = function() {
-    this.viewStack.loadIdentity();
-    this.modelStack.loadIdentity();
-  };
-	
-	Camera.prototype.set = function(options) {
-		var e = options.eye,
-				d = options.direction,
-				u = options.up;
-				
-		this.eye = (e && new Vec3(e.x, e.y, e.z)) || new Vec3();
-		this.direction = (d && new Vec3(d.x, d.y, d.z)) || new Vec3();
-		this.up = (u && new Vec3(u.x, u.y, u.z)) || new Vec3(0, 1, 0);
-		
-		this.viewStack.lookAt(this.eye, this.direction, this.up);
-	};
-	
-	BenchGL.Camera = Camera;
-	
 }());
 
 // shader.js
 
-(function() {
+BenchGL.namespace('BenchGL.webgl');
+
+BenchGL.webgl.Shader = (function() {
+
+	// Private properties and methods
+	var Shader;
 	
-	var Shader = function(gl, type, source) {
+	Shader = function(gl, type, source) {
 		var shader = gl.createShader(type),
 				valid = false,
 				log = '';
@@ -2275,21 +2334,18 @@ window.requestAnimFrame = (function(){
 		].join("\n")
 	};
 	
-	BenchGL.Shader = Shader;
+	return Shader;
 	
 }());
 
-
 // program.js
 
-(function(){
+BenchGL.namespace('BenchGL.webgl');
 
-  var Shader = BenchGL.Shader, 
-      XHR = BenchGL.XHRequest, 
-      ProgramAttribute, 
-      ProgramUniform, 
-      ProgramSampler, 
-      Program;
+BenchGL.webgl.ProgramAttribute = (function() {
+
+	// Private properties and methods
+  var ProgramAttribute;
   
   ProgramAttribute = function(program, name, type, size, location){
     this.program = program;
@@ -2307,6 +2363,15 @@ window.requestAnimFrame = (function(){
   ProgramAttribute.prototype.getIndex = function(){
     return this.location;
   };
+  
+  return ProgramAttribute;
+  
+}());
+
+BenchGL.webgl.ProgramUniform = (function() {
+
+	// Private properties and methods
+	var ProgramUniform;
   
   ProgramUniform = function(program, name, type, size, location){
     this.program = program;
@@ -2412,6 +2477,15 @@ window.requestAnimFrame = (function(){
     return this.value;
   };
   
+  return ProgramUniform;
+  
+}());
+
+BenchGL.webgl.ProgramSampler = (function() {
+
+	// Private properties and methods
+	var ProgramSampler;
+  
   ProgramSampler = function(program, name, type, size, location){
     this.program = program;
     this.name = name;
@@ -2429,6 +2503,22 @@ window.requestAnimFrame = (function(){
     this.program.gl.uniform1i(this.location, n);
     this.unit = n;
   };
+  
+  return ProgramSampler;
+  
+}());
+
+BenchGL.webgl.Program = (function() {
+
+	// Dependencies
+	var Shader = BenchGL.webgl.Shader, 
+      ProgramAttribute = BenchGL.webgl.ProgramAttribute,
+      ProgramUniform = BenchGL.webgl.ProgramUniform,
+      ProgramSampler = BenchGL.webgl.ProgramSampler,
+      XHR = BenchGL.io.XHRequest,
+      
+      // Private properties and methods
+      Program;
   
   Program = function(gl, vertex, fragment){
     var program = gl.createProgram(), valid = false, log = '';
@@ -2767,22 +2857,466 @@ window.requestAnimFrame = (function(){
     return new Program(gl, vertex, fragment);
   };
   
-  BenchGL.Program = Program;
+  return Program;
   
 }());
 
+// mesh.js
+
+BenchGL.namespace('BenchGL.drawing');
+
+BenchGL.drawing.Model = (function() {
+  
+  // Dependencies
+  var MatStack = BenchGL.math.MatrixStack,
+      Mat = BenchGL.skin.Material,
+      XHR = BenchGL.io.XHRequest,
+      sin = Math.sin,
+      cos = Math.cos,
+      pi = Math.PI,
+      id = 0,
+      
+      // Private properties and methods
+      Model;
+  
+  Model = function(options) {
+    options = $.mix({
+      drawType : gl.TRIANGLES,
+      useColors : true,
+      dynamic : true,
+      colors : [1, 1, 1, 1]
+    }, options || {});
+    
+    this.id = options.id || id++;
+    this.drawType = options.drawType;
+    this.useColors = options.useColors;
+    this.dynamic = options.dynamic;
+    this.vertices = options.vertices;
+    this.normals = options.normals;
+    this.texcoords = options.texcoords;
+    this.colors = options.colors;
+    this.indices = options.indices;
+    
+    this.material = new Mat();
+    this.uniforms = {};
+    this.textureNames = [];
+    
+    this.matrixStack = new MatStack();
+        
+    if (this.useColors) {
+      this.normalizeColors();
+    }
+  };
+  
+  Model.prototype.textures = function() {
+    return this.textureNames;
+  };
+  
+  Model.prototype.matrix = function() {
+  	return this.matrixStack.top();
+  };
+  
+  Model.prototype.reset = function() {
+    this.matrixStack.loadIdentity();
+  };
+  
+  Model.prototype.translate = function(x, y, z) {
+    this.matrixStack.translate(x, y, z);
+  };
+  
+  Model.prototype.scale = function(x, y, z) {
+    this.matrixStack.scale(x, y, z);
+  };
+  
+  Model.prototype.rotate = function(angle, x, y, z) {
+    this.matrixStack.rotate(angle, x, y, z);
+  };
+  
+  Model.prototype.rotateXYZ = function(rx, ry, rz) {
+    this.matrixStack.rotateXYZ(rx, ry, rz);
+  };  
+  
+  Model.prototype.normalizeColors = function() {
+    if (!this.vertices) return;
+    
+    var colors = this.colors,
+        totalLength = this.vertices.length * 4 / 3,
+        count = totalLength / colors.length,
+        result = new Float32Array(totalLength);
+    
+    if (colors.length < totalLength) {
+      while (count--) {
+        result.set(colors, count * colors.length);
+      }
+      this.colors = result;
+    }    
+  };
+  
+  Model.prototype.setTextures = function() {
+    var textureNames = this.textureNames,
+        i, l;
+    for (i = 0, l = arguments.length; i < l; i ++) {
+      textureNames.push(arguments[i]);
+    }
+  };
+
+  Model.prototype.setMaterialAmbient = function(r, g, b) {
+    this.material.setAmbient(r, g, b);
+  };
+    
+  Model.prototype.setMaterialDiffuse = function(r, g, b) {
+    this.material.setDiffuse(r, g, b);    
+  };
+  
+  Model.prototype.setMaterialSpecular = function(r, g, b) {
+    this.material.setSpecular(r, g, b);    
+  };
+  
+  Model.prototype.setMaterialEmissive = function(r, g, b) {
+    this.material.setEmissive(r, g, b);    
+  };
+
+  Model.prototype.setMaterialShininess = function(shininess) {
+    this.material.setShininess(shininess);
+  };   
+  
+  Model.prototype.setUniform = function(name, value) {
+    this.uniforms[name] = value;
+  };
+  
+  Model.prototype.bindVertices = function(program, update) {
+    if (!this.vertices) return;
+    
+    if (update || this.dynamic) {
+      program.bindAttribute(this.id + '-vertices', {
+        name: 'a_position',
+        data: new Float32Array(this.vertices),
+        size: 3
+      });
+    } else {
+      program.bindAttribute(this.id + '-vertices');
+    }
+  };
+  
+  Model.prototype.bindNormals = function(program, update) {
+    if (!this.normals) return;
+    
+    if (update || this.dynamic) {
+      program.bindAttribute(this.id + '-normals', {
+        name : 'a_normal',
+        data : new Float32Array(this.normals),
+        size : 3
+      });          
+    } else {
+      program.bindAttribute(this.id + '-normals');
+    }
+  };
+  
+  Model.prototype.bindTexcoords = function(program, update) {
+    if (!this.texcoords) return;
+    
+    if (update || this.dynamic) {
+      program.bindAttribute(this.id + '-texcoords', {
+        name: 'a_texcoord',
+        data: new Float32Array(this.texcoords),
+        size: 2
+      });
+    } else {
+      program.bindAttribute(this.id + '-texcoords');
+    }
+  };
+
+  Model.prototype.bindColors = function(program, update) {
+    if (!this.colors || !this.useColors) return;
+    
+    if (update || this.dynamic) {
+      program.bindAttribute(this.id + '-colors', {
+        name : 'a_color',
+        data: new Float32Array(this.colors),
+        size: 4
+      });
+    } else {
+      program.bindAttribute(this.id + '-colors');
+    }
+  };
+   
+  Model.prototype.bindIndices = function(program, update) {
+    if (!this.indices) return;
+    
+    program.bindAttribute('a_index', {
+      attributeType : gl.ELEMENT_ARRAY_BUFFER,
+      data : new Uint16Array(this.indices),
+    });     
+  };
+  
+  Model.prototype.bindUniforms = function(program) {
+    program.bindUniforms(this.uniforms);
+  };
+  
+  Model.prototype.bindMaterial = function(program) {
+    var material = this.material,
+        uniforms = {};
+    
+    uniforms.u_matAmbient = material.ambient.toRGBAArray();
+    uniforms.u_matDiffuse = material.diffuse.toRGBAArray();
+    uniforms.u_matSpecular = material.specular.toRGBAArray();
+    uniforms.u_matEmissive = material.emissive.toRGBAArray();
+    uniforms.u_matShininess = material.shininess;
+    
+    program.bindUniforms(uniforms);
+  };
+  
+  Model.prototype.bindTextures = function(program, textures) {
+    var textureNames = this.textureNames,
+        i, l, texture;
+    for (i = 0, l = textureNames.length; i < l; i++) {
+      texture = textures[textureNames[i]];
+      if (texture) {
+        program.bindUniform('u_useTexture' + i, true);
+        program.bindSamplers('tex' + i, i);
+        texture.bind(i);
+      }
+    }    
+  };
+  
+  Model.prototype.draw = function() {
+    if (this.indices) {
+      // Draw the model with as an indexed vertex array
+      gl.drawElements(this.drawType, this.indices.length, gl.UNSIGNED_SHORT, 0);
+    } else if (this.vertices) {
+      // Draw the model with as a simple flat vertex array
+      gl.drawArrays(this.drawType, 0, this.vertices.length / 3);
+    }
+  };
+  
+  Model.factory = function(type, options){
+    type = $.capitalize(type);
+    
+    if (typeof Model[type] !== "function") {
+      throw {
+        name: "UnknownModelType",
+        message: "Method '" + type + "' does not exist."
+      };
+    }
+    
+    return Model[type](options);
+  };
+  
+  Model.Triangle = function(options){
+    return new Model($.mix({
+      vertices: [0, 1, 0, -1, -1, 0, 1, -1, 0],
+      normals: [0, 0, 1, 0, 0, 1, 0, 0, 1],
+      texcoords: [1, 1, 0, 0, 1, 0],
+      colors: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    }, options || {}));
+  };
+  
+  Model.Rectangle = function(options){
+    return new Model($.mix({
+      vertices: [-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0],
+      normals: [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+      texcoords: [0, 0, 1, 0, 0, 1, 1, 1],
+      colors: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      indices: [0, 1, 2, 3, 1, 2]
+    }, options || {}));
+  };
+  
+  Model.Circle = function(options){
+    var n = (options) ? options.slices || 16 : 16, 
+        r = (options) ? options.radius || 1 : 1, 
+        vertexCoords = [0, 0, 0], 
+        normalCoords = [0, 0, 1], 
+        textureCoords = [0.5, 0.5],
+        i, angle, x, y, u, v;
+    
+    for (i = 0; i <= n; i++) {
+      angle = pi * i / n;
+      x = r * cos(angle);
+      y = r * sin(angle);
+      u = (cos(angle) + 1) * 0.5;
+      v = (sin(angle) + 1) * 0.5;
+      
+      vertexCoords.push(x);
+      vertexCoords.push(y);
+      vertexCoords.push(0);
+      normalCoords.push(0);
+      normalCoords.push(0);
+      normalCoords.push(1);
+      textureCoords.push(u);
+      textureCoords.push(v);
+    }
+    
+    return new Model($.mix({
+      drawType : gl.TRIANGLE_FAN,
+      vertices: vertexCoords,
+      normals: normalCoords,
+      texcoords: textureCoords,
+      colors: [1, 1, 1, 1]
+    }, options || {}));
+  };
+  
+  Model.Cube = function(options){
+    return new Model($.mix({
+      vertices: [
+      -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1,
+      -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1,
+      -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1,
+      -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1,
+      1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1,
+      -1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1],
+      normals: [
+      0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+      0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
+      0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+      0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+      1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+      -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0],
+      texcoords: [
+      0, 0, 1, 0, 1, 1, 0, 1,
+      1, 0, 1, 1, 0, 1, 0, 0,
+      0, 1, 0, 0, 1, 0, 1, 1,
+      1, 1, 0, 1, 0, 0, 1, 0,
+      1, 0, 1, 1, 0, 1, 0, 0,
+      0, 0, 1, 0, 1, 1, 0, 1 ],
+      colors: [
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]
+    }, options || {}));
+  };
+  
+  Model.Pyramid = function(options){
+    return new Model($.mix({
+      vertices: [
+      0, 1, 0, -1, -1, 1, 1, -1, 1,
+      0, 1, 0, 1, -1, -1, -1, -1, -1,
+      0, 1, 0, 1, -1, 1, 1, -1, -1,
+      0, 1, 0, -1, -1, -1, -1, -1, 1],
+      normals: [
+      0, 1, 0, -1, -1, 1, 1, -1, 1,
+      0, 1, 0, 1, -1, -1, -1, -1, -1,
+      0, 1, 0, 1, -1, 1, 1, -1, -1,
+      0, 1, 0, -1, -1, -1, -1, -1, 1],
+      texcoords: [
+      1, 1, 0, 0, 1, 0,
+      1, 1, 0, 0, 1, 0,
+      1, 1, 0, 0, 1, 0,
+      1, 1, 0, 0, 1, 0],
+      colors: [
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    }, options || {}));
+  };
+  
+  Model.Sphere = function(options){
+    var n = (options) ? options.slices || 32 : 32, 
+        m = (options) ? options.stacks || 32 : 32, 
+        r = (options) ? options.radius || 1.0 : 1.0, 
+        vertexCoords = [], 
+        normalCoords = [],
+        textureCoords = [], 
+        indices = [],
+        pi2 = pi * 2,
+        i, j, theta, phi, sint, cost, sinp, cosp,
+        x, y, z, u, v, first, second;
+    
+    for (i = 0; i <= n; i++) {
+      theta = pi * i / n;
+      sint = sin(theta);
+      cost = cos(theta);
+      for (j = 0; j <= m; j++) {
+        phi = pi2 * j / m;
+        sinp = sin(phi);
+        cosp = cos(phi);
+        x = r * sint * cosp;
+        y = r * cost;
+        z = r * sint * sinp;
+        u = 1 - j / m;
+        v = 1 - i / n;
+        
+        vertexCoords.push(x);
+        vertexCoords.push(y);
+        vertexCoords.push(z);
+        normalCoords.push(x);
+        normalCoords.push(y);
+        normalCoords.push(z);
+        textureCoords.push(u);
+        textureCoords.push(v);
+      }
+    }
+    
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < m; j++) {
+        first = i * (m + 1) + j;
+        second = first + m + 1;
+        
+        indices.push(first);
+        indices.push(second);
+        indices.push(first + 1);
+        indices.push(second);
+        indices.push(second + 1);
+        indices.push(first + 1);
+      }
+    }
+    
+    return new Model($.mix({
+      vertices: vertexCoords,
+      normals: normalCoords,
+      texcoords: textureCoords,
+      colors: [1.0, 1.0, 1.0, 1.0],
+      indices: indices
+    }, options || {}));
+  };
+  
+  Model.Json = function(options){
+    var modelOptions = options.model,
+        model;
+    
+    new XHR({
+      url: options.url,
+      async: false,
+      onSuccess: function(response){
+        var json = JSON.parse(response), 
+            options = $.mix({
+              vertices: json.vertexPositions,
+              normals: json.vertexNormals,
+              texcoords: json.vertexTextureCoords,
+              indices: json.indices
+            }, modelOptions || {});
+        
+        model = new Model(options);
+      }
+    }).send();
+    
+    return model;
+  };
+  
+  return Model;
+  
+}());
 
 // renderer.js
 
-(function(){
+BenchGL.namespace('BenchGL.drawing');
 
-  var Vec3 = BenchGL.Vector3,
-      Mat4 = BenchGL.Matrix4,
-      Color = BenchGL.Color, 
-      Material = BenchGL.Material, 
-      Light = BenchGL.Light, 
-      Texture = BenchGL.Texture, 
-      TextureRequest = BenchGL.TextureRequest, 
+BenchGL.drawing.Renderer = (function() {
+
+	// Dependencies
+  var Vec3 = BenchGL.math.Vector3,
+      Mat4 = BenchGL.math.Matrix4,
+      Color = BenchGL.skin.Color, 
+      Material = BenchGL.skin.Material, 
+      Light = BenchGL.skin.Light, 
+      Texture = BenchGL.skin.Texture, 
+      TextureRequest = BenchGL.io.TextureRequest,
+      
+      // Private properties and methods 
       Renderer;
   
   Renderer = function(gl, program, camera, effects){
@@ -2868,7 +3402,11 @@ window.requestAnimFrame = (function(){
   };
   
   Renderer.prototype.addTextures = function(options){
-    new TextureRequest(this, options).send();
+  	var myself = this;
+  	
+    new TextureRequest(options).send(function(name, options) {
+    	myself.addTexture(name, options);
+    });
   };
   
   Renderer.prototype.setTextures = function(){
@@ -2921,11 +3459,10 @@ window.requestAnimFrame = (function(){
     
     for (e in effects) {
       effect = effects[e];
-      uniforms['use' + e] = true;
       for (p in effect) {
         property = p.charAt(0).toUpperCase() + p.slice(1);
         value = effect[p];
-        uniforms[e + property] = value;
+        uniforms['u_' + e + property] = value;
       }
     }
     
@@ -2954,11 +3491,12 @@ window.requestAnimFrame = (function(){
         textures = this.textures,
         modelView, i, l, texture;
     
-    model.bindVertices(program);
-    model.bindNormals(program);
-    model.bindTexcoords(program);
-    model.bindColors(program);
-    model.bindIndices(program);
+  	model.bindVertices(program);
+  	model.bindNormals(program);
+  	model.bindTexcoords(program);
+  	model.bindColors(program);
+  	model.bindIndices(program);
+    	
     model.bindMaterial(program);
     model.bindUniforms(program);
     model.bindTextures(program, textures);
@@ -2982,91 +3520,187 @@ window.requestAnimFrame = (function(){
     }    
   };
   
-  BenchGL.Renderer = Renderer;
+  return Renderer;
   
 }());
 
-// timer.js
+// bench.js
+// The core module for the library, provides the main entry point for external applications.
 
-(function() {
+BenchGL.namespace('BenchGL.core');
 
-	var nowTime = 0,
-			lastTime = 0,
-			elapsedTime = 0,
-      Timer;
+BenchGL.core.WebGL = (function() {
 
-	Timer = function() {
-		this.fps = 0;
-		this.lastDelta = 0;
-		this.maxSamples = 60;
-		this.samples = [];
-	};
-	
-	Timer.prototype.start = function() {
-		nowTime = new Date().getTime();
-		lastTime = nowTime;
-		elapsedTime = 0;
-		return this;
-	};
-	
-	Timer.prototype.stop = function() {
-		var now = new Date().getTime(),
-        sample, i, l, fps = 0;
+	// Private properties and methods 
+	var WebGL;
+
+	WebGL = function(canvas, options) {
+		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
+				gl = canvas.getContext('experimental-webgl', options);
 		
-    lastTime = nowTime;
-		nowTime = now;
-		elapsedTime = nowTime - lastTime;
-		sample = 1000.0 / elapsedTime;
-				
-		if (this.samples.unshift(sample) > this.maxSamples) {
-      this.samples.pop();     
-    }
-		
-		for (i = 0, l = this.samples.length; i < l; i++) {
-			fps += this.samples[i];
+		if (!gl) {
+			gl = canvas.getContext('webgl', options);
 		}
-		fps /= this.samples.length;
 		
-		this.fps = Math.round(fps);
-		this.lastDelta = elapsedTime;
-		return this;
+		this.context = gl;
+		this.canvas = canvas;
 	};
 	
-	Timer.prototype.clear = function() {
-		nowTime = 0;
-		lastTime = 0;
-		elapsedTime = 0;
-		
-		this.fps = 0;
-		this.lastDelta = 0;
-		this.samples = [];
-		return this;
+	WebGL.prototype.getContext = function() {
+		return this.context;
 	};
 	
-	BenchGL.Timer = Timer;
+	WebGL.prototype.getCanvas = function() {
+		return this.canvas;
+	};
+	
+	return WebGL;
 
 }());
 
+BenchGL.core.Engine = (function() {
 
-// logger.js
+	var WebGL = BenchGL.core.WebGL,
+			Program = BenchGL.webgl.Program,
+			Canvas = BenchGL.ui.Canvas,
+			Camera = BenchGL.ui.Camera,
+			Renderer = BenchGL.drawing.Renderer,
+			instance,
+			Engine;
 
-(function(){
-  
-  var instance, Logger;
-
-  Logger = function Logger(){
-    if (instance) {
-      return instance;
+	/**
+	 * Creates an instance of BenchGL. 
+	 * @class Provides an entry point for BenchGL library.
+	 * @param {String} canvasId The id of the canvas that WebGL exploits.
+	 * @param {Object} [options] General options for initializing the library.
+	 * @param {Object} [options.context] The options for the WebGL context.
+	 * @param {Object} [options.program] The options for the shader program.
+	 * @param {String} [options.program.type='defaults'] The type of shader program.
+	 * @param {String} [options.program.vertex] The vertex shader source.
+	 * @param {String} [options.program.fragment] The fragmente shader source.
+	 * @param {String} [options.camera] The options for the camera.
+	 * @param {Number} [options.camera.fovy=45] The field of view angle for the camera.
+	 * @param {Number} [options.camera.near=0.1] The near clipping plane for the camera.
+	 * @param {Number} [options.camera.far=100] The far clipping plane for the camera.
+	 * @param {Object} [effects] Special effects for the rendering engine. 
+	 * @param {Object} [events] Functions to eventually handle user events.
+	 * @param {Boolean} [debug=false] Is debug active?
+	 * @param {Function} [onError] Callback function to call on errors.
+	 * @param {Function} [onLoad] Callback function to call after loading succesfully. 
+	 */
+  Engine = function(canvasId, options) {
+  	if (instance) {
+  		return instance;
+  	}
+  	
+  	instance = this;
+  	
+    options = $.mix({
+      context: {},
+      program: {
+        type: 'defaults'	// {defaults|urls|scripts|sources}
+      },
+      camera: {
+        fovy: 45,
+        near: 0.1,
+        far: 100
+      },
+      effects: {
+      	/* 
+      	Example:
+      	
+      	fog : {
+      		active : true,
+      		color : [0.5, 0.5, 0.5],
+      		near : 	10,
+      		far : 100
+      	}
+      	
+      	*/      	
+      },
+      events: {
+      	/* 
+      	Example:
+      	
+      	onKeyDown : function() { ... },
+      	onMouseMove : function() { ... },
+      	
+      	*/
+      },
+      debug: false,
+      onError: $.empty,
+      onLoad: $.empty
+    }, options || {});
+    
+    var contextOptions = options.context,
+        eventsOptions = options.events,
+        cameraOptions = options.camera,
+        programOptions = options.program,
+        effectsOptions = options.effects,
+        canvas, program, camera, renderer;
+    
+    // Create the WebGL context and store it in a library-shared variable.
+    gl = new WebGL(canvasId, contextOptions).getContext();
+    
+    if (!gl) {
+      options.onError();
+      return null;
     }
-    instance = this;
+    
+    // Create a canvas wrapper to handle user events
+    canvas = new Canvas(gl.canvas, eventsOptions);
+    
+    // Create a camera
+    camera = new Camera($.mix(cameraOptions, {
+      aspect: gl.canvas.width / gl.canvas.height
+    }));
+    
+    // Set up the shader program asynchronously
+    program = Program.factory(gl, $.mix({
+      onSuccess : function(program) {
+        start(gl, program, function(application) {
+          options.onLoad(application);
+        });
+      },
+      onError : function(e) {
+        options.onError(e);
+      }
+    }, programOptions));
+    
+    // If the program has loaded correctly, call the onLoad callback
+    if (program) {
+      start(gl, program, function(application) {
+        options.onLoad(application);
+      });
+    }
+    
+    // Calls the user application
+    function start(gl, program, callback) {
+    	// Binds the loaded program for rendering
+      program.bind();
+      
+      // Create a renderer
+      renderer = new Renderer(gl, program, camera, effectsOptions);
+      
+      // Call the application with library handlers references 
+      callback({
+        gl: gl,
+        canvas: canvas,
+        program: program,
+        camera: camera,
+        renderer: renderer
+      });      
+    }
   };
   
-  Logger.prototype.log = function(message){
-    console.log(message);
-  };
-  
-  BenchGL.Logger = Logger;
+ 	return Engine;
   
 }());
+
+// Framework version
+BenchGL.version = '0.1';
+
+// WebGL context container
+var gl;
 
 }());

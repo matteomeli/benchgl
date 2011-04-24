@@ -1,8 +1,13 @@
 // worker.js
 
-(function(){
+BenchGL.namespace('BenchGL.extra');
 
-  var WorkerPool = function(filename, n){
+BenchGL.extra.WorkerPool = (function() {
+	
+	// Private properties and methods
+	var WorkerPool;
+	
+  WorkerPool = function(filename, n){
     this.workers = [];
     this.configs = [];
     while (n--) {
@@ -55,6 +60,6 @@
     this.configs = [];
   };
   
-  BenchGL.WorkerPool = WorkerPool;
+  return WorkerPool;
   
 }());

@@ -114,7 +114,7 @@ function start() {
 	}, false);
   
   // Start the application
-	BenchGL('metaballs-canvas', {
+	BenchGL.core.Engine('metaballs-canvas', {
 		program : {
       type : 'urls',
       vertex : '../../shaders/surfaces.vertex',
@@ -150,12 +150,12 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					surface = new BenchGL.Model(gl, {
+					timer = new BenchGL.ui.Timer(),
+					surface = new BenchGL.drawing.Model(gl, {
 						useColors : false,
 						dynamic : true
 					}),
-					pool = new BenchGL.WorkerPool('worker.js', workers);
+					pool = new BenchGL.extra.WorkerPool('worker.js', workers);
 			
       surface.setMaterialDiffuse(0.0, 0.4, 0.8);	
       surface.setMaterialShininess(10);
@@ -195,8 +195,9 @@ function start() {
 				renderer.background();
 				
 				camera.reset();
+				camera.model().translate(0.0, 0.0, z);
 				
-				surface.translate(0.0, 0.0, z);
+				surface.reset();
 				surface.rotate(-xRot, 1, 0, 0);
 				surface.rotate(yRot, 0, 1, 0);
 				

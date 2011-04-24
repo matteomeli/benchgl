@@ -3,7 +3,7 @@ function $(id) {
 };
 
 function start() {
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		onError : function() {
 			alert('An error occured launching the application...');
 		},
@@ -13,8 +13,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					pyramid = BenchGL.Model.factory('pyramid', {
+					timer = new BenchGL.ui.Timer(),
+					pyramid = BenchGL.drawing.Model.factory('pyramid', {
 						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							0.0, 1.0, 0.0, 1.0,
@@ -30,7 +30,7 @@ function start() {
 							0.0, 1.0, 0.0, 1.0
 						]
 					}), 
-					cube = BenchGL.Model.factory('cube', {
+					cube = BenchGL.drawing.Model.factory('cube', {
 						colors : [
 							1.0, 0.0, 0.0, 1.0,
 							1.0, 0.0, 0.0, 1.0,
@@ -68,9 +68,11 @@ function start() {
 				camera.reset();
         camera.model().translate(0, 0, -8);
         
+        pyramid.reset();
         pyramid.translate(-1.5, 0, 0);
 				pyramid.rotate(pyrRot, 0, 1, 0);
 				
+				cube.reset();
 				cube.translate(1.5, 0, 0);
 				cube.rotate(cubeRot, 1, 1, 1);
 				

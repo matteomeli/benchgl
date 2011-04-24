@@ -1,8 +1,13 @@
 // shader.js
 
-(function() {
+BenchGL.namespace('BenchGL.webgl');
+
+BenchGL.webgl.Shader = (function() {
+
+	// Private properties and methods
+	var Shader;
 	
-	var Shader = function(gl, type, source) {
+	Shader = function(gl, type, source) {
 		var shader = gl.createShader(type),
 				valid = false,
 				log = '';
@@ -146,7 +151,6 @@
 		].join("\n")
 	};
 	
-	BenchGL.Shader = Shader;
+	return Shader;
 	
 }());
-

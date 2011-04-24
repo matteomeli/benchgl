@@ -161,7 +161,7 @@ function start() {
 	}, false);
   
   // Start the application
-	BenchGL('surfaces-canvas', {
+	BenchGL.core.Engine('surfaces-canvas', {
 		program : {
 			type : 'urls',
 			vertex : '../../shaders/surfaces.vertex',
@@ -197,10 +197,10 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					surface = new BenchGL.Model({
+					surface = new BenchGL.drawing.Model({
 						useColors : false
 					}),
-					pool = new BenchGL.WorkerPool('marchingcubes.js', parallelFactor);
+					pool = new BenchGL.extra.WorkerPool('marchingcubes.js', parallelFactor);
 			
       surface.setMaterialShininess(10);
       	
@@ -288,6 +288,7 @@ function start() {
 				camera.reset();
 				camera.model().translate(0.0, 0.0, z);
         
+        surface.reset();
 				surface.rotate(-xRot, 1, 0, 0);
 				surface.rotate(yRot, 0, 1, 0);
 				surface.translate(-0.5, -0.5, -0.5);

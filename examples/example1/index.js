@@ -1,5 +1,5 @@
 function start() {
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		onError : function() {
 			alert('An error occured launching the application...');
 		},
@@ -9,8 +9,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					triangle = BenchGL.Model.factory('triangle'), 
-					square = BenchGL.Model.factory('rectangle');
+					triangle = BenchGL.drawing.Model.factory('triangle'), 
+					square = BenchGL.drawing.Model.factory('rectangle');
 			
 			renderer.background();
 			
@@ -19,9 +19,11 @@ function start() {
       
       renderer.setupCamera();
 			
+			//triangle.reset();
 			triangle.translate(-1.5, 0, 0);
-			renderer.renderModel(triangle);
+			renderer.renderModel(triangle, true);
 			
+			//square.reset();
 			square.translate(1.5, 0, 0);
 			renderer.renderModel(square);
 		}

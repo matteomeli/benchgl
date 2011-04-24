@@ -545,15 +545,7 @@ onmessage = function(e) {
       		result += 1 / ((x - x0) * (x - x0) + (y - y0) * (y - y0) + (z - z0) * (z - z0)) || 1;
       	}
       	return result;
-      }/*,
-			sampler = function(x, y, z, t) {
-				var result = 0,
-						height = 20 * (0 + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
-						
-				height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
-				result = (height - z) * 50;
-				return result;
-	  	},*/      
+      },     
   		result = compute(grid, time, isolevel, sampler);
   		
   postMessage(result);

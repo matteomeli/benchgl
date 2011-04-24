@@ -3,7 +3,7 @@ function $(id) {
 };
 
 function start() {
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		program : {
 			type : 'urls',
 			vertex : '../../shaders/lighting-pf.vertex',
@@ -18,8 +18,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					teapot = BenchGL.Model.factory('json', {
+					timer = new BenchGL.ui.Timer(),
+					teapot = BenchGL.drawing.Model.factory('json', {
 						url : 'Teapot.json'
 					}),
 					teapotAngle = 0;
@@ -86,6 +86,7 @@ function start() {
 				camera.reset()
         camera.model().translate(0.0, 0.0, -40.0);
 				
+				teapot.reset();
         teapot.rotate(23.4, 1, 0, -1);
 				teapot.rotate(teapotAngle, 0, 1, 0);
 				teapot.setTextures('metal');

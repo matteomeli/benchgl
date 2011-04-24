@@ -510,9 +510,9 @@ function compute(grid, time, isolevel, sampler) {
       normals = [],
 			result;
 			
-	for (var i = xstart; i <= xend; i+=xstep) {
-		for (var j = ystart; j <= yend; j+=ystep) {
-			for (var k = zstart; k <= zend; k+=ystep) {
+	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
+		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
+			for (var k = zstart+(zstep/2); k <= zend; k+=ystep) {
 				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);

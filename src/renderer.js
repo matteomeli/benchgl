@@ -1,14 +1,19 @@
 // renderer.js
 
-(function(){
+BenchGL.namespace('BenchGL.drawing');
 
-  var Vec3 = BenchGL.Vector3,
-      Mat4 = BenchGL.Matrix4,
-      Color = BenchGL.Color, 
-      Material = BenchGL.Material, 
-      Light = BenchGL.Light, 
-      Texture = BenchGL.Texture, 
-      TextureRequest = BenchGL.TextureRequest, 
+BenchGL.drawing.Renderer = (function() {
+
+	// Dependencies
+  var Vec3 = BenchGL.math.Vector3,
+      Mat4 = BenchGL.math.Matrix4,
+      Color = BenchGL.skin.Color, 
+      Material = BenchGL.skin.Material, 
+      Light = BenchGL.skin.Light, 
+      Texture = BenchGL.skin.Texture, 
+      TextureRequest = BenchGL.io.TextureRequest,
+      
+      // Private properties and methods 
       Renderer;
   
   Renderer = function(gl, program, camera, effects){
@@ -94,7 +99,11 @@
   };
   
   Renderer.prototype.addTextures = function(options){
-    new TextureRequest(this, options).send();
+  	var myself = this;
+  	
+    new TextureRequest(options).send(function(name, options) {
+    	myself.addTexture(name, options);
+    });
   };
   
   Renderer.prototype.setTextures = function(){
@@ -147,11 +156,10 @@
     
     for (e in effects) {
       effect = effects[e];
-      uniforms['use' + e] = true;
       for (p in effect) {
         property = p.charAt(0).toUpperCase() + p.slice(1);
         value = effect[p];
-        uniforms[e + property] = value;
+        uniforms['u_' + e + property] = value;
       }
     }
     
@@ -180,11 +188,12 @@
         textures = this.textures,
         modelView, i, l, texture;
     
-    model.bindVertices(program);
-    model.bindNormals(program);
-    model.bindTexcoords(program);
-    model.bindColors(program);
-    model.bindIndices(program);
+  	model.bindVertices(program);
+  	model.bindNormals(program);
+  	model.bindTexcoords(program);
+  	model.bindColors(program);
+  	model.bindIndices(program);
+    	
     model.bindMaterial(program);
     model.bindUniforms(program);
     model.bindTextures(program, textures);
@@ -208,6 +217,6 @@
     }    
   };
   
-  BenchGL.Renderer = Renderer;
+  return Renderer;
   
 }());

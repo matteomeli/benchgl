@@ -3,7 +3,7 @@ function $(id) {
 };
 
 function start() {
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		onError : function() {
 			alert('An error occured launching the application...');
 		},
@@ -13,9 +13,9 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory('cube'),
-					sphere = BenchGL.Model.factory('sphere'),
+					timer = new BenchGL.ui.Timer(),
+					cube = BenchGL.drawing.Model.factory('cube'),
+					sphere = BenchGL.drawing.Model.factory('sphere'),
 					cubeAngle = 0,
 					moonAngle = 180;
           
@@ -81,10 +81,12 @@ function start() {
         camera.reset();
         camera.model().translate(0, 0, -20);
         
+        sphere.reset();
         sphere.rotate(moonAngle, 0, 1, 0);
         sphere.translate(5, 0, 0);
         sphere.setTextures('moon');
         
+        cube.reset();
         cube.rotate(cubeAngle, 0, 1, 0);
         cube.translate(5, 0, 0);
         cube.setTextures('crate');

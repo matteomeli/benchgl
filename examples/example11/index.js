@@ -6,7 +6,7 @@ function start() {
 	var xRot = yRot = 0,
 			mouseDown = false;
 	
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		events : {
 			onMouseDown : function(e, x, y) {
 				if (e.button === 0) {
@@ -34,8 +34,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					sphere = BenchGL.Model.factory('sphere');
+					timer = new BenchGL.ui.Timer(),
+					sphere = BenchGL.drawing.Model.factory('sphere');
 			
 			renderer.useLights(true);
 			
@@ -77,6 +77,7 @@ function start() {
         renderer.setupLights(); 
         renderer.setupTextures();           
 				
+				sphere.reset();
 				sphere.translate(0.0, 0.0, -3.0);
 				sphere.rotate(-xRot, 1, 0, 0);
 				sphere.rotate(yRot, 0, 1, 0);

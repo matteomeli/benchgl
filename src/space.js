@@ -1,16 +1,20 @@
 // space.js
 
-(function(){
+BenchGL.namespace('BenchGL.math');
 
-	var Mat4 = BenchGL.Matrix4,
+BenchGL.math.MatrixStack = (function() {
+
+	// Dependencies
+	var Mat4 = BenchGL.math.Matrix4,
 			pi = Math.PI,
-      MatrixStack,
-      TransformStack;
+			
+			// Private properties and methods
+      MatrixStack;
 	
 	MatrixStack = function() {
 		this.stack = [];
 		this.current = 0;
-		this.stack.push(new Mat4());
+		this.stack.push(Mat4.Identity());
 	};
 	
 	MatrixStack.prototype.top = function() {
@@ -37,7 +41,7 @@
 	};
 	
 	MatrixStack.prototype.loadIdentity = function() {
-		this.stack[this.current] = new Mat4();
+		this.stack[this.current] = Mat4.Identity();
 		return this;
 	};
 	
@@ -52,7 +56,8 @@
 	};
 	
 	MatrixStack.prototype.rotateXYZ = function(rx, ry, rz) {
-		this.multiply(Mat4.RotateXYZ(rx, ry, rz));
+		var conversion = pi / 180;
+		this.multiply(Mat4.RotateXYZ(rx * conversion, ry * conversion, rz * conversion));
 		return this;
 	};
 	
@@ -80,6 +85,15 @@
 		this.multiply(Mat4.Frustum(left, rigth, bottom, top, near, far));
 		return this;
 	};
+	
+	return MatrixStack;
+	
+}());	
+
+BenchGL.math.TransformStack = (function() {
+
+	// Private properties and methods
+	var TransformStack;
 	
 	TransformStack = function() {
 		this.modelStack = new MatrixStack();
@@ -221,9 +235,6 @@
 		return this;
 	};
 	
-	BenchGL.MatrixStack = MatrixStack;
-	BenchGL.TransformStack = TransformStack;
+	return TransformStack;
 	
 }());
-
-

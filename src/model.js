@@ -1,14 +1,19 @@
 // mesh.js
 
-(function(){
+BenchGL.namespace('BenchGL.drawing');
+
+BenchGL.drawing.Model = (function() {
   
-  var MatStack = BenchGL.MatrixStack,
-      Mat = BenchGL.Material,
-      XHR = BenchGL.XHRequest,
+  // Dependencies
+  var MatStack = BenchGL.math.MatrixStack,
+      Mat = BenchGL.skin.Material,
+      XHR = BenchGL.io.XHRequest,
       sin = Math.sin,
       cos = Math.cos,
       pi = Math.PI,
       id = 0,
+      
+      // Private properties and methods
       Model;
   
   Model = function(options) {
@@ -29,42 +34,43 @@
     this.colors = options.colors;
     this.indices = options.indices;
     
-    this.modelStack = new MatStack();
     this.material = new Mat();
     this.uniforms = {};
     this.textureNames = [];
+    
+    this.matrixStack = new MatStack();
         
     if (this.useColors) {
       this.normalizeColors();
     }
   };
   
-  Model.prototype.matrix = function() {
-    return this.modelStack.top();
-  };
-  
   Model.prototype.textures = function() {
     return this.textureNames;
   };
   
-  Model.prototype.loadIdentity = function() {
-    this.modelStack.loadIdentity();
+  Model.prototype.matrix = function() {
+  	return this.matrixStack.top();
+  };
+  
+  Model.prototype.reset = function() {
+    this.matrixStack.loadIdentity();
   };
   
   Model.prototype.translate = function(x, y, z) {
-    this.modelStack.translate(x, y, z);
+    this.matrixStack.translate(x, y, z);
   };
   
   Model.prototype.scale = function(x, y, z) {
-    this.modelStack.scale(x, y, z);
+    this.matrixStack.scale(x, y, z);
   };
   
   Model.prototype.rotate = function(angle, x, y, z) {
-    this.modelStack.rotate(angle, x, y, z);
+    this.matrixStack.rotate(angle, x, y, z);
   };
   
   Model.prototype.rotateXYZ = function(rx, ry, rz) {
-    this.modelStack.rotateXYZ(rx, ry, rz);
+    this.matrixStack.rotateXYZ(rx, ry, rz);
   };  
   
   Model.prototype.normalizeColors = function() {
@@ -217,9 +223,6 @@
     } else if (this.vertices) {
       // Draw the model with as a simple flat vertex array
       gl.drawArrays(this.drawType, 0, this.vertices.length / 3);
-      
-      // Reset transformation matrix
-      this.modelStack.loadIdentity();
     }
   };
   
@@ -431,7 +434,6 @@
     return model;
   };
   
-  BenchGL.Model = Model;
+  return Model;
   
 }());
-

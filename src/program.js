@@ -1,13 +1,11 @@
 // program.js
 
-(function(){
+BenchGL.namespace('BenchGL.webgl');
 
-  var Shader = BenchGL.Shader, 
-      XHR = BenchGL.XHRequest, 
-      ProgramAttribute, 
-      ProgramUniform, 
-      ProgramSampler, 
-      Program;
+BenchGL.webgl.ProgramAttribute = (function() {
+
+	// Private properties and methods
+  var ProgramAttribute;
   
   ProgramAttribute = function(program, name, type, size, location){
     this.program = program;
@@ -25,6 +23,15 @@
   ProgramAttribute.prototype.getIndex = function(){
     return this.location;
   };
+  
+  return ProgramAttribute;
+  
+}());
+
+BenchGL.webgl.ProgramUniform = (function() {
+
+	// Private properties and methods
+	var ProgramUniform;
   
   ProgramUniform = function(program, name, type, size, location){
     this.program = program;
@@ -130,6 +137,15 @@
     return this.value;
   };
   
+  return ProgramUniform;
+  
+}());
+
+BenchGL.webgl.ProgramSampler = (function() {
+
+	// Private properties and methods
+	var ProgramSampler;
+  
   ProgramSampler = function(program, name, type, size, location){
     this.program = program;
     this.name = name;
@@ -147,6 +163,22 @@
     this.program.gl.uniform1i(this.location, n);
     this.unit = n;
   };
+  
+  return ProgramSampler;
+  
+}());
+
+BenchGL.webgl.Program = (function() {
+
+	// Dependencies
+	var Shader = BenchGL.webgl.Shader, 
+      ProgramAttribute = BenchGL.webgl.ProgramAttribute,
+      ProgramUniform = BenchGL.webgl.ProgramUniform,
+      ProgramSampler = BenchGL.webgl.ProgramSampler,
+      XHR = BenchGL.io.XHRequest,
+      
+      // Private properties and methods
+      Program;
   
   Program = function(gl, vertex, fragment){
     var program = gl.createProgram(), valid = false, log = '';
@@ -485,7 +517,6 @@
     return new Program(gl, vertex, fragment);
   };
   
-  BenchGL.Program = Program;
+  return Program;
   
 }());
-

@@ -3,7 +3,7 @@ function $(id) {
 };
 
 function start() {
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		onError : function() {
 			alert('An error occured launching the application...');
 		},
@@ -13,8 +13,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory('cube'),
+					timer = new BenchGL.ui.Timer(),
+					cube = BenchGL.drawing.Model.factory('cube'),
 					xRot = yRot = zRot = 0;
 			
 			renderer.useTextures(true);
@@ -43,10 +43,9 @@ function start() {
         renderer.setupCamera();
         renderer.setupTextures();
         
+        cube.reset();
 				cube.translate(0, 0, -5);
-				cube.rotate(xRot, 1, 0, 0);
-				cube.rotate(yRot, 0, 1, 0);
-				cube.rotate(zRot, 0, 0, 1);
+				cube.rotateXYZ(xRot, yRot, zRot);
 				cube.setTextures('nehe');
 				renderer.renderModel(cube);
 			};

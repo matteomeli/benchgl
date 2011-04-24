@@ -1,21 +1,19 @@
 path = '../src/'
 
 files = [
-  'bench.js',
+	'core.js',
+  'utils.js',
   'math.js',
-  'webgl.js',
   'space.js',
   'skin.js',
   'io.js',
-  'model.js',
+  'ui.js',
   'worker.js',
-  'canvas.js',
-  'camera.js',
   'shader.js',
   'program.js',
+  'model.js',
   'renderer.js',
-  'timer.js',
-  'logger.js'
+  'bench.js'
 ]
 
 def build():
@@ -23,7 +21,10 @@ def build():
   license = open('../LICENSE', 'r').read()
   for file in files:
     body.append(open(path + file, 'r').read())
-  print '/**\n@preserve' + license + '*/\n\n' + '(function() { \n' + '\n'.join(body) + '\n}());'
+  print '/**\n@preserve' + license + '*/\n'
+# Use this in case of avoiding globals completely...
+# print 'var BenchGL = BenchGL || {};\n'
+  print '(function() {\n\n' + '\n'.join(body) + '\n}());'
 
 if __name__ == '__main__':
   build()

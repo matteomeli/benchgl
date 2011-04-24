@@ -4,7 +4,7 @@ function $(id) {
 };
 	
 function start() {
-	BenchGL.Shader.Fragment.Blend = [
+	BenchGL.webgl.Shader.Fragment.Blend = [
 		"#ifdef GL_ES",
 		"precision highp float;",
 		"#endif",
@@ -31,7 +31,7 @@ function start() {
 		"}"
 	].join("\n");
 
-	BenchGL('example-canvas', {
+	BenchGL.core.Engine('example-canvas', {
 		program : {
 			type : 'defaults',
 			fragment : 'blend'
@@ -45,8 +45,8 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
-					timer = new BenchGL.Timer(),
-					cube = BenchGL.Model.factory('cube'),
+					timer = new BenchGL.ui.Timer(),
+					cube = BenchGL.drawing.Model.factory('cube'),
 					xRot = yRot = 0, z = -5.0,
 					xSpeed = 3, ySpeed = -3;
 			
@@ -133,6 +133,7 @@ function start() {
         renderer.setupLights();
         renderer.setupTextures();
 				
+				cube.reset();
 				cube.translate(0.0, 0.0, z);
 				cube.rotate(xRot, 1, 0, 0);
 				cube.rotate(yRot, 0, 1, 0);

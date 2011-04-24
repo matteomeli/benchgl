@@ -1,12 +1,14 @@
 // skin.js
 
-(function(){
+BenchGL.namespace('BenchGL.skin');
 
-  var Vec3 = BenchGL.Vector3, 
-      Color, 
-      Material, 
-      Light, 
-      Texture;
+BenchGL.skin.Color = (function() {
+
+	// Dependencies
+  var Vec3 = BenchGL.math.Vector3, 
+  
+  		// Private properties and methods
+      Color;
   
   Color = function(r, g, b, a){
     this.r = r;
@@ -22,6 +24,18 @@
   Color.prototype.toRGBAArray = function(){
     return [this.r, this.g, this.b, this.a];
   };
+  
+  return Color;
+  
+}());
+
+BenchGL.skin.Material = (function() {
+
+	// Dependencies
+	var Color = BenchGL.skin.Color,
+			
+			// Private properties and methods
+			Material;
   
   Material = function(options){
     options = $.mix({
@@ -79,6 +93,19 @@
   Material.prototype.setShininess = function(shininess){
     this.shininess = shininess;
   };
+  
+  return Material;
+  
+}());
+
+BenchGL.skin.Light = (function() {
+  
+  var Vec3 = BenchGL.math.Vector3,
+  		Color = BenchGL.skin.Color,
+  		Material = BenchGL.skin.Material,
+  
+  		// Private properties and methods
+  		Light;
   
   Light = function(options){
     options = $.mix({
@@ -178,6 +205,15 @@
     this.active = active;
   };
   
+  return Light;
+  
+}());
+
+BenchGL.skin.Texture = (function() {
+  
+  // Private properties and methods
+  var Texture;
+  
   Texture = function(gl, options){
     options = $.mix({
       level: 0,
@@ -230,9 +266,6 @@
     return this;
   };
   
-  BenchGL.Color = Color;
-  BenchGL.Light = Light;
-  BenchGL.Material = Material;
-  BenchGL.Texture = Texture;
+  return Texture;
   
 }());
