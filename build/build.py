@@ -12,6 +12,7 @@ files = [
   'program.js',
   'model.js',
   'renderer.js',
+  'webgl.js',
   'core.js'
 ]
 

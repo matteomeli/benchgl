@@ -23,7 +23,7 @@ BenchGL.namespace = function(name) {
 	return parent;
 };
 
-// Globalize BenchGL library
+// Special function to globalize BenchGL library
 BenchGL.globalize = function() {
 	for (var module in BenchGL) {
 		for (var object in BenchGL[module]) {

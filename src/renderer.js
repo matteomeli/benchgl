@@ -106,16 +106,6 @@ BenchGL.drawing.Renderer = (function() {
     });
   };
   
-  Renderer.prototype.setTextures = function(){
-    var textureName, i;
-    for (i = 0; i < arguments.length; i++) {
-      textureName = arguments[i];
-      if (this.textures.hasOwnProperty(textureName)) {
-        this.activeTextures.push(this.textures[textureName]);
-      }
-    }
-  };
-  
   Renderer.prototype.setupCamera = function(){
     var program = this.program,
         camera = this.camera;
@@ -220,3 +210,24 @@ BenchGL.drawing.Renderer = (function() {
   return Renderer;
   
 }());
+
+BenchGL.drawing.RendereringStrategy = (function() {
+
+	var RenderingStrategy;
+	
+	RenderingStrategy = function(renderer) {
+		this.renderer = renderer;
+	};
+	
+	RenderingStrategy.prototype.renderModel = function(model) {
+	
+	};
+	
+	RenderingStrategy.prototype.renderAll = function() {
+	
+	};
+	
+	return RenderingStrategy;
+
+}());
+

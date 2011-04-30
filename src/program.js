@@ -17,7 +17,7 @@ BenchGL.webgl.ProgramAttribute = (function() {
   };
   
   ProgramAttribute.prototype.setIndex = function(n) {
-    this.program.gl.bindAttribLocation(this.program.handler, n, this.name);
+    gl.bindAttribLocation(this.program.handler, n, this.name);
     this.location = n;
   }; 
   
@@ -163,7 +163,7 @@ BenchGL.webgl.ProgramSampler = (function() {
   };
   
   ProgramSampler.prototype.setUnit = function(n){
-    this.program.gl.uniform1i(this.location, n);
+    gl.uniform1i(this.location, n);
     this.unit = n;
   };
   
@@ -186,7 +186,8 @@ BenchGL.webgl.Program = (function() {
       Program;
   
   Program = function(vertex, fragment){
-    var program = gl.createProgram(), valid = false, log = '';
+    var program = gl.createProgram(), 
+    		valid = false, log = '';
     
     gl.attachShader(program, vertex.handler);
     gl.attachShader(program, fragment.handler);

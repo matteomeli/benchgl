@@ -4,7 +4,9 @@ function $(id) {
 
 function start() {
 	var status = $('status'),
-      level = 32,
+			button = $('sample'),
+			level = $('level'),
+      samplingLevel = +level.value,
       time = 0,
 			isolevel = 50,
 			xRot = yRot = 0, z = -2.0, mouseDown = false, toSample = true,
@@ -60,34 +62,39 @@ function start() {
 					});
 			
 			// Node.js server connection stuff
-			var socket = new io.Socket('localhost', {
-			  port: 3333
-			});
-      
-      printStatus(new Date().getTime() + ': Connecting to remote server...');
+			var socket = new io.Socket(null, { 
+				port: 3333, 
+				rememberTransport : false, 
+				transportOptions : {
+					websocket : { closeTimeout : 30000 }
+				} });
 			socket.connect();
-		
-			socket.on('connect', function() {
-        printStatus(new Date().getTime() + ': Connected to remote server...');
-			  console.log('Connected!');
-        sample();
-			});
 			
 			socket.on('message', function(message) {
-        console.log(new Date().getTime());
-        var data = message.data;
-        
-        console.timeEnd('Calculating geometry (level ' + data.level +')');    
-        printStatus(new Date().getTime() + ': Geometry received (level ' + data.level + ')!');
-        
+        console.timeEnd('Calculating on remote server (level ' + message.level + ')');        
         surface.dynamic = true;
-        surface.vertices = data.vertices;
-        surface.normals = data.normals;
+        surface.vertices = message.vertices;
+        surface.normals = message.normals;
+			});
+			
+			socket.on('connect', function() {
+			  console.log('Connected!');
 			});
 			
 			socket.on('disconnect', function() {
-        // TODO: Implement better reconnection logic!
-			  socket.connect();
+        console.log('Disconnected!');
+			});
+			
+			socket.on('reconnect', function() {
+        console.log('Reconnected!');
+			});
+			
+			socket.on('reconnecting', function(nextTry) {
+        console.log('Reconnecting to server (next attempt in ' + nextTry + ' ms) ...');
+			});
+			
+			socket.on('reconnect_failed', function() {
+        console.log('Reconnection failed!');
 			});
 			
 			// Rendering stuff
@@ -132,6 +139,11 @@ function start() {
         requestAnimFrame(render);
 			}
 			
+			button.addEventListener('click', function(e) {
+				samplingLevel = +level.value;
+				sample();
+			}, false);
+			
 			function sample() {
 		    var body = sampler.toString(),
 		    		config = {
@@ -149,20 +161,15 @@ function start() {
 									end : 1
 								}
 							},
-              level : level,
+		          level : samplingLevel,
 							time			: time,
 							isolevel 	: isolevel,
 							body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 						};
-            
-       printStatus(new Date().getTime() + ': Geometry requested (level ' + level + ')!');
-       console.time('Calculating geometry (level ' + level +')');		 
+		        
+		   console.time('Calculating on remote server (level ' + samplingLevel +')');		 
 			 socket.send(config);
 			}
-      
-      function printStatus(message) {
-        status.innerHTML += message + "<br/>";
-      }
       
       render();
 		}

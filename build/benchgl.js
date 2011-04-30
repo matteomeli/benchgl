@@ -33,7 +33,7 @@ BenchGL.namespace = function(name) {
 	return parent;
 };
 
-// Globalize BenchGL library
+// Special function to globalize BenchGL library
 BenchGL.globalize = function() {
 	for (var module in BenchGL) {
 		for (var object in BenchGL[module]) {
@@ -1758,7 +1758,6 @@ BenchGL.io.TextureRequest = (function() {
     var texturesReqs = this.texturesReqs,
         keys = Object.keys(texturesReqs);
     
-    // Each key of texturesReqs is a request
     keys.map(function(key) {
       var textureOpt = texturesReqs[key];
       textureOpt.image = new Image();
@@ -2096,7 +2095,7 @@ BenchGL.ui.Timer = (function() {
 	Timer = function() {
 		this.fps = 0;
 		this.lastDelta = 0;
-		this.maxSamples = 60;
+		this.maxSamples = 50;
 		this.samples = [];
 	};
 	
@@ -2389,7 +2388,7 @@ BenchGL.webgl.ProgramAttribute = (function() {
   };
   
   ProgramAttribute.prototype.setIndex = function(n) {
-    this.program.gl.bindAttribLocation(this.program.handler, n, this.name);
+    gl.bindAttribLocation(this.program.handler, n, this.name);
     this.location = n;
   }; 
   
@@ -2535,7 +2534,7 @@ BenchGL.webgl.ProgramSampler = (function() {
   };
   
   ProgramSampler.prototype.setUnit = function(n){
-    this.program.gl.uniform1i(this.location, n);
+    gl.uniform1i(this.location, n);
     this.unit = n;
   };
   
@@ -2558,7 +2557,8 @@ BenchGL.webgl.Program = (function() {
       Program;
   
   Program = function(vertex, fragment){
-    var program = gl.createProgram(), valid = false, log = '';
+    var program = gl.createProgram(), 
+    		valid = false, log = '';
     
     gl.attachShader(program, vertex.handler);
     gl.attachShader(program, fragment.handler);
@@ -2932,17 +2932,13 @@ BenchGL.drawing.Model = (function() {
     
     this.material = new Mat();
     this.uniforms = {};
-    this.textureNames = [];
+    this.textures = [];
     
     this.matrixStack = new MatStack();
         
     if (this.useColors) {
       this.normalizeColors();
     }
-  };
-  
-  Model.prototype.textures = function() {
-    return this.textureNames;
   };
   
   Model.prototype.matrix = function() {
@@ -2986,12 +2982,9 @@ BenchGL.drawing.Model = (function() {
   };
   
   Model.prototype.setTextures = function() {
-    var textureNames = this.textureNames,
-        i, l;
-    for (i = 0, l = arguments.length; i < l; i ++) {
-    	if (textureNames.indexOf(arguments[i]) < 0) {
-      	textureNames.push(arguments[i]);
-      }
+    var textures = this.textures;
+    for (var i = 0, l = arguments.length; i < l; i ++) {
+      textures.push(arguments[i]);
     }
   };
 
@@ -3078,10 +3071,14 @@ BenchGL.drawing.Model = (function() {
   Model.prototype.bindIndices = function(program, update) {
     if (!this.indices) return;
     
-    program.bindAttribute('a_index', {
-      attributeType : gl.ELEMENT_ARRAY_BUFFER,
-      data : new Uint16Array(this.indices),
-    });     
+    if (update || this.dynamic) {
+	    program.bindAttribute(this.id + '-indices', {
+	      attributeType : gl.ELEMENT_ARRAY_BUFFER,
+	      data : new Uint16Array(this.indices),
+	    });
+    } else {
+    	program.bindAttribute(this.id + '-indices');
+    }
   };
   
   Model.prototype.bindUniforms = function(program) {
@@ -3102,16 +3099,16 @@ BenchGL.drawing.Model = (function() {
   };
   
   Model.prototype.bindTextures = function(program, textures) {
-    var textureNames = this.textureNames,
-        i, l, texture;
-    for (i = 0, l = textureNames.length; i < l; i++) {
-      texture = textures[textureNames[i]];
+    var names = this.textures;
+    for (i = 0, l = names.length; i < l; i++) {
+      var texture = textures[names[i]];
       if (texture) {
         program.bindUniform('u_useTexture' + i, true);
         program.bindSamplers('tex' + i, i);
         texture.bind(i);
       }
-    }    
+    }
+    this.textures = [];
   };
   
   Model.prototype.draw = function() {
@@ -3444,16 +3441,6 @@ BenchGL.drawing.Renderer = (function() {
     });
   };
   
-  Renderer.prototype.setTextures = function(){
-    var textureName, i;
-    for (i = 0; i < arguments.length; i++) {
-      textureName = arguments[i];
-      if (this.textures.hasOwnProperty(textureName)) {
-        this.activeTextures.push(this.textures[textureName]);
-      }
-    }
-  };
-  
   Renderer.prototype.setupCamera = function(){
     var program = this.program,
         camera = this.camera;
@@ -3559,17 +3546,49 @@ BenchGL.drawing.Renderer = (function() {
   
 }());
 
-// core.js
-// The core module provides the main entry point for the library.
+BenchGL.drawing.RendereringStrategy = (function() {
 
-BenchGL.namespace('BenchGL.core.WebGL');
+	var RenderingStrategy;
+	
+	RenderingStrategy = function(renderer) {
+		this.renderer = renderer;
+	};
+	
+	RenderingStrategy.prototype.renderModel = function(model) {
+	
+	};
+	
+	RenderingStrategy.prototype.renderAll = function() {
+	
+	};
+	
+	return RenderingStrategy;
 
-BenchGL.core.WebGL = (function() {
+}());
 
+
+// webgl.js
+
+BenchGL.namespace('BenchGL.webgl.WebGL');
+
+BenchGL.webgl.WebGL = (function() {
+	
 	// Private properties and methods 
 	var WebGL;
-
-	WebGL = function(canvas, options) {
+	
+	/**
+	 * The WebGL container.
+	 * @class Represents a container for the static method that retrieves a WebGL context.
+	 */
+	WebGL = {};
+	
+	/**
+	 * Tries to retrieve a WebGL, if availale.
+	 * @param {String|HTMLCanvasElement} The canvas id or element to leverage.
+	 * @param {Object} Options for creating the context.
+	 * @returns {WebGLRenderingContext} A WebGL rendering context or null if not available.
+	 */
+	WebGL.getContext = function(canvas, options) {
 		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
 				options = options || {},
 				gl = canvas.getContext('experimental-webgl', options);
@@ -3578,33 +3597,55 @@ BenchGL.core.WebGL = (function() {
 			gl = canvas.getContext('webgl', options);
 		}
 		
-		this.context = gl;
-		this.canvas = canvas;
-	};
-	
-	WebGL.prototype.getContext = function() {
-		return this.context;
-	};
-	
-	WebGL.prototype.getCanvas = function() {
-		return this.canvas;
+		return gl;
 	};
 	
 	return WebGL;
 
 }());
+// core.js
+// The core module provides the main entry point for the library.
 
 BenchGL.namespace('BenchGL.core.Engine');
 
 BenchGL.core.Engine = (function() {
 
-	var WebGL = BenchGL.core.WebGL,
+	// Dependencies
+	var WebGL = BenchGL.webgl.WebGL,
 			Program = BenchGL.webgl.Program,
 			Canvas = BenchGL.ui.Canvas,
 			Camera = BenchGL.ui.Camera,
 			Renderer = BenchGL.drawing.Renderer,
 			instance,
-			Engine;
+			
+			// Private properties
+			Engine,
+			
+			// Private methods
+			start = function(program, canvas, camera, effects, callback, debug) {
+	    	// Binds the loaded program for rendering
+	      program.bind();
+	      
+	      // Create a renderer
+	      renderer = new Renderer(program, camera, effects);
+	      
+	      if (debug) {
+	      	gl.setTracing(true);
+	      }
+	      
+	      // Call the application with library handlers references 
+	      callback({
+	        gl: gl,
+	        canvas: canvas,
+	        program: program,
+	        camera: camera,
+	        renderer: renderer
+	      });
+	      
+	      if (debug) {
+	      	gl.setTracing(false);
+	      }    
+    	};
 
 	/**
 	 * Creates an instance of BenchGL. 
@@ -3678,7 +3719,7 @@ BenchGL.core.Engine = (function() {
         canvas, program, camera, renderer;
     
     // Create the WebGL context and store it in a library-shared variable.
-    gl = new WebGL(canvasId, contextOptions).getContext();
+    gl = WebGL.getContext(canvasId, contextOptions);
     
     if (!gl) {
       options.onError();
@@ -3701,7 +3742,7 @@ BenchGL.core.Engine = (function() {
     // Set up the shader program asynchronously
     program = Program.factory($.mix({
       onSuccess : function(program) {
-        start(program, function(application) {
+        start(program, canvas, camera, effectsOptions, function(application) {
           options.onLoad(application);
         }, options.debug);
       },
@@ -3712,35 +3753,9 @@ BenchGL.core.Engine = (function() {
     
     // If the program has loaded correctly, call the onLoad callback
     if (program) {
-      start(program, function(application) {
+      start(program, canvas, camera, effectsOptions, function(application) {
         options.onLoad(application);
       }, options.debug);
-    }
-    
-    // Calls the user application
-    function start(program, callback, debug) {
-    	// Binds the loaded program for rendering
-      program.bind();
-      
-      // Create a renderer
-      renderer = new Renderer(program, camera, effectsOptions);
-      
-      if (debug) {
-      	gl.setTracing(true);
-      }
-      
-      // Call the application with library handlers references 
-      callback({
-        gl: gl,
-        canvas: canvas,
-        program: program,
-        camera: camera,
-        renderer: renderer
-      });
-      
-      if (debug) {
-      	gl.setTracing(false);
-      }    
     }
   };
   

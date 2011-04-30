@@ -3,7 +3,7 @@
 //  Copyright (c) 2010 Matteo Meli.  
 //
 
-var levels = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+//var levels = [0, 1, 2, 4, 8, 16, 24, 32, 64];
 
 var edgeTable = [
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -537,22 +537,8 @@ onmessage = function(e) {
       time = data.time,
       isolevel = data.isolevel,
       body = data.body,
-      sampler = new Function('x, y, z, t', body);
-      
-  /*for (var i = 0, l = levels.length; i < l; i++) {
-    if (levels[i] > baseLevel) {
-      postMessage({
-        type: 'partial',
-        level: levels[i]
-      });*/
+      sampler = new Function('x, y, z, t', body),
       result = compute(grid, time, isolevel, sampler, level);
-      /*postMessage({
-        type: 'result',
-        level: levels[i],
-        content: result
-      });
-    }
-	}*/
   
   postMessage({
     level : level,

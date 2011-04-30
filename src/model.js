@@ -37,17 +37,13 @@ BenchGL.drawing.Model = (function() {
     
     this.material = new Mat();
     this.uniforms = {};
-    this.textureNames = [];
+    this.textures = [];
     
     this.matrixStack = new MatStack();
         
     if (this.useColors) {
       this.normalizeColors();
     }
-  };
-  
-  Model.prototype.textures = function() {
-    return this.textureNames;
   };
   
   Model.prototype.matrix = function() {
@@ -91,12 +87,9 @@ BenchGL.drawing.Model = (function() {
   };
   
   Model.prototype.setTextures = function() {
-    var textureNames = this.textureNames,
-        i, l;
-    for (i = 0, l = arguments.length; i < l; i ++) {
-    	if (textureNames.indexOf(arguments[i]) < 0) {
-      	textureNames.push(arguments[i]);
-      }
+    var textures = this.textures;
+    for (var i = 0, l = arguments.length; i < l; i ++) {
+      textures.push(arguments[i]);
     }
   };
 
@@ -183,10 +176,14 @@ BenchGL.drawing.Model = (function() {
   Model.prototype.bindIndices = function(program, update) {
     if (!this.indices) return;
     
-    program.bindAttribute('a_index', {
-      attributeType : gl.ELEMENT_ARRAY_BUFFER,
-      data : new Uint16Array(this.indices),
-    });     
+    if (update || this.dynamic) {
+	    program.bindAttribute(this.id + '-indices', {
+	      attributeType : gl.ELEMENT_ARRAY_BUFFER,
+	      data : new Uint16Array(this.indices),
+	    });
+    } else {
+    	program.bindAttribute(this.id + '-indices');
+    }
   };
   
   Model.prototype.bindUniforms = function(program) {
@@ -207,16 +204,16 @@ BenchGL.drawing.Model = (function() {
   };
   
   Model.prototype.bindTextures = function(program, textures) {
-    var textureNames = this.textureNames,
-        i, l, texture;
-    for (i = 0, l = textureNames.length; i < l; i++) {
-      texture = textures[textureNames[i]];
+    var names = this.textures;
+    for (i = 0, l = names.length; i < l; i++) {
+      var texture = textures[names[i]];
       if (texture) {
         program.bindUniform('u_useTexture' + i, true);
         program.bindSamplers('tex' + i, i);
         texture.bind(i);
       }
-    }    
+    }
+    this.textures = [];
   };
   
   Model.prototype.draw = function() {

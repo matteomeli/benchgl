@@ -148,7 +148,6 @@ BenchGL.io.TextureRequest = (function() {
     var texturesReqs = this.texturesReqs,
         keys = Object.keys(texturesReqs);
     
-    // Each key of texturesReqs is a request
     keys.map(function(key) {
       var textureOpt = texturesReqs[key];
       textureOpt.image = new Image();

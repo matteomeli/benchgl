@@ -319,7 +319,7 @@ BenchGL.ui.Timer = (function() {
 	Timer = function() {
 		this.fps = 0;
 		this.lastDelta = 0;
-		this.maxSamples = 60;
+		this.maxSamples = 50;
 		this.samples = [];
 	};
 	

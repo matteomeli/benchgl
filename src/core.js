@@ -1,49 +1,46 @@
 // core.js
 // The core module provides the main entry point for the library.
 
-BenchGL.namespace('BenchGL.core.WebGL');
-
-BenchGL.core.WebGL = (function() {
-
-	// Private properties and methods 
-	var WebGL;
-
-	WebGL = function(canvas, options) {
-		var canvas = typeof canvas === "string" ? $(canvas) : canvas,
-				options = options || {},
-				gl = canvas.getContext('experimental-webgl', options);
-		
-		if (!gl) {
-			gl = canvas.getContext('webgl', options);
-		}
-		
-		this.context = gl;
-		this.canvas = canvas;
-	};
-	
-	WebGL.prototype.getContext = function() {
-		return this.context;
-	};
-	
-	WebGL.prototype.getCanvas = function() {
-		return this.canvas;
-	};
-	
-	return WebGL;
-
-}());
-
 BenchGL.namespace('BenchGL.core.Engine');
 
 BenchGL.core.Engine = (function() {
 
-	var WebGL = BenchGL.core.WebGL,
+	// Dependencies
+	var WebGL = BenchGL.webgl.WebGL,
 			Program = BenchGL.webgl.Program,
 			Canvas = BenchGL.ui.Canvas,
 			Camera = BenchGL.ui.Camera,
 			Renderer = BenchGL.drawing.Renderer,
 			instance,
-			Engine;
+			
+			// Private properties
+			Engine,
+			
+			// Private methods
+			start = function(program, canvas, camera, effects, callback, debug) {
+	    	// Binds the loaded program for rendering
+	      program.bind();
+	      
+	      // Create a renderer
+	      renderer = new Renderer(program, camera, effects);
+	      
+	      if (debug) {
+	      	gl.setTracing(true);
+	      }
+	      
+	      // Call the application with library handlers references 
+	      callback({
+	        gl: gl,
+	        canvas: canvas,
+	        program: program,
+	        camera: camera,
+	        renderer: renderer
+	      });
+	      
+	      if (debug) {
+	      	gl.setTracing(false);
+	      }    
+    	};
 
 	/**
 	 * Creates an instance of BenchGL. 
@@ -117,7 +114,7 @@ BenchGL.core.Engine = (function() {
         canvas, program, camera, renderer;
     
     // Create the WebGL context and store it in a library-shared variable.
-    gl = new WebGL(canvasId, contextOptions).getContext();
+    gl = WebGL.getContext(canvasId, contextOptions);
     
     if (!gl) {
       options.onError();
@@ -140,7 +137,7 @@ BenchGL.core.Engine = (function() {
     // Set up the shader program asynchronously
     program = Program.factory($.mix({
       onSuccess : function(program) {
-        start(program, function(application) {
+        start(program, canvas, camera, effectsOptions, function(application) {
           options.onLoad(application);
         }, options.debug);
       },
@@ -151,35 +148,9 @@ BenchGL.core.Engine = (function() {
     
     // If the program has loaded correctly, call the onLoad callback
     if (program) {
-      start(program, function(application) {
+      start(program, canvas, camera, effectsOptions, function(application) {
         options.onLoad(application);
       }, options.debug);
-    }
-    
-    // Calls the user application
-    function start(program, callback, debug) {
-    	// Binds the loaded program for rendering
-      program.bind();
-      
-      // Create a renderer
-      renderer = new Renderer(program, camera, effectsOptions);
-      
-      if (debug) {
-      	gl.setTracing(true);
-      }
-      
-      // Call the application with library handlers references 
-      callback({
-        gl: gl,
-        canvas: canvas,
-        program: program,
-        camera: camera,
-        renderer: renderer
-      });
-      
-      if (debug) {
-      	gl.setTracing(false);
-      }    
     }
   };
   
