@@ -11,7 +11,7 @@ function start() {
 			var gl = handler.gl,
 					canvas = handler.canvas,
 					vertexProgram = handler.program,
-					fragmentProgram = BenchGL.webgl.Program.FromScripts(gl, {
+					fragmentProgram = BenchGL.webgl.Program.FromScripts({
 						vertex : 'per-fragment-lighting-vs',
 						fragment : 'per-fragment-lighting-fs'
 					}),
