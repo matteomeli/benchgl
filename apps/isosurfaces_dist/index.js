@@ -62,19 +62,41 @@ function start() {
 					});
 			
 			// Node.js server connection stuff
-			var socket = new io.Socket(null, { 
-				port: 3333, 
-				rememberTransport : false, 
-				transportOptions : {
-					websocket : { closeTimeout : 30000 }
-				} });
+			var socket = new io.Socket(null, { port: 3333, connectTimeout : 60000 });
 			socket.connect();
 			
 			socket.on('message', function(message) {
-        console.timeEnd('Calculating on remote server (level ' + message.level + ')');        
+				var end = new Date().getTime(),
+						transportTime = end - message.start;
+						
+        if (message.type === 'chunk') {
+       		console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
+       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
+       		        
+        	surface.vertices = surface.vertices.concat(message.vertices);
+        	surface.normals = surface.normals.concat(message.normals);
+        } else if (message.type === 'last') {
+       		console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
+       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
+       		
+       		console.timeEnd('Total time (level ' + message.level + ')');
+       		
+       		if (surface.vertices) {
+        		surface.vertices = surface.vertices.concat(message.vertices);
+        		surface.normals = surface.normals.concat(message.normals);
+        	} else {
+        		surface.vertices = message.vertices;
+						surface.normals = message.normals;
+        	}
+        } else if (message.type === 'first') {
+					console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
+       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
+       		
+        	surface.vertices = message.vertices;
+					surface.normals = message.normals;
+        }
+        
         surface.dynamic = true;
-        surface.vertices = message.vertices;
-        surface.normals = message.normals;
 			});
 			
 			socket.on('connect', function() {
@@ -83,6 +105,7 @@ function start() {
 			
 			socket.on('disconnect', function() {
         console.log('Disconnected!');
+        socket.connect();
 			});
 			
 			socket.on('reconnect', function() {
@@ -161,13 +184,14 @@ function start() {
 									end : 1
 								}
 							},
+							start : new Date().getTime(),
 		          level : samplingLevel,
 							time			: time,
 							isolevel 	: isolevel,
 							body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 						};
 		        
-		   console.time('Calculating on remote server (level ' + samplingLevel +')');		 
+		   console.time('Total time (level ' + samplingLevel +')');		 
 			 socket.send(config);
 			}
       

@@ -1787,7 +1787,7 @@ BenchGL.ui.Canvas = (function() {
 	 * Creates a new Canvas.
 	 * @class Represents a wrap object for a canvas HTML5 element.
 	 * @param {HTMLCanvasElement} canvas The canvas element.
-	 * @options {Object} options Contains callback functions to handle events occurring in the browser.
+	 * @options {Object} options Contains callbacks to handle events in the browser.
 	 */
   Canvas = function(canvas, options) {
     options = $.mix({

@@ -3,8 +3,11 @@ require('./worker.js');
 var http = require('http'),
 		path = require('path'),
 		io = require('socket.io'),
-		sys = require('sys'),
-		Worker = require('webworker').Worker;
+		sys = require('sys');
+		
+/*
+// TODO: Reading options from command line!
+*/
 
 var server = http.createServer(function(req, res){ 
   res.writeHead(200, { 'Content-Type': 'text/html' }); 
@@ -31,11 +34,67 @@ socket.on('connection', function(client){
     
     console.timeEnd('Calculating geometry (level ' + message.level + ')');
     
+    var vertices = result.vertices,
+        normals = result.normals,
+        verticesChunk = [],
+        normalsChunk = [],
+        chunkLength = 30000,
+        totalLength = vertices.length,
+        spares = totalLength % chunkLength;
+        chunks = Math.floor(totalLength / chunkLength),
+        isChunkable = chunks > 0,
+        start = 0,
+        end = (isChunkable) ? chunkLength : spares,
+        firstChunk = true,
+        counter = 0;
+    
+    console.log('--- GEOMETRIC DATA INFO ---');
+    console.log('Total number of vertex coordinates: ' + totalLength);
+    console.log('Total number of vertices: ' + totalLength/3);
+    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
+    console.log('Chunk size: ' + chunkLength);
+    console.log('Number of chunks: ' + chunks);
+    console.log('Spares coordinates: ' + spares);
+    console.log('--- END ---');
+    
+    if (isChunkable) {
+    	console.log('Splitting and sending data!');
+    } else {
+    	console.log('Sending data!');
+    }
+    
+    while (chunks--) {
+      verticesChunk = vertices.slice(start, end);
+      normalsChunk = normals.slice(start, end);
+      start = end;
+      end += chunkLength;
+      
+      client.send({
+      	type : firstChunk ? 'first' : 'chunk',
+      	chunk : counter++,
+      	start : new Date().getTime(),
+        level : message.level,
+        vertices : verticesChunk,
+        normals : normalsChunk
+      });
+      
+      if (firstChunk) {
+      	firstChunk = false;
+      }
+    }
+
+		if (isChunkable) {
+			end += spares;
+		}
+		
+    verticesChunk = vertices.slice(start, end);
+    normalsChunk = normals.slice(start, end);    
     client.send({
+    	type : 'last',
     	start : new Date().getTime(),
     	level : result.level,
-    	vertices : result.vertices,
-    	normals : result.normals
+    	vertices : verticesChunk,
+    	normals : normalsChunk
     });
   });
   
@@ -342,7 +401,7 @@ var triangleTable = [
   [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 ];
   
-function getVertex (p1, p2, v1, v2, isolevel) {
+function getVertex(p1, p2, v1, v2, isolevel) {
   var abs = Math.abs;
   
   if (abs(isolevel-v1) < 0.00001)
