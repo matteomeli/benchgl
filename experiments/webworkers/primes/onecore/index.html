@@ -1,29 +1,83 @@
 <!DOCTYPE HTML>
 <html>
  <head>
-  <title>Web Worker tests: Multi-core computation</title>
+  <title>Web Worker tests: Single-thread computation</title>
+  <script type="text/javascript">
+  	var samples = {}, tests = 0;
+		
+		samples.creation = [];
+		samples.dispatch = [];
+		samples.execution = [];
+		samples.reception = [];
+		samples.total = [];
+		samples.test = [];
+		
+  	function test() {
+			var worker, result, startTime, partialTime, endTime, testTime,
+					creationTime, dispatchTime, executionTime, receptionTime, totalTime;
+      
+			startTime = new Date().getTime();
+      worker = new Worker('worker.js');
+			endTime = new Date().getTime();
+			creationTime = endTime - startTime;
+			
+      worker.onmessage = function(e){
+        endTime = new Date().getTime();
+        
+        result = e.data;
+        
+        dispatchTime = result.start - partialTime;
+        executionTime = result.end - result.start;
+        receptionTime = endTime - result.end;
+				totalTime = endTime - partialTime;
+        testTime = endTime - startTime; 
+         
+				console.log('Creation time: %fms', creationTime); 
+        console.log('Dispatch time: %fms', dispatchTime);
+        console.log('Execution time: %fms', executionTime);
+        console.log('Reception time: %fms', receptionTime);
+				console.log('Total time: %fms', totalTime);
+				console.log('Test time (execution %d): %fms ', tests, testTime);
+				
+				samples.creation.push(creationTime);
+        samples.dispatch.push(dispatchTime);
+		    samples.execution.push(executionTime);
+		    samples.reception.push(receptionTime);
+		    samples.total.push(totalTime);
+				samples.test.push(testTime);
+				
+				worker.terminate();
+      };
+      
+      partialTime = new Date().getTime();
+      worker.postMessage({
+        from: 1,
+        to: 100000
+      });
+			tests++;
+		}
+		
+    function average() {
+      var avg = 0;
+      
+			for (var s in samples) {
+				var sample = samples[s];
+	      for (var i = 0; i < sample.length; i++) {
+	        avg += sample[i];
+	      }
+				avg /= sample.length;
+				console.log('Average %s time of %d executions: %fms', s, tests, avg);
+				sample = [];
+				avg = 0;				
+			}
+			tests = 0;
+    }
+  </script>
  </head>
  <body>
- 	<h1>Multi-core computation</h1>
+ 	<h1>Single-thread computation</h1>
  	<p>Watch the results on the console.</p>
-  <script type="text/javascript">
-		var worker, result, start, time;
-				
-		start = new Date().getTime();
-		worker = new Worker('worker.js');	// Create the Web Worker
-		time = new Date().getTime();
-		console.log('Creation: %d', (time - start));		
-		
-		worker.onmessage = function (e) {
-			result = e.data;
-			
-			time = new Date().getTime();
-			console.log('Dispatch: %d', (result.start - start));
-			console.log('Execution: %d', (result.end - result.start));
-			console.log('Reception: %d', (time - result.end));
-			console.log('Total time: %d', (time - start));
-		};
-		worker.postMessage({from:1, to:1000000});
-  </script>
+  <input type="button" onclick="test();" value="Test" />
+  <input type="button" onclick="average();" value="Average" />
  </body>
 </html>

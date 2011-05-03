@@ -1,46 +1,91 @@
 <!DOCTYPE HTML>
 <html>
  <head>
-  <title>Worker tests: Multi-core computation</title>
+  <title>Worker tests: Dual-thread computation</title>
+  <script type="text/javascript">
+    var samples = {}, tests = 0;
+    
+    samples.creation = [];
+    samples.dispatch = [];
+    samples.execution = [];
+    samples.reception = [];
+    samples.real = [];
+    samples.test = [];		
+		
+		function test() {
+	    var numWorkers = 2, 
+	        itemsPerWorker = 100000 / numWorkers,
+	        pendingWorkers = numWorkers,
+	        worker, result, startTime, partialTime, endTime, testTime, 
+					totalTime = 0, creationTime = 0, dispatchTime = 0, executionTime = 0, receptionTime = 0;
+					
+			startTime = new Date().getTime();
+			
+	    for (var i = 0; i < numWorkers; i++) {
+				partialTime = new Date().getTime();
+	      worker = new Worker('worker.js');
+	      endTime = new Date().getTime();
+	      creationTime += endTime - partialTime;
+
+	      worker.onmessage = function(e) {
+	        endTime = new Date().getTime();
+	        
+	        result = e.data;
+	        
+	        dispatchTime += result.start - partialTime;
+	        executionTime += result.end - result.start;
+	        receptionTime += endTime - result.end;
+	        totalTime += endTime - partialTime;
+	
+	        if (--pendingWorkers == 0) {
+	          testTime = endTime - startTime;
+	          
+						console.log('Construction avg time: %fms', creationTime/numWorkers);
+	          console.log('Dispatch avg time: %fms', dispatchTime/numWorkers);
+	          console.log('Execution avg time: %fms', executionTime/numWorkers);
+	          console.log('Reception avg time: %fms', receptionTime/numWorkers);
+	          console.log('Total avg time: %fms', totalTime/numWorkers);
+	          console.log('Test time (%d workers - execution %d): %fms ', numWorkers, tests, testTime);
+	        
+					  samples.creation.push(creationTime/numWorkers);
+	          samples.dispatch.push(dispatchTime/numWorkers);
+	          samples.execution.push(executionTime/numWorkers);
+	          samples.reception.push(receptionTime/numWorkers);
+	          samples.real.push(totalTime/numWorkers);
+	          samples.test.push(testTime);
+	        }
+	      }
+				
+	      partialTime = new Date().getTime();
+	      worker.postMessage({
+	        from  : i * itemsPerWorker + 1, 
+	        to    : (i + 1) * itemsPerWorker
+	      });
+	    }
+			tests++;
+		}
+		
+    function average() {
+      var avg = 0;
+      
+      for (var s in samples) {
+        var sample = samples[s];
+        for (var i = 0; i < sample.length; i++) {
+          avg += sample[i];
+        }
+        avg /= sample.length;
+        console.log('Average %s time of %d executions: %fms', s, tests, avg);
+        sample = [];
+        avg = 0;        
+      }
+      tests = 0;
+    }
+  </script>
  </head>
  <body>
- 	<h1>Multi-core computation</h1>
+ 	<h1>Dual-thread computation</h1>
  	<p>Watch the results on the console.</p>
-  <script type="text/javascript">
-		var numWorkers = 2, 
-				itemsPerWorker = 10000000 / numWorkers,
-				pendingWorkers = numWorkers,
-				start, time, last;
-		
-		start = new Date().getTime();
-		for (var i = 0; i < numWorkers; i++) {
-			time = new Date().getTime();
-			var worker = new Worker('worker.js');
-			last = time;
-			time = new Date().getTime();
-			console.log('Creation %d: %d', i, (time - last));
-			
-			worker.onmessage = function(e) {
-				var result = e.data,
-						id = result.id;
-				
-				time = new Date().getTime();
-				console.log('Dispatch %d: %d', id, (result.start - start));
-				console.log('Execution %d: %d', id, (result.end - result.start));
-				console.log('Reception %d: %d', id, (time - result.end));
-				
-				pendingWorkers--;
-				if (pendingWorkers == 0) {
-					console.log('Total time: %d', (time - start));
-				}
-			}
-			now = new Date().getTime();
-			worker.postMessage({
-				id 		: i,
-				from	:	i * itemsPerWorker + 1, 
-				to		:	(i + 1) * itemsPerWorker
-			});
-		}
-  </script>
+  <input type="button" onclick="test();" value="Test" />
+  <input type="button" onclick="average();" value="Average" />
  </body>
 </html>

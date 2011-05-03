@@ -19,8 +19,8 @@ self.onmessage = function(e) {
 	}
 	end = new Date().getTime();
 	postMessage({
-		id : e.data.id,
 		start : start,
 		end : end
 	});
+	self.close();
 }
