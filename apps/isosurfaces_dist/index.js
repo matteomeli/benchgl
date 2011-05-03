@@ -70,14 +70,14 @@ function start() {
 						transportTime = end - message.start;
 						
         if (message.type === 'chunk') {
+       		console.log('Data [chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
-       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		        
         	surface.vertices = surface.vertices.concat(message.vertices);
         	surface.normals = surface.normals.concat(message.normals);
         } else if (message.type === 'last') {
+       		console.log('Data [last chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
-       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		
        		console.timeEnd('Total time (level ' + message.level + ')');
        		
@@ -88,9 +88,13 @@ function start() {
         		surface.vertices = message.vertices;
 						surface.normals = message.normals;
         	}
-        } else if (message.type === 'first') {
+        } else if (message.type === 'first' || message.type === 'unique') {
+					if (message.type === 'first') {
+       			console.log('Data [first chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
+       		} else {
+       			console.log('Data [full] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
+       		}
 					console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
-       		console.log('Data (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		
         	surface.vertices = message.vertices;
 					surface.normals = message.normals;

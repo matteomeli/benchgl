@@ -24,78 +24,84 @@ socket.on('connection', function(client){
   client.on('message', function(message) {
     var end = new Date().getTime(),
     		transportTime = end - message.start,
+    		level = message.level,
     		result;
     
-    console.log('Calculation requested! (level ' + message.level + ')');
-    console.log('Transport time: (level ' + message.level + '): ' + transportTime + 'ms');
-    console.time('Calculating geometry (level ' + message.level + ')');
+    console.log('Calculation requested! (max level ' + message.level + ')');
+    console.log('Transport time: ' + transportTime + 'ms');
     
-    result = init(message);
-    
-    console.timeEnd('Calculating geometry (level ' + message.level + ')');
-    
-    var vertices = result.vertices,
-        normals = result.normals,
-        verticesChunk = [],
-        normalsChunk = [],
-        chunkLength = 30000,
-        totalLength = vertices.length,
-        spares = totalLength % chunkLength;
-        chunks = Math.floor(totalLength / chunkLength),
-        isChunkable = chunks > 0,
-        start = 0,
-        end = (isChunkable) ? chunkLength : spares,
-        firstChunk = true,
-        counter = 0;
-    
-    console.log('--- GEOMETRIC DATA INFO ---');
-    console.log('Total number of vertex coordinates: ' + totalLength);
-    console.log('Total number of vertices: ' + totalLength/3);
-    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
-    console.log('Chunk size: ' + chunkLength);
-    console.log('Number of chunks: ' + chunks);
-    console.log('Spares coordinates: ' + spares);
-    console.log('--- END ---');
-    
-    if (isChunkable) {
-    	console.log('Splitting and sending data!');
-    } else {
-    	console.log('Sending data!');
+    for (var i = 0; i < levels.length && levels[i] <= level; i++) {
+    	message.level = levels[i];
+	    
+	    console.time('Calculating geometry (level ' + message.level + ')');
+	    
+	    result = init(message);
+	    
+	    console.timeEnd('Calculating geometry (level ' + message.level + ')');
+	    
+	    var vertices = result.vertices,
+	        normals = result.normals,
+	        verticesChunk = [],
+	        normalsChunk = [],
+	        chunkLength = 30000,
+	        totalLength = vertices.length,
+	        spares = totalLength % chunkLength,
+	        chunks = Math.floor(totalLength / chunkLength),
+	        isChunkable = chunks > 0,
+	        start = 0,
+	        end = (isChunkable) ? chunkLength : spares,
+	        firstChunk = true,
+	        counter = 0;
+	    
+	    console.log('--- GEOMETRIC DATA INFO ---');
+	    console.log('Total number of vertex coordinates: ' + totalLength);
+	    console.log('Total number of vertices: ' + totalLength/3);
+	    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
+	    console.log('Chunk size: ' + chunkLength);
+	    console.log('Number of chunks: ' + chunks);
+	    console.log('Spares coordinates: ' + spares);
+	    console.log('--- END ---');
+	    
+	    if (isChunkable) {
+	    	console.log('Splitting and sending data!');
+	    } else {
+	    	console.log('Sending data!');
+	    }
+	    
+	    while (chunks--) {
+	      verticesChunk = vertices.slice(start, end);
+	      normalsChunk = normals.slice(start, end);
+	      start = end;
+	      end += chunkLength;
+	      
+	      client.send({
+	      	type : firstChunk ? 'first' : 'chunk',
+	      	chunk : counter++,
+	      	start : new Date().getTime(),
+	        level : message.level,
+	        vertices : verticesChunk,
+	        normals : normalsChunk
+	      });
+	      
+	      if (firstChunk) {
+	      	firstChunk = false;
+	      }
+	    }
+	
+			if (isChunkable) {
+				end += spares;
+			}
+			
+	    verticesChunk = vertices.slice(start, end);
+	    normalsChunk = normals.slice(start, end);    
+	    client.send({
+	    	type : isChunkable ? 'last' : 'unique',
+	    	start : new Date().getTime(),
+	    	level : result.level,
+	    	vertices : verticesChunk,
+	    	normals : normalsChunk
+	    });
     }
-    
-    while (chunks--) {
-      verticesChunk = vertices.slice(start, end);
-      normalsChunk = normals.slice(start, end);
-      start = end;
-      end += chunkLength;
-      
-      client.send({
-      	type : firstChunk ? 'first' : 'chunk',
-      	chunk : counter++,
-      	start : new Date().getTime(),
-        level : message.level,
-        vertices : verticesChunk,
-        normals : normalsChunk
-      });
-      
-      if (firstChunk) {
-      	firstChunk = false;
-      }
-    }
-
-		if (isChunkable) {
-			end += spares;
-		}
-		
-    verticesChunk = vertices.slice(start, end);
-    normalsChunk = normals.slice(start, end);    
-    client.send({
-    	type : isChunkable ? 'last' : 'unique',
-    	start : new Date().getTime(),
-    	level : result.level,
-    	vertices : verticesChunk,
-    	normals : normalsChunk
-    });
   });
   
   client.on('disconnect',function() {

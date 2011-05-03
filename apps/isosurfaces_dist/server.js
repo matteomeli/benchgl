@@ -32,6 +32,7 @@ socket.on('connection', function(client){
     console.timeEnd('Calculating geometry (level ' + message.level + ')');
     
     client.send({
+    	type : 'unique',
     	start : new Date().getTime(),
     	level : result.level,
     	vertices : result.vertices,
