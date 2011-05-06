@@ -1,78 +1,120 @@
 <!DOCTYPE HTML>
 <html>
  <head>
-  <title>Worker tests: Marching cubes</title>
+  <title>Worker tests: dual-thread marching cubes</title>
+  <script type="text/javascript">
+    var samples = {}, tests = 0;
+    
+    samples.creation = [];
+    samples.dispatch = [];
+    samples.execution = [];
+    samples.reception = [];
+    samples.real = [];
+    samples.test = [];    
+    
+    function test() {
+      var numWorkers = 2,
+			    partial = 1 / numWorkers,
+          pendingWorkers = numWorkers,
+          result, startTime, partialTime, endTime, testTime, 
+          totalTime = 0, creationTime = 0, dispatchTime = 0, executionTime = 0, receptionTime = 0,
+					sampler = function(x, y, z, t) {
+            var result = 0,
+                height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+                
+            height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
+            result = (height - z) * 50;
+            return result;
+          },
+          body = sampler.toString(),
+          level = 8,
+          time = 0,
+          isolevel = 48;
+          
+      startTime = new Date().getTime();
+      
+      for (var i = 0; i < numWorkers; i++) {
+        partialTime = new Date().getTime();
+        worker = new Worker('marchingcubes.js');
+        endTime = new Date().getTime();
+        creationTime += endTime - partialTime;
+
+        worker.onmessage = function(e) {
+          endTime = new Date().getTime();
+          
+          result = e.data;
+					console.log(result);
+					
+          dispatchTime += result.start - partialTime;
+          executionTime += result.end - result.start;
+          receptionTime += endTime - result.end;
+          totalTime += endTime - partialTime;
+  
+          if (--pendingWorkers == 0) {
+            testTime = endTime - startTime;
+            
+            console.log('Construction avg time: %fms', creationTime/numWorkers);
+            console.log('Dispatch avg time: %fms', dispatchTime/numWorkers);
+            console.log('Execution avg time: %fms', executionTime/numWorkers);
+            console.log('Reception avg time: %fms', receptionTime/numWorkers);
+            console.log('Total avg time: %fms', totalTime/numWorkers);
+            console.log('Test time (%d workers - execution %d): %fms ', numWorkers, tests, testTime);
+          
+            samples.creation.push(creationTime/numWorkers);
+            samples.dispatch.push(dispatchTime/numWorkers);
+            samples.execution.push(executionTime/numWorkers);
+            samples.reception.push(receptionTime/numWorkers);
+            samples.real.push(totalTime/numWorkers);
+            samples.test.push(testTime);
+          }
+        }
+        
+        partialTime = new Date().getTime();
+        worker.postMessage({
+          grid : {
+	          y : {
+	            start : 0,
+	            end : 1
+	          },
+	          z : {
+	            start : 0,
+	            end : 1
+	          },
+	          x : {
+	            start : i * partial,
+	            end : i * partial + partial
+	          }
+	        },
+	        level : level,
+	        time : time,
+	        isolevel : isolevel,
+	        body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+        });
+      }
+      tests++;
+    }
+    
+    function average() {
+      var avg = 0;
+      
+      for (var s in samples) {
+        var sample = samples[s];
+        for (var i = 0; i < sample.length; i++) {
+          avg += sample[i];
+        }
+        avg /= sample.length;
+        console.log('Average %s time of %d executions: %fms', s, tests, avg);
+        sample = [];
+        avg = 0;        
+      }
+      tests = 0;
+    }
+  </script>
  </head>
  <body>
- 	<h1>Marching cubes computation</h1>
- 	<p>Watch the results on the console.</p>
-  <script type="text/javascript">
-		var worker,
-				numWorkers = 8,
-				pendingWorkers = numWorkers,
-				start, now, last,
-				size = 128,
-  			step = 1.0 / size,
-  			limit = size / numWorkers;
-  			time = 0,
-  			isolevel = 50,
-				sampler = function(x, y, z, t) {
-					var result = 0,
-							height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
-							
-					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
-					result = (height - z) * 50;
-					return result;
-		  	},
-		  	body = sampler.toString();
-		
-		start = new Date().getTime();
-		for (var i = 0; i < numWorkers; i++) {
-			now = new Date().getTime();
-			worker = new Worker('marchingcubes.js');
-			last = now;
-			now = new Date().getTime();
-			console.log('Creation %d: %d', i, (now - last));
-			
-			worker.onmessage = function(e) {
-				var result = e.data,
-						id = result.id;
-				
-				now = new Date().getTime();
-				console.log('Dispatch %d: %d', id, (result.start - start));
-				console.log('Execution %d: %d', id, (result.end - result.start));
-				console.log('Reception %d: %d', id, (now - result.end));
-				
-				pendingWorkers--;
-				if (pendingWorkers == 0) {
-					console.log('Total time: %d', (now - start));
-				}
-			}
-			now = new Date().getTime();
-			worker.postMessage({
-				id : i,
-  			grid : {
-					x : {
-						start : 0,
-						end : size,
-						step : step
-					},
-					y : {
-						start : 0,
-						end : size,
-						step : step,
-					},
-					z : {
-						start : i * limit,
-						end : (i + 1) * limit,
-						step : step
-					}
-				},
-				time : time,
-				isolevel : isolevel,
-				body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
-			});
-		}
-  </script>
+  <h1>Marching cubes dual-thread computation</h1>
+  <p>Watch the results on the console.</p>
+  <input type="button" onclick="test();" value="Test" />
+  <input type="button" onclick="average();" value="Average" />
  </body>
 </html>

@@ -20,26 +20,29 @@ function start() {
 			tFrom = $('timeFrom'),
 			tTo = $('timeTo'),
 			loop = $('loop'),
+			again = $('again'),
 			play = $('play'),
 			stop = $('stop'),
 			speed = $('speed'),
 			useTime = false,
       toSample = false,
+			sampleReq = false;
       firstRun = true,
 			fps = +speed.value,
 			time = 0,
 			timeStep = 0,
 			level = +sub.value,
 			parallelization = +workers.value,
+			//ratio = parallelization + 1,
 			isolevel = +iso.value,
 			samplerIndex = +sampler.value,
-			xRot = yRot = 0, z = -2.0, mouseDown = false,
+			xRot = 0, yRot = 0, z = -2.0, mouseDown = false,
 			samplers = [
 				function(x, y, z, t) {
 					var result = 0,
 							height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
 							
-					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height)),
+					height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
 					result = (height - z) * 50;
 					return result;
 		  	},
@@ -135,6 +138,10 @@ function start() {
 		  ];
 	
 	// Set event listeners for control widgets
+  again.addEventListener("click", function(e) {
+    sampleReq = true;
+  }, false);
+	
 	timeEnabled.addEventListener("click", function(e) {
 		tFrom.disabled = !timeEnabled.checked;
 		tTo.disabled = !timeEnabled.checked;
@@ -198,7 +205,7 @@ function start() {
 					surface = new BenchGL.drawing.Model({
 						useColors : false
 					}),
-					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization);
+					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization/*Math.pow(8, parallelization)*/);
 			
       surface.setMaterialShininess(10);
       	
@@ -219,6 +226,10 @@ function start() {
 			
 			function handleSampling() {
         toSample = false;
+				if (sampleReq) {
+					toSample = true;
+					sampleReq = false;
+				}
 				if (+iso.value != isolevel) {
 					isolevel = +iso.value;
 					toSample = true;
@@ -242,7 +253,9 @@ function start() {
 				}
 				if (+workers.value != parallelization) {
 					parallelization = +workers.value;
-					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization)
+					//ratio = parallelization + 1;
+					pool.shutDown();
+					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization /*Math.pow(8, parallelization)*/);
 					toSample = true;
 				}
 				if (+sub.value != level) {
@@ -294,12 +307,11 @@ function start() {
 			};
 			
 			function sample() {
-				var partial = 1 / parallelization,
+				var partial = 1 / parallelization /* ratio */,
 						body = samplers[+sampler.value].toString();
 				
 				pool.map(function(i) {
-					/*var ratio = parallelization + 1,
-							idx = i % ratio,
+					/*var idx = i % ratio,
         			idy = ((i / ratio) >> 0) % ratio,
         			idz = ((i / ratio / ratio) >> 0) % ratio;*/
         
@@ -310,12 +322,12 @@ function start() {
 								end : 1
 							},
 							y : {
-								start : 0,
-								end : 1
+                start : 0,
+                end : 1
 							},
 							z : {
-								start : i * partial,
-								end : i * partial + partial
+                start : i * partial,
+                end : i * partial + partial
 							}
 						},
 						level : level,
