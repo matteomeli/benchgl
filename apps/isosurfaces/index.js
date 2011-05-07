@@ -26,7 +26,7 @@ function start() {
 			speed = $('speed'),
 			useTime = false,
       toSample = false,
-			sampleReq = false;
+			sampleReq = false,
       firstRun = true,
 			fps = +speed.value,
 			time = 0,
@@ -280,6 +280,7 @@ function start() {
         handleSampling();
                 
 				if (surface.dynamic) {
+					console.time('Timing sampler');
 					sample();
 				} else {
 					render();
@@ -339,7 +340,6 @@ function start() {
 					return config;
 				});
 				
-				console.time('Timing sampler');
 				pool.reduce(function(total, partial) {
 					var l = partial.vertices.length, i = 0;
 					while (i < l) {
@@ -350,7 +350,7 @@ function start() {
 					return total;
 				}, 
 				function(result) {
-					console.log(result);
+					//console.log(result);
 					console.timeEnd('Timing sampler');
 				  surface.vertices = result.vertices;
 					surface.normals = result.normals;

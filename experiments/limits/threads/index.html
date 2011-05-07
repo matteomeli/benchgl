@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Worker example: Max concurrent threads</title>
+ </head>
+ <body>
+  <p>Calculating max concurrent threads available...</p>
+  <script>
+  	var result = 0,
+		    sampler = function(x, y, z, t) {
+          var result = 0,
+              height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
+              
+          height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
+          result = (height - z) * 50;
+          return result;
+        },
+        body = sampler.toString();
+				
+  	for (var i = 0; i < 64; i++) {
+			var worker = new Worker('marchingcubes.js');
+			worker.onmessage = function(e) {
+				result++;
+				console.log(result);
+				console.log(e.data);
+			};
+			worker.postMessage({
+        grid : {
+          x : {
+            start : 0,
+            end : 1
+          },
+          y : {
+            start : 0,
+            end : 1
+          },
+          z : {
+            start : 0,
+            end : 1
+          }
+        },
+        level : 32,
+        time : 0,
+        isolevel : 48,
+        body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
+      });
+		}
+  </script>
+ </body>
+</html>

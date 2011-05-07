@@ -4,64 +4,69 @@
   <title>Worker tests: No-thread marching cubes</title>
   <script type="text/javascript" src="marchingcubes.js"></script>
   <script type="text/javascript">
-    var samples = [];
-        
-    function test() {
-      var startTime, endTime, totalTime, result,
-          sampler = function(x, y, z, t) {
-            var result = 0,
-                height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
-                
-            height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
-            result = (height - z) * 50;
-            return result;
-          },
-          grid = {
-            x : {
-              start : 0,
-              end : 1
-            },
-            y : {
-              start : 0,
-              end : 1
-            },
-            z : {
-              start : 0,
-              end : 1
-            }
-          },
-          level = 128,
-          time = 0,
-          isolevel = 48;
+  var samples = [];
+  
+  function test(level) {
+    var startTime, endTime, totalTime, result, sampler = function(x, y, z, t) {
+      var result = 0, height = 20 * (t + Math.sqrt((0.5 - x) * (0.5 - x) + (0.5 - y) * (0.5 - y)));
       
-      startTime = new Date().getTime();
-          
-      result = compute(grid, time, isolevel, sampler, level);
-      
-      endTime = new Date().getTime();
-      totalTime = endTime - startTime;
-      
-      console.log('Total time: ' + totalTime);
-      samples.push(totalTime);
-    }
-    
-    function average() {
-      var avg = 0;
-      
-      for (var i = 0; i < samples.length; i++) {
-        avg += samples[i];
+      height = 1.5 + 0.1 * (Math.sin(height) + Math.cos(height));
+      result = (height - z) * 50;
+      return result;
+    }, grid = {
+      x: {
+        start: 0,
+        end: 1
+      },
+      y: {
+        start: 0,
+        end: 1
+      },
+      z: {
+        start: 0,
+        end: 1
       }
-      avg /= samples.length;
-      samples = [];
-      
-      console.log('Average time: %fms', avg);
-    } 
+    }, time = 0, isolevel = 48;
+    
+    startTime = new Date().getTime();
+    
+    result = compute(grid, time, isolevel, sampler, level);
+    
+    endTime = new Date().getTime();
+    totalTime = endTime - startTime;
+    
+    samples.push(totalTime);
+  }
+  
+  function average(level) {
+    var avg = 0;
+    
+    for (var i = 0; i < samples.length; i++) {
+      avg += samples[i];
+    }
+    avg /= samples.length;
+    samples = [];
+    
+    console.log('Average time (%d) : %fms', level, avg);
+  }
+  
+  function run() {
+    var levels = [1, 2, 4, 8, 16, 32, 64, 128], 
+		    iterations = 10;
+    
+    for (var i = 0; i < levels.length; i++) {
+      for (var j = 0; j < iterations; j++) {
+        test(levels[i]);
+      }
+      average(levels[i]);
+    }
+  }
+		
   </script>
  </head>
  <body>
  	<h1>Marching cubes no-thread computation</h1>
  	<p>Watch the results on the console.</p>
-  <input type="button" onclick="test();" value="Test" />
-  <input type="button" onclick="average();" value="Average" />
+  <input type="button" onclick="run();" value="Run" />
  </body>
 </html>

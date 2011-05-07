@@ -3,53 +3,47 @@
  <head>
   <title>Web Worker tests: No-thread computation</title>
   <script type="text/javascript">
-  	var samples = [];
-		
-    function test() {
-      var startTime, endTime, totalTime;
-        
-      startTime = new Date().getTime();
-      
-      for (var n = 1; n <= 1000000; n += 1) {
-        var found = false;
-        for (var i = 2; i <= Math.sqrt(n); i += 1) {
-          if (n % i == 0) {
-            var found = true;
-            break;
-          }
-        }
-        if (!found) {
-          // found a prime!   
-          //console.log(n);
-          // do nothing
-          ;
+  function test(limit) {
+    var startTime, endTime, totalTime;
+    
+    startTime = new Date().getTime();
+    
+    for (var n = 1; n <= limit; n += 1) {
+      var found = false;
+      for (var i = 2; i <= Math.sqrt(n); i += 1) {
+        if (n % i == 0) {
+          var found = true;
+          break;
         }
       }
-      
-      endTime = new Date().getTime();
-      totalTime = endTime - startTime;
-        
-      console.log('Total time: %fms', totalTime);
-			samples.push(totalTime);
+      if (!found) {
+        // found a prime!
+      }
     }
-		
-		function average() {
-			var avg = 0;
-			
-			for (var i = 0; i < samples.length; i++) {
-				avg += samples[i];
-			}
-			avg /= samples.length;
-			samples = [];
-			
-			console.log('Average time: %fms', avg);
-		}
+    
+    endTime = new Date().getTime();
+    totalTime = endTime - startTime;
+    
+    return totalTime;
+  }
+	
+	function run() {
+    var limits = [10000, 25000, 50000, 75000, 100000, 250000, 500000, 750000, 1000000],
+		    avg = 0;
+    
+    for (var i = 0, l = limits.length; i < l; i++) {
+			 for (var j = 0; j < 10; j++) {
+			   avg += test(limits[i]);
+			 }
+			 console.log('Average time at level %d: %dms', limits[i], avg/l);
+			 avg = 0;
+    }
+	}
   </script>
  </head>
  <body>
   <h1>No-thread computation</h1>
   <p>Watch the results on the console.</p>
-	<input type="button" onclick="test();" value="Test" />
-	<input type="button" onclick="average();" value="Average" />
+	<input type="button" onclick="run();" value="Run" />
  </body>
 </html>

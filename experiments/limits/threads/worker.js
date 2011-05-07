@@ -22,5 +22,4 @@ self.onmessage = function(e) {
 		start : start,
 		end : end
 	});
-	self.close();
 }

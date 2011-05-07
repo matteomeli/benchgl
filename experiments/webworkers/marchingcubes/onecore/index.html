@@ -12,7 +12,7 @@
     samples.total = [];
     samples.test = [];
     
-    function test() {
+    function test(level) {
       var worker, result, startTime, partialTime, endTime, testTime,
           creationTime, dispatchTime, executionTime, receptionTime, totalTime,
           sampler = function(x, y, z, t) {
@@ -38,7 +38,6 @@
               end : 1
             }
           },
-          level = 128,
           time = 0,
           isolevel = 48;
       
@@ -58,12 +57,12 @@
         totalTime = endTime - partialTime;
         testTime = endTime - startTime; 
          
-        console.log('Creation time: %fms', creationTime); 
-        console.log('Dispatch time: %fms', dispatchTime);
-        console.log('Execution time: %fms', executionTime);
-        console.log('Reception time: %fms', receptionTime);
-        console.log('Total time: %fms', totalTime);
-        console.log('Test time (execution %d): %fms ', tests, testTime);
+        //console.log('Creation time: %fms', creationTime); 
+        //console.log('Dispatch time: %fms', dispatchTime);
+        //console.log('Execution time: %fms', executionTime);
+        //console.log('Reception time: %fms', receptionTime);
+        //console.log('Total time: %fms', totalTime);
+        //console.log('Test time (execution %d): %fms ', tests, testTime);
         
         samples.creation.push(creationTime);
         samples.dispatch.push(dispatchTime);
@@ -86,7 +85,7 @@
       tests++;
     }
     
-    function average() {
+    function average(level) {
       var avg = 0;
       
       for (var s in samples) {
@@ -95,18 +94,31 @@
           avg += sample[i];
         }
         avg /= sample.length;
-        console.log('Average %s time of %d executions: %fms', s, tests, avg);
+        console.log('Average %s time of %d executions (%d): %fms', s, tests, level, avg);
         sample = [];
         avg = 0;        
       }
       tests = 0;
     }
+		
+		function run() {
+	    var levels = [0, 1, 2, 4, 8, 16, 32, 64, 128], 
+	        iterations = 10;
+	    
+	    for (var i = 0; i < levels.length; i++) {
+	      for (var j = 0; j < iterations; j++) {
+	        test(levels[i]);
+	      }
+	      average(levels[i]);
+	    }			
+		}
   </script>
  </head>
  <body>
  	<h1>Marching cubes one-core computation</h1>
  	<p>Watch the results on the console.</p>
-  <input type="button" onclick="test();" value="Test" />
+  <input type="button" onclick="test(8);" value="Test" />
   <input type="button" onclick="average();" value="Average" />
+	<input type="button" onclick="run();" value="Run" />
  </body>
 </html>
