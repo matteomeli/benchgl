@@ -507,8 +507,8 @@ function compute(grid, time, isolevel, sampler, level) {
 			
 	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
 		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
-			for (var k = zstart+(zstep/2); k <= zend; k+=zstep) {
-				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
+			for (var k = zstart+(xstep/2); k <= zend; k+=xstep) {
+				result = polygonize(i, j, k, xstep, ystep, xstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
 					normals.push.apply(normals, result.normals);

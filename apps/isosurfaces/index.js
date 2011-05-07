@@ -350,6 +350,7 @@ function start() {
 					return total;
 				}, 
 				function(result) {
+					console.log(result);
 					console.timeEnd('Timing sampler');
 				  surface.vertices = result.vertices;
 					surface.normals = result.normals;

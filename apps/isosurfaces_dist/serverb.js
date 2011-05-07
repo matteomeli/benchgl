@@ -601,35 +601,35 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
 };
 
 function compute(grid, time, isolevel, sampler, level) {
-  var xstart = grid.x.start,
-      ystart = grid.y.start,
-      zstart = grid.z.start,
-      xend = grid.x.end,
-      yend = grid.y.end,
-      zend = grid.z.end,
-      xstep = (xend - xstart) / level,
-      ystep = (yend - ystart) / level,
-      zstep = (zend - zstart) / level,
-      vertices = [],
+	var xstart = grid.x.start,
+			ystart = grid.y.start,
+			zstart = grid.z.start,
+			xend = grid.x.end,
+			yend = grid.y.end,
+			zend = grid.z.end,
+			xstep = (xend - xstart) / level,
+			ystep = (yend - ystart) / level,
+			zstep = (zend - zstart) / level,
+			vertices = [],
       normals = [],
-      result;
-      
-  for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
-    for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
-      for (var k = zstart+(zstep/2); k <= zend; k+=ystep) {
-        result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
-        if (result) {
-          vertices.push.apply(vertices, result.vertices);
-          normals.push.apply(normals, result.normals);
-        }
-      }
-    }
-  }
-  
-  return {
-    vertices  : vertices,
-    normals   : normals
-  };
+			result;
+			
+	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
+		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
+			for (var k = zstart+(xstep/2); k <= zend; k+=xstep) {
+				result = polygonize(i, j, k, xstep, ystep, xstep, time, isolevel, sampler);
+				if (result) {
+					vertices.push.apply(vertices, result.vertices);
+					normals.push.apply(normals, result.normals);
+				}
+			}
+		}
+	}
+	
+	return {
+		vertices  : vertices,
+		normals   : normals
+	};
 };
 
 function init(message) {
