@@ -17,6 +17,11 @@ BenchGL.drawing.Model = (function() {
       // Private properties and methods
       Model;
   
+  /**
+   * Creates a new Model.
+   * @class	
+   * @param
+   */
   Model = function(options) {
     options = $.mix({
       drawType : gl.TRIANGLES,

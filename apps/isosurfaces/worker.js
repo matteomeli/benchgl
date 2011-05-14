@@ -498,17 +498,20 @@ function compute(grid, time, isolevel, sampler, level) {
 			xend = grid.x.end,
 			yend = grid.y.end,
 			zend = grid.z.end,
-			xstep = (xend - xstart) / level,
-			ystep = (yend - ystart) / level,
-			zstep = (zend - zstart) / level,
+			//xstep = 1 / level,//(xend - xstart) / level,
+			//ystep = 1 / level,//(yend - ystart) / level,
+			//zstep = 1 / level,//(zend - zstart) / level,
+			xstep = (xend - xstart) * (1 / level),
+			ystep = (yend - ystart) * (1 / level),
+			zstep = (zend - zstart) * (1 / level),
 			vertices = [],
       normals = [],
 			result;
 			
 	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
 		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
-			for (var k = zstart+(xstep/2); k <= zend; k+=xstep) {
-				result = polygonize(i, j, k, xstep, ystep, xstep, time, isolevel, sampler);
+			for (var k = zstart+(zstep/2); k <= zend; k+=zstep) {
+				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
 					normals.push.apply(normals, result.normals);
@@ -534,4 +537,5 @@ onmessage = function(e) {
       result = compute(grid, time, isolevel, sampler, level);
 
   postMessage(result);
+  //self.close();
 };

@@ -1,6 +1,18 @@
 function $(id) {
   return document.getElementById(id);
-};
+}
+
+function rgbToHex(r, g, b) {
+	return "#" + toHex(r) + toHex(g) + toHex(b);
+}
+
+function toHex(n) {
+	n = parseInt(n,10);
+	if (isNaN(n)) return "00";
+	n = Math.max(0,Math.min(n,255));
+	return "0123456789ABCDEF".charAt((n-n%16)/16)
+	    + "0123456789ABCDEF".charAt(n%16);
+}
 
 function start() {
 	var surfaceR = $('surfaceR'),
@@ -14,7 +26,7 @@ function start() {
 			lightZ = $('lightZ'),
 			sampler = $('sampler'),
 			workers = $('workers'),
-			sub = $('sub'),
+			samplingLevel = $('level'),
 			iso = $('isolevel'),
 			timeEnabled = $('time'),
 			tFrom = $('timeFrom'),
@@ -31,7 +43,7 @@ function start() {
 			fps = +speed.value,
 			time = 0,
 			timeStep = 0,
-			level = +sub.value,
+			level = +samplingLevel.value,
 			parallelization = +workers.value,
 			//ratio = parallelization + 1,
 			isolevel = +iso.value,
@@ -149,6 +161,9 @@ function start() {
 		stop.disabled = !timeEnabled.checked;
 		loop.disabled = !timeEnabled.checked;
 		speed.disabled = !timeEnabled.checked;
+		if (!timeEnabled.checked) {
+			time = 0;
+		}
 	}, false);
 	
 	play.addEventListener("click", function(e) {
@@ -166,7 +181,7 @@ function start() {
 	}, false);
   
   // Start the application
-	BenchGL.core.Engine('surfaces-canvas', {
+	BenchGL.Engine('surfaces-canvas', {
 		program : {
 			type : 'urls',
 			vertex : '../../shaders/surfaces.vertex',
@@ -202,6 +217,7 @@ function start() {
 					program = handler.program,
 					camera = handler.camera,
 					renderer = handler.renderer,
+					timer = new BenchGL.ui.Timer(),
 					surface = new BenchGL.drawing.Model({
 						useColors : false
 					}),
@@ -248,6 +264,7 @@ function start() {
 						time += timeStep;
 					}
 					if (useTime) {
+						//pool = new BenchGL.extra.WorkerPool('worker.js', /*parallelization*/Math.pow(8, parallelization));
 						toSample = true;
 					}
 				}
@@ -255,11 +272,13 @@ function start() {
 					parallelization = +workers.value;
 					//ratio = parallelization + 1;
 					pool.shutDown();
-					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization /*Math.pow(8, parallelization)*/);
+					pool = new BenchGL.extra.WorkerPool('worker.js', parallelization/*Math.pow(8, parallelization)*/);
 					toSample = true;
 				}
-				if (+sub.value != level) {
-					level = +sub.value;
+				if (+samplingLevel.value != level) {
+					level = +samplingLevel.value;
+					//pool.shutDown();
+					//pool = new BenchGL.extra.WorkerPool('worker.js', /*parallelization*/Math.pow(8, parallelization));
 					toSample = true;
 				}
 				if (+speed.value != fps) {
@@ -273,16 +292,25 @@ function start() {
 				surface.setMaterialDiffuse(+surfaceR.value, +surfaceG.value, +surfaceB.value);
 				renderer.lights['light0'].setPosition(+lightX.value, +lightY.value, +lightZ.value);
 				renderer.lights['light0'].setDiffuse(+lightR.value, +lightG.value, +lightB.value);
+				// change ui background (nice effect)
+				var hexColor = rgbToHex(+surfaceR.value*255, +surfaceG.value*255, +surfaceB.value*255);
+				document.getElementById('ui').style.backgroundColor = hexColor;
 			};
+			
+			function info() {
+        $('fps').innerHTML = timer.fps + ' fps';
+      };
 			
 			function display() {
         handleControls();
         handleSampling();
+        info();
                 
 				if (surface.dynamic) {
 					console.time('Timing sampler');
 					sample();
 				} else {
+					timer.stop();
 					render();
 				}
 			};
@@ -319,12 +347,12 @@ function start() {
 			    var config = {
 						grid : {
 							x : {
-								start : 0,
-								end : 1
+                start : 0,//idx * partial,
+                end : 1//idx * partial + partial
 							},
 							y : {
-                start : 0,
-                end : 1
+                start : 0,//idy * partial,
+                end : 1//idy * partial + partial
 							},
 							z : {
                 start : i * partial,
@@ -350,7 +378,7 @@ function start() {
 					return total;
 				}, 
 				function(result) {
-					//console.log(result);
+					console.log(result);
 					console.timeEnd('Timing sampler');
 				  surface.vertices = result.vertices;
 					surface.normals = result.normals;
@@ -364,6 +392,7 @@ function start() {
 			};
 			
 			// Call display function
+			timer.start();
 			display();
 		}
 	});

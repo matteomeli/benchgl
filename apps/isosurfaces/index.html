@@ -12,10 +12,11 @@
 
 <body onload="start();">
 	<div id="title">
-		<h1>Isosurfaces viewer</h1>
+		<h2>Isosurfaces viewer</h2>
 	</div>
   <div id="outer">
   	<div id="inner">
+  		<div id="fps">0 fps</div>
 	    <canvas id="surfaces-canvas" width="800" height="600"></canvas>
 			<div id="ui">
 				<table style="border: 0; padding: 10px; width: 100%">
@@ -197,17 +198,17 @@
 									<td>Workers:</td>
 									<td>
 				            <select id="workers">
-				              <option selected>1</option>
-				              <option>2</option>
-				              <option>4</option>
-				              <option>8</option>
+				              <option selected value="1">1</option>
+				              <option value="2">2</option>
+				              <option value="4">4</option>
+				              <option value="8">8</option>
 				            </select>									
 									</td>
 								</tr>
 								<tr>
-									<td>Grid size:</td>
+									<td>Sampling step (1/x):</td>
 									<td>
-										<input type="number" id="sub" value="8" step="2" />
+										<input type="number" id="level" value="10" min="0" max="100" step="1" />
 										<input type="button" id="again" value="Sample" />
 									</td>
 								</tr>

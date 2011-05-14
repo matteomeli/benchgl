@@ -1,6 +1,105 @@
 // renderer.js
 // Module drawing: Implements the core of the rendering engine.
 
+BenchGL.namespace('BenchGL.drawing.SinglePassRenderingStrategy');
+
+BenchGL.drawing.SinglePassRenderingStrategy = (function() {
+
+	var SinglePassRenderingStrategy;
+	
+	SinglePassRenderingStrategy = function(renderer) {
+		this.renderer = renderer;
+	};
+	
+  SinglePassRenderingStrategy.prototype.setupCamera = function(){
+    var program = this.renderer.program,
+        camera = this.renderer.camera;
+    
+    program.bindUniform('u_projectionMatrix', camera.projMatrix());
+    program.bindUniform('u_viewMatrix', camera.viewMatrix());
+  };
+  
+  SinglePassRenderingStrategy.prototype.setupLights = function(){
+    var uniforms = {},
+        index = 0, l, light;
+    
+    uniforms.u_enableLighting = this.renderer.useLighting;
+    uniforms.u_ambientColor = this.renderer.ambientColor.toRGBArray();
+    uniforms.u_directionalColor = this.renderer.directionalColor.toRGBArray();
+    uniforms.u_lightingDirection = this.renderer.lightingDirection.toArray();
+    
+    for (l in this.renderer.lights) {
+      light = this.renderer.lights[l];
+      uniforms['u_enableLight' + (index + 1)] = light.active;
+      uniforms['u_lightPosition' + (index + 1)] = light.position.toArray();
+      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBArray();
+      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBArray();
+      index++;
+    }
+    
+    this.renderer.program.bindUniforms(uniforms);
+  };
+  
+  SinglePassRenderingStrategy.prototype.setupTextures = function() {
+    this.renderer.program.bindUniform('u_enableTexturing', this.renderer.useTexturing);
+  };
+  
+  SinglePassRenderingStrategy.prototype.setupEffects = function(){
+    var effects = this.renderer.effects,
+        uniforms = {}, 
+        e, effect, p, property, value;
+    
+    for (e in effects) {
+      effect = effects[e];
+      for (p in effect) {
+        property = p.charAt(0).toUpperCase() + p.slice(1);
+        value = effect[p];
+        uniforms['u_' + e + property] = value;
+      }
+    }
+    
+    this.renderer.program.bindUniforms(uniforms);
+  };	
+	
+	SinglePassRenderingStrategy.prototype.renderModel = function(model) {
+    var program = this.renderer.program,
+        camera = this.renderer.camera,
+        textures = this.renderer.textures,
+        modelView, i, l, texture;
+    
+  	model.bindVertices(program);
+  	model.bindNormals(program);
+  	model.bindTexcoords(program);
+  	model.bindColors(program);
+  	model.bindIndices(program);
+    	
+    model.bindMaterial(program);
+    model.bindUniforms(program);
+    model.bindTextures(program, textures);
+    
+    // Set modelView and normal matrices
+    modelView = camera.modelViewMatrix().multiplyMat4(model.matrix());
+    program.bindUniform('u_modelViewMatrix', modelView);
+    program.bindUniform('u_normalMatrix', modelView.invert().$transpose());    
+    
+    model.draw();	
+	};
+	
+	SinglePassRenderingStrategy.prototype.renderAll = function() {
+    this.setupCamera();
+    this.setupLights();
+    this.setupTextures();
+    this.setupEffects();
+    
+    for (var i = 0, l = this.renderer.models.length; i < l; i++) {
+      this.renderModel(this.renderer.models[i]);
+    }   	
+	};
+	
+	return SinglePassRenderingStrategy;
+
+}());
+
 BenchGL.namespace('BenchGL.drawing.Renderer');
 
 BenchGL.drawing.Renderer = (function() {
@@ -13,6 +112,7 @@ BenchGL.drawing.Renderer = (function() {
       Light = BenchGL.skin.Light, 
       Texture = BenchGL.skin.Texture, 
       TextureRequest = BenchGL.io.TextureRequest,
+      SinglePassRenderingStrategy = BenchGL.drawing.SinglePassRenderingStrategy,
       
       // Private properties and methods 
       Renderer;
@@ -21,6 +121,9 @@ BenchGL.drawing.Renderer = (function() {
     this.program = program;
     this.camera = camera;
     this.effects = effects;
+    
+    // Rendering strategy
+    this.strategy = new SinglePassRenderingStrategy(this);
     
     // Background and current color
     this.clearColor = new Color(0, 0, 0, 1);
@@ -94,66 +197,16 @@ BenchGL.drawing.Renderer = (function() {
     this.lights[name] = new Light(options);
   };
   
-  Renderer.prototype.addTexture = function(name, options){
+  Renderer.prototype.addTexture = function(name, options) {
     this.textures[name] = new Texture(options);
   };
   
-  Renderer.prototype.addTextures = function(options){
+  Renderer.prototype.addTextures = function(options) {
   	var myself = this;
   	
     new TextureRequest(options).send(function(name, options) {
     	myself.addTexture(name, options);
     });
-  };
-  
-  Renderer.prototype.setupCamera = function(){
-    var program = this.program,
-        camera = this.camera;
-    
-    program.bindUniform('u_projectionMatrix', camera.projMatrix());
-    program.bindUniform('u_viewMatrix', camera.viewMatrix());
-  };
-  
-  Renderer.prototype.setupLights = function(){
-    var uniforms = {},
-        index = 0, l, light;
-    
-    uniforms.u_enableLighting = this.useLighting;
-    uniforms.u_ambientColor = this.ambientColor.toRGBArray();
-    uniforms.u_directionalColor = this.directionalColor.toRGBArray();
-    uniforms.u_lightingDirection = this.lightingDirection.toArray();
-    
-    for (l in this.lights) {
-      light = this.lights[l];
-      uniforms['u_enableLight' + (index + 1)] = light.active;
-      uniforms['u_lightPosition' + (index + 1)] = light.position.toArray();
-      uniforms['u_lightColor' + (index + 1)] = light.diffuse.toRGBArray();
-      uniforms['u_lightSpecularColor' + (index + 1)] = light.specular.toRGBArray();
-      index++;
-    }
-    
-    this.program.bindUniforms(uniforms);
-  };
-  
-  Renderer.prototype.setupTextures = function(){
-    this.program.bindUniform('u_enableTexturing', this.useTexturing);
-  };
-  
-  Renderer.prototype.setupEffects = function(){
-    var effects = this.effects,
-        uniforms = {}, 
-        e, effect, p, property, value;
-    
-    for (e in effects) {
-      effect = effects[e];
-      for (p in effect) {
-        property = p.charAt(0).toUpperCase() + p.slice(1);
-        value = effect[p];
-        uniforms['u_' + e + property] = value;
-      }
-    }
-    
-    this.program.bindUniforms(uniforms);
   };
   
   Renderer.prototype.addModels = function() {
@@ -172,62 +225,30 @@ BenchGL.drawing.Renderer = (function() {
     }
   };
   
-  Renderer.prototype.renderModel = function(model){
-    var program = this.program,
-        camera = this.camera,
-        textures = this.textures,
-        modelView, i, l, texture;
-    
-  	model.bindVertices(program);
-  	model.bindNormals(program);
-  	model.bindTexcoords(program);
-  	model.bindColors(program);
-  	model.bindIndices(program);
-    	
-    model.bindMaterial(program);
-    model.bindUniforms(program);
-    model.bindTextures(program, textures);
-    
-    // Set modelView and normal matrices
-    modelView = camera.modelViewMatrix().multiplyMat4(model.matrix());
-    program.bindUniform('u_modelViewMatrix', modelView);
-    program.bindUniform('u_normalMatrix', modelView.invert().$transpose());    
-    
-    model.draw();
+  Renderer.prototype.setupCamera = function() {
+    this.strategy.setupCamera();
+  };
+  
+  Renderer.prototype.setupLights = function() {
+    this.strategy.setupLights();
+  };
+  
+  Renderer.prototype.setupTextures = function() {
+    this.strategy.setupTextures();
+  };
+  
+  Renderer.prototype.setupEffects = function() {
+    this.strategy.setupTextures();
+  };
+  
+  Renderer.prototype.renderModel = function(model) {
+    this.strategy.renderModel(model);
   };
   
   Renderer.prototype.renderAll = function() {
-    this.setupCamera();
-    this.setupLights();
-    this.setupTextures();
-    this.setupEffects();
-    
-    for (var i = 0, l = this.models.length; i < l; i++) {
-      this.renderModel(this.models[i]);
-    }    
+    this.strategy.renderAll(); 
   };
   
   return Renderer;
   
 }());
-
-BenchGL.drawing.RendereringStrategy = (function() {
-
-	var RenderingStrategy;
-	
-	RenderingStrategy = function(renderer) {
-		this.renderer = renderer;
-	};
-	
-	RenderingStrategy.prototype.renderModel = function(model) {
-	
-	};
-	
-	RenderingStrategy.prototype.renderAll = function() {
-	
-	};
-	
-	return RenderingStrategy;
-
-}());
-

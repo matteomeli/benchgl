@@ -1,5 +1,3 @@
-require('./worker.js');
-
 var http = require('http'),
 		path = require('path'),
 		io = require('socket.io'),

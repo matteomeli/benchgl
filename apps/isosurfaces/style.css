@@ -11,26 +11,42 @@ body {
 #outer {
   width: 100%;
   text-align: center;
+  overflow: hidden;
 }
 
 #inner {
   display: inline-block;
+  overflow: hidden;
 }
 
 #ui {
 	text-align: left;
-	background-color: #94ffa7;
+	/*background-color: #94ffa7;*/
 	border: solid 1px #a9a0a0;
   width: 800px;
 }
 
+#fps {
+	background-color: rgba(0, 0, 0, 0.2);
+	color: white;
+	position: relative;
+	width: 50px;
+	top: 30px;
+	left: 10px;
+	z-index: 2;
+	border-radius: 10px;
+	padding: 0;
+	margin : 0;
+	
+}
+
 .controlbox {
-	padding: 5px;
+	padding: 2px;
 }
 
 .controlbox-title {
 	text-align: center;
 	font-weight: bold;
 	font-size: large;
-	padding: 5px;
+	padding: 2px;
 }

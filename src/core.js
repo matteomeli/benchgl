@@ -1,9 +1,9 @@
 // core.js
 // The core module provides the main entry point for the library.
 
-BenchGL.namespace('BenchGL.core.Engine');
+//BenchGL.namespace('BenchGL.core.Engine');
 
-BenchGL.core.Engine = (function() {
+BenchGL.Engine = (function() {
 
 	// Dependencies
 	var WebGL = BenchGL.webgl.WebGL,

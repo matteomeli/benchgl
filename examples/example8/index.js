@@ -31,7 +31,7 @@ function start() {
 		"}"
 	].join("\n");
 
-	BenchGL.core.Engine('example-canvas', {
+	BenchGL.Engine('example-canvas', {
 		program : {
 			type : 'defaults',
 			fragment : 'blend'

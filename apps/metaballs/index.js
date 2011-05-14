@@ -114,7 +114,7 @@ function start() {
 	}, false);
   
   // Start the application
-	BenchGL.core.Engine('metaballs-canvas', {
+	BenchGL.Engine('metaballs-canvas', {
 		program : {
       type : 'urls',
       vertex : '../../shaders/surfaces.vertex',

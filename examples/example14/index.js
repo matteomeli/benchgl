@@ -3,7 +3,7 @@ function $(id) {
 };
 
 function start() {
-	BenchGL.core.Engine('example-canvas', {
+	BenchGL.Engine('example-canvas', {
 		program : {
 			type : 'urls',
 			vertex : '../../shaders/lighting-pf.vertex',

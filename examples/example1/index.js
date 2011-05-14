@@ -1,5 +1,5 @@
 function start() {
-	BenchGL.core.Engine('example-canvas', {
+	BenchGL.Engine('example-canvas', {
 		onError : function() {
 			alert('An error occured launching the application...');
 		},

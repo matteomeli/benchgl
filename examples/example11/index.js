@@ -6,7 +6,7 @@ function start() {
 	var xRot = yRot = 0,
 			mouseDown = false;
 	
-	BenchGL.core.Engine('example-canvas', {
+	BenchGL.Engine('example-canvas', {
 		events : {
 			onMouseDown : function(e, x, y) {
 				if (e.button === 0) {
