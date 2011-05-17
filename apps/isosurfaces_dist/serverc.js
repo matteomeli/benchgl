@@ -1,11 +1,14 @@
 var http = require('http'),
 		path = require('path'),
 		io = require('socket.io'),
-		sys = require('sys');
+		sys = require('sys'),
+		port = process.argv[2] || 3333,
+		chunkSize = process.argv[3] && process.argv[3]*1000 || 30000;
 		
-/*
-// TODO: Reading options from command line!
-*/
+if (process.argv[2] === 'help') {
+	console.log('Usage: node servere.js [port] [chunk-size]');
+	return;
+}
 
 var server = http.createServer(function(req, res){ 
   res.writeHead(200, { 'Content-Type': 'text/html' }); 
@@ -28,87 +31,91 @@ socket.on('connection', function(client){
     console.log('Calculation requested! (max level ' + message.level + ')');
     console.log('Transport time: ' + transportTime + 'ms');
     
-    for (var i = 0; i < levels.length && levels[i] <= level; i++) {
+    for (var i = 0; i < levels.length && levels[i] < level; i++) {
     	message.level = levels[i];
-	    
 	    console.time('Calculating geometry (level ' + message.level + ')');
-	    
 	    result = init(message);
-	    
 	    console.timeEnd('Calculating geometry (level ' + message.level + ')');
-	    
-	    var vertices = result.vertices,
-	        normals = result.normals,
-	        verticesChunk = [],
-	        normalsChunk = [],
-	        chunkLength = 30000,
-	        totalLength = vertices.length,
-	        spares = totalLength % chunkLength,
-	        chunks = Math.floor(totalLength / chunkLength),
-	        isChunkable = chunks > 0,
-	        start = 0,
-	        end = (isChunkable) ? chunkLength : spares,
-	        firstChunk = true,
-	        counter = 0;
-	    
-	    console.log('--- GEOMETRIC DATA INFO ---');
-	    console.log('Total number of vertex coordinates: ' + totalLength);
-	    console.log('Total number of vertices: ' + totalLength/3);
-	    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
-	    console.log('Chunk size: ' + chunkLength);
-	    console.log('Number of chunks: ' + chunks);
-	    console.log('Spares coordinates: ' + spares);
-	    console.log('--- END ---');
-	    
-	    if (isChunkable) {
-	    	console.log('Splitting and sending data!');
-	    } else {
-	    	console.log('Sending data!');
-	    }
-	    
-	    while (chunks--) {
-	      verticesChunk = vertices.slice(start, end);
-	      normalsChunk = normals.slice(start, end);
-	      start = end;
-	      end += chunkLength;
-	      
-	      client.send({
-	      	type : firstChunk ? 'first' : 'chunk',
-	      	chunk : counter++,
-	      	start : new Date().getTime(),
-	        level : message.level,
-	        vertices : verticesChunk,
-	        normals : normalsChunk
-	      });
-	      
-	      if (firstChunk) {
-	      	firstChunk = false;
-	      }
-	    }
-	
-			if (isChunkable) {
-				end += spares;
-			}
-			
-	    verticesChunk = vertices.slice(start, end);
-	    normalsChunk = normals.slice(start, end);    
-	    client.send({
-	    	type : isChunkable ? 'last' : 'unique',
-	    	start : new Date().getTime(),
-	    	level : result.level,
-	    	vertices : verticesChunk,
-	    	normals : normalsChunk
-	    });
+	    send(client, message, result);    
     }
+  	message.level = level;
+    console.time('Calculating geometry (level ' + message.level + ')');
+    result = init(message);
+    console.timeEnd('Calculating geometry (level ' + message.level + ')');
+    send(client, message, result);        
   });
   
   client.on('disconnect',function() {
     // TODO
   });
 
+	function send(client, message, result) {
+    var vertices = result.vertices,
+        normals = result.normals,
+        verticesChunk = [],
+        normalsChunk = [],
+        totalLength = vertices.length,
+        spares = totalLength % chunkSize,
+        chunks = Math.floor(totalLength / chunkSize),
+        isChunkable = chunks > 0,
+        start = 0,
+        end = (isChunkable) ? chunkSize : spares,
+        firstChunk = true,
+        counter = 0;
+    
+    console.log('--- GEOMETRIC DATA INFO ---');
+    console.log('Total number of vertex coordinates: ' + totalLength);
+    console.log('Total number of vertices: ' + totalLength/3);
+    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
+    console.log('Chunk size: ' + chunkSize);
+    console.log('Number of chunks: ' + chunks);
+    console.log('Spares coordinates: ' + spares);
+    console.log('--- END ---');
+    
+    if (isChunkable) {
+    	console.log('Splitting and sending data!');
+    } else {
+    	console.log('Sending data!');
+    }
+    
+    while (chunks--) {
+      verticesChunk = vertices.slice(start, end);
+      normalsChunk = normals.slice(start, end);
+      start = end;
+      end += chunkSize;
+      
+      client.send({
+      	type : firstChunk ? 'first' : 'chunk',
+      	chunk : counter++,
+      	start : new Date().getTime(),
+        level : message.level,
+        vertices : verticesChunk,
+        normals : normalsChunk
+      });
+      
+      if (firstChunk) {
+      	firstChunk = false;
+      }
+    }
+
+		if (isChunkable) {
+			end += spares;
+		}
+		
+    verticesChunk = vertices.slice(start, end);
+    normalsChunk = normals.slice(start, end);    
+    client.send({
+    	type : isChunkable ? 'last' : 'unique',
+    	start : new Date().getTime(),
+    	level : result.level,
+    	vertices : verticesChunk,
+    	normals : normalsChunk
+    });	
+	}
   
 });
 
+// Splicing levels
 var levels = [0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
 
 var edgeTable = [

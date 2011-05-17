@@ -65,7 +65,7 @@ function start() {
 			
 			// Node.js server connection stuff
 			//var socket = new io.Socket('plm.dia.uniroma3.it', { port: 3333, connectTimeout : 60000 });
-			var socket = new io.Socket(null, { port: 4444, connectTimeout : 60000 });
+			var socket = new io.Socket(null, { port: 3333, connectTimeout : 60000 });
 			socket.connect();
 			
 			socket.on('message', function(message) {
