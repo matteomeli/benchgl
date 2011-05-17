@@ -362,6 +362,7 @@ function start() {
 						level : level,
 						time : time,
 						isolevel : isolevel,
+						workers : parallelization,
 						body : body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 					};
 					

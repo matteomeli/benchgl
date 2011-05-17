@@ -6,6 +6,7 @@ function start() {
 	var status = $('status'),
 			button = $('sample'),
 			level = $('level'),
+			lastLevel = -1,
       samplingLevel = +level.value,
       time = 0,
 			isolevel = 50,
@@ -74,19 +75,9 @@ function start() {
 				
         if (message.type === 'chunk') {
        		console.log('Data [chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
-        	surface.vertices = surface.vertices.concat(message.vertices);
-        	surface.normals = surface.normals.concat(message.normals);
         } else if (message.type === 'last') {
        		console.log('Data [last chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
        		console.timeEnd('Total time (level ' + message.level + ')');
-       		
-       		if (surface.vertices) {
-        		surface.vertices = surface.vertices.concat(message.vertices);
-        		surface.normals = surface.normals.concat(message.normals);
-        	} else {
-        		surface.vertices = message.vertices;
-						surface.normals = message.normals;
-        	}
         } else if (message.type === 'first' || message.type === 'unique') {
 					if (message.type === 'first') {
        			console.log('Data [first chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
@@ -97,9 +88,15 @@ function start() {
 					if (message.type === 'unique') {
 						console.timeEnd('Total time (level ' + message.level + ')');
 					}
-       		
+        }
+        
+        if (message.level !== lastLevel) {
+        	lastLevel = message.level;
         	surface.vertices = message.vertices;
-					surface.normals = message.normals;
+        	surface.normals = message.normals;
+        } else {
+        	surface.vertices = surface.vertices.concat(message.vertices);
+        	surface.normals = surface.normals.concat(message.normals);
         }
         
         surface.dynamic = true;

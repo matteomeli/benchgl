@@ -6,6 +6,8 @@ function start() {
 	var status = $('status'),
 			button = $('sample'),
 			level = $('level'),
+			computationStart, computationEnd,
+			lastLevel = -1,
       samplingLevel = +level.value,
       time = 0,
 			isolevel = 50,
@@ -67,39 +69,22 @@ function start() {
 			socket.connect();
 			
 			socket.on('message', function(message) {
-				var end = new Date().getTime(),
-						transportTime = end - message.start;
+				var computationEnd = new Date().getTime(),
+						transportTime = computationEnd - message.start;
 						
-				console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');		
-				
-        if (message.type === 'chunk') {
-       		console.log('Data [chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
-        	surface.vertices = surface.vertices.concat(message.vertices);
-        	surface.normals = surface.normals.concat(message.normals);
-        } else if (message.type === 'last') {
-       		console.log('Data [last chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
-       		console.timeEnd('Total time (level ' + message.level + ')');
-       		
-       		if (surface.vertices) {
-        		surface.vertices = surface.vertices.concat(message.vertices);
-        		surface.normals = surface.normals.concat(message.normals);
-        	} else {
-        		surface.vertices = message.vertices;
-						surface.normals = message.normals;
-        	}
-        } else if (message.type === 'first' || message.type === 'unique') {
-					if (message.type === 'first') {
-       			console.log('Data [first chunk] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
-       		} else {
-       			console.log('Data [full] (level ' + message.level + '): ' + (message.vertices.length*2)/3);
-       		}
-					
-					if (message.type === 'unique') {
-						console.timeEnd('Total time (level ' + message.level + ')');
-					}
-       		
-        	surface.vertices = message.vertices;
-					surface.normals = message.normals;
+				console.log('Transport time (level ' + message.level + '): ' + transportTime + 'ms');
+				console.log('Compute time (level ' + message.level + '): ' + (computationEnd-computationStart) + 'ms');
+				//console.timeEnd('Time elapsed (level ' + message.level +')');	
+        
+        if (message.level >= lastLevel) {
+	        if (message.level > lastLevel) {
+	        	lastLevel = message.level;
+	        	surface.vertices = message.vertices;
+	        	surface.normals = message.normals;
+	        } else {
+	        	surface.vertices = surface.vertices.concat(message.vertices);
+	        	surface.normals = surface.normals.concat(message.normals);
+	        }
         }
         
         surface.dynamic = true;
@@ -197,7 +182,8 @@ function start() {
 							body			: body.substring(body.indexOf("{") + 1, body.lastIndexOf("}"))
 						};
 		        
-		   console.time('Total time (level ' + samplingLevel +')');		 
+		   //console.time('Time elapsed (level ' + samplingLevel +')');
+		   computationStart = new Date().getTime();
 			 socket.send(config);
 			}
       

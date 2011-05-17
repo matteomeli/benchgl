@@ -1,39 +1,147 @@
+var http = require('http'),
+		path = require('path'),
+		io = require('socket.io'),
+		sys = require('sys'),
+		port = process.argv[2] || 3333,
+		chunkSize = process.argv[3] && process.argv[3]*1000 || 30000;
+		
+if (process.argv[2] === 'help') {
+	console.log('Usage: node servere.js [port] [chunk-size]');
+	return;
+}
+
+var server = http.createServer(function(req, res) { 
+  res.writeHead(200, { 'Content-Type': 'text/html' }); 
+  res.write('<h1>Hello! Server is running on port ' + port + '...</h1>');
+  res.end();
+});
+
+server.listen(port);
+
+var socket = io.listen(server);
+
+socket.on('connection', function(client) {
+    
+  client.on('message', function(message) {
+    var end = new Date().getTime(),
+    		transportTime = end - message.start,
+    		level = message.level,
+    		result;
+    
+    console.log('Calculation requested!');
+    console.log('Transport time: ' + transportTime + 'ms');
+    console.time('Calculating geometry (level ' + message.level + ')');
+    
+    result = init(message);
+    
+    console.timeEnd('Calculating geometry (level ' + message.level + ')');
+    
+    var vertices = result.vertices,
+        normals = result.normals,
+        verticesChunk = [],
+        normalsChunk = [],
+        totalLength = vertices.length,
+        spares = totalLength % chunkSize,
+        chunks = Math.floor(totalLength / chunkSize),
+        isChunkable = chunks > 0,
+        start = 0,
+        end = (isChunkable) ? chunkSize : spares,
+        firstChunk = true,
+        counter = 0;
+    
+    console.log('--- GEOMETRIC DATA INFO ---');
+    console.log('Total number of vertex coordinates: ' + totalLength);
+    console.log('Total number of vertices: ' + totalLength/3);
+    console.log('Total number of vertices+normals: ' + (totalLength*2)/3);
+    console.log('Chunk size: ' + chunkSize);
+    console.log('Number of chunks: ' + chunks);
+    console.log('Spares coordinates: ' + spares);
+    console.log('--- END ---');
+    
+    if (isChunkable) {
+    	console.log('Splitting and sending data!');
+    } else {
+    	console.log('Sending data!');
+    }
+    
+    while (chunks--) {
+      verticesChunk = vertices.slice(start, end);
+      normalsChunk = normals.slice(start, end);
+      start = end;
+      end += chunkSize;
+      
+      client.send({
+      	type : firstChunk ? 'first' : 'chunk',
+      	chunk : counter++,
+      	start : new Date().getTime(),
+        level : message.level,
+        vertices : verticesChunk,
+        normals : normalsChunk
+      });
+
+      if (firstChunk) {
+      	firstChunk = false;
+      }
+    }
+
+		if (isChunkable) {
+			end += spares;
+		}
+		
+    verticesChunk = vertices.slice(start, end);
+    normalsChunk = normals.slice(start, end);    
+    client.send({
+    	type : isChunkable ? 'last' : 'unique',
+    	start : new Date().getTime(),
+    	level : result.level,
+    	vertices : verticesChunk,
+    	normals : normalsChunk
+    });
+  });
+  
+  client.on('disconnect',function() {
+    // TODO
+  });
+  
+});
+
+// marching cubes
 var edgeTable = [
-	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
-	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
-	0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
-	0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
-	0x230, 0x339, 0x33 , 0x13a, 0x636, 0x73f, 0x435, 0x53c,
-	0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
-	0x3a0, 0x2a9, 0x1a3, 0xaa , 0x7a6, 0x6af, 0x5a5, 0x4ac,
-	0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
-	0x460, 0x569, 0x663, 0x76a, 0x66 , 0x16f, 0x265, 0x36c,
-	0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
-	0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff , 0x3f5, 0x2fc,
-	0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
-	0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55 , 0x15c,
-	0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
-	0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc ,
-	0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
-	0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
-	0xcc , 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
-	0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
-	0x15c, 0x55 , 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
-	0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
-	0x2fc, 0x3f5, 0xff , 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-	0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
-	0x36c, 0x265, 0x16f, 0x66 , 0x76a, 0x663, 0x569, 0x460,
-	0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
-	0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa , 0x1a3, 0x2a9, 0x3a0,
-	0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
-	0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33 , 0x339, 0x230,
-	0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
-	0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
-	0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
-	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
+  0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
+  0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
+  0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
+  0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
+  0x230, 0x339, 0x33 , 0x13a, 0x636, 0x73f, 0x435, 0x53c,
+  0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
+  0x3a0, 0x2a9, 0x1a3, 0xaa , 0x7a6, 0x6af, 0x5a5, 0x4ac,
+  0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
+  0x460, 0x569, 0x663, 0x76a, 0x66 , 0x16f, 0x265, 0x36c,
+  0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
+  0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff , 0x3f5, 0x2fc,
+  0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
+  0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55 , 0x15c,
+  0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
+  0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc ,
+  0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
+  0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
+  0xcc , 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
+  0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
+  0x15c, 0x55 , 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
+  0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
+  0x2fc, 0x3f5, 0xff , 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
+  0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
+  0x36c, 0x265, 0x16f, 0x66 , 0x76a, 0x663, 0x569, 0x460,
+  0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
+  0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa , 0x1a3, 0x2a9, 0x3a0,
+  0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
+  0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33 , 0x339, 0x230,
+  0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
+  0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
+  0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
+  0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 ];
-	
-var triangleTable = [	
+  
+var triangleTable = [ 
   [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
   [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
   [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -291,8 +399,8 @@ var triangleTable = [
   [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
   [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 ];
-	
-function getVertex (p1, p2, v1, v2, isolevel) {
+  
+function getVertex(p1, p2, v1, v2, isolevel) {
   var abs = Math.abs;
   
   if (abs(isolevel-v1) < 0.00001)
@@ -308,12 +416,12 @@ function getVertex (p1, p2, v1, v2, isolevel) {
     x: p1.x + mu * (p2.x - p1.x),
     y: p1.y + mu * (p2.y - p1.y),
     z: p1.z + mu * (p2.z - p1.z)
-  };		
+  };    
 };
-	
+  
 function getNormal(p, time, sampler) {
   var t = time,
-  		x = sampler(p.x - 0.01, p.y, p.z, t) - sampler(p.x + 0.01, p.y, p.z, t),
+      x = sampler(p.x - 0.01, p.y, p.z, t) - sampler(p.x + 0.01, p.y, p.z, t),
       y = sampler(p.x, p.y - 0.01, p.z, t) - sampler(p.x, p.y + 0.01, p.z, t),
       z = sampler(p.x, p.y, p.z - 0.01, t) - sampler(p.x, p.y, p.z + 0.01, t),
       d = Math.sqrt(x * x + y * y + z * z);
@@ -324,25 +432,25 @@ function getNormal(p, time, sampler) {
     z: z / d
   };
 };
-	
+  
 function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
-	var cube_vertices = new Array(8),
-	    cube_values = new Array(8),
-			vertices = new Array(12),
-			normals = new Array(12),
-			vertexCoords = [],
-			normalCoords = [],
+  var cube_vertices = new Array(8),
+      cube_values = new Array(8),
+      vertices = new Array(12),
+      normals = new Array(12),
+      vertexCoords = [],
+      normalCoords = [],
       cube_index = 0,
       edges_index = 0,
-			vertex,
+      vertex,
       point,
-      triangles;	
+      triangles;  
 
-	cube_vertices[0] = {
-		x : x - xstep / 2,
-		y : y - ystep / 2,
-		z : z - zstep / 2
-	};
+  cube_vertices[0] = {
+    x : x - xstep / 2,
+    y : y - ystep / 2,
+    z : z - zstep / 2
+  };
   cube_vertices[1] = {
     x : x + xstep / 2,
     y : y - ystep / 2,
@@ -375,100 +483,100 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
   };
   cube_vertices[7] = {
     x : x - xstep / 2,
-    y : y + ystep / 2,
-    z : z + zstep / 2
+    y : y + zstep / 2,
+    z : z + ystep / 2
   };
-	
+  
   for (var i = 0; i < 8; i++) {
-		vertex = cube_vertices[i];
+    vertex = cube_vertices[i];
     cube_values[i] = sampler(vertex.x, vertex.y, vertex.z, t);
     
     if (cube_values[i] <= isolevel) {
       cube_index |= 1 << i;
     }
   }
-	
-	// The current cube is all inside or outside
-	if ((edges_index = edgeTable[cube_index]) == 0) {
-		return false;
-	}
-	
+  
+  // The current cube is all inside or outside
+  if ((edges_index = edgeTable[cube_index]) == 0) {
+    return false;
+  }
+  
   // Find the vertices where the isosurface intersects the cube
   if (edgeTable[cube_index] & 1) {
     vertices[0] = getVertex(cube_vertices[0], cube_vertices[1], 
-		                             cube_values[0], cube_values[1], isolevel);
+                                 cube_values[0], cube_values[1], isolevel);
     normals[0] = getNormal(vertices[0], t, sampler);
   }
   
   if (edgeTable[cube_index] & 2) {
     vertices[1] = getVertex(cube_vertices[1], cube_vertices[2], 
-		                             cube_values[1], cube_values[2], isolevel);
+                                 cube_values[1], cube_values[2], isolevel);
     normals[1] = getNormal(vertices[1], t, sampler);
   }
   
   if (edgeTable[cube_index] & 4) {
     vertices[2] = getVertex(cube_vertices[2], cube_vertices[3], 
-		                             cube_values[2], cube_values[3], isolevel);
+                                 cube_values[2], cube_values[3], isolevel);
     normals[2] = getNormal(vertices[2], t, sampler);
   }
   
   if (edgeTable[cube_index] & 8) {
     vertices[3] = getVertex(cube_vertices[3], cube_vertices[0],
-		                             cube_values[3], cube_values[0], isolevel);
+                                 cube_values[3], cube_values[0], isolevel);
     normals[3] = getNormal(vertices[3], t, sampler);
   }
   
   if (edgeTable[cube_index] & 16) {
     vertices[4] = getVertex(cube_vertices[4], cube_vertices[5],
-		                             cube_values[4], cube_values[5], isolevel);
+                                 cube_values[4], cube_values[5], isolevel);
     normals[4] = getNormal(vertices[4], t, sampler);
   }
   
   if (edgeTable[cube_index] & 32) {
     vertices[5] = getVertex(cube_vertices[5], cube_vertices[6],
-		                             cube_values[5], cube_values[6], isolevel);
+                                 cube_values[5], cube_values[6], isolevel);
     normals[5] = getNormal(vertices[5], t, sampler);
   }
   
   if (edgeTable[cube_index] & 64) {
     vertices[6] = getVertex(cube_vertices[6], cube_vertices[7], 
-		                             cube_values[6], cube_values[7], isolevel);
+                                 cube_values[6], cube_values[7], isolevel);
     normals[6] = getNormal(vertices[6], t, sampler);
   }
   
   if (edgeTable[cube_index] & 128) {
     vertices[7] = getVertex(cube_vertices[7], cube_vertices[4], 
-		                             cube_values[7], cube_values[4], isolevel);
+                                 cube_values[7], cube_values[4], isolevel);
     normals[7] = getNormal(vertices[7], t, sampler);
   }   
   
   if (edgeTable[cube_index] & 256) {
     vertices[8] = getVertex(cube_vertices[0], cube_vertices[4],
-		                             cube_values[0], cube_values[4], isolevel);
+                                 cube_values[0], cube_values[4], isolevel);
     normals[8] = getNormal(vertices[8], t, sampler);
   }   
   
   if (edgeTable[cube_index] & 512) {
     vertices[9] = getVertex(cube_vertices[1], cube_vertices[5],
-		                             cube_values[1], cube_values[5], isolevel);
+                                 cube_values[1], cube_values[5], isolevel);
     normals[9] = getNormal(vertices[9], t, sampler);
   }   
   
   if (edgeTable[cube_index] & 1024) {
     vertices[10] = getVertex(cube_vertices[2], cube_vertices[6], 
-		                              cube_values[2], cube_values[6], isolevel);
+                                  cube_values[2], cube_values[6], isolevel);
     normals[10] = getNormal(vertices[10], t, sampler);
   }   
   
   if (edgeTable[cube_index] & 2048) {
     vertices[11] = getVertex(cube_vertices[3], cube_vertices[7], 
-		                              cube_values[3], cube_values[7], isolevel);
+                                  cube_values[3], cube_values[7], isolevel);
     normals[11] = getNormal(vertices[11], t, sampler);
   }
-	
-	// Build the triangles to draw the surface
-	triangles = triangleTable[cube_index];
-	for (var i = 0; triangles[i] != -1; i += 3) {
+  
+  // Build the triangles to draw the surface
+  triangles = triangleTable[cube_index];
+  for (var i = 0; triangles[i] != -1; i += 3) {
     var p1 = vertices[triangles[i]],
         p2 = vertices[triangles[i+1]],
         p3 = vertices[triangles[i+2]],
@@ -483,35 +591,32 @@ function polygonize(x, y, z, xstep, ystep, zstep, t, isolevel, sampler) {
     normalCoords.push(n1.x, n1.y, n1.z,
                       n2.x, n2.y, n2.z,
                       n3.x, n3.y, n3.z);
-	}
-	
-	return {
-		vertices : vertexCoords,
-		normals  : normalCoords
-	}
+  }
+  
+  return {
+    vertices : vertexCoords,
+    normals  : normalCoords
+  }
 };
 
-function compute(grid, time, isolevel, sampler, level, workers) {
+function compute(grid, time, isolevel, sampler, level) {
 	var xstart = grid.x.start,
 			ystart = grid.y.start,
 			zstart = grid.z.start,
 			xend = grid.x.end,
 			yend = grid.y.end,
 			zend = grid.z.end,
-			//xstep = 1 / level,//(xend - xstart) / level,
-			//ystep = 1 / level,//(yend - ystart) / level,
-			//zstep = 1 / level,//(zend - zstart) / level,
-			xstep = (xend - xstart) * (1 / level),
-			ystep = (yend - ystart) * (1 / level),
-			zstep = (zend - zstart) * (workers / level),
+			xstep = (xend - xstart) / level,
+			ystep = (yend - ystart) / level,
+			zstep = (zend - zstart) / level,
 			vertices = [],
       normals = [],
 			result;
 			
 	for (var i = xstart+(xstep/2); i <= xend; i+=xstep) {
 		for (var j = ystart+(ystep/2); j <= yend; j+=ystep) {
-			for (var k = zstart+(zstep/2); k <= zend; k+=zstep) {
-				result = polygonize(i, j, k, xstep, ystep, zstep, time, isolevel, sampler);
+			for (var k = zstart+(xstep/2); k <= zend; k+=xstep) {
+				result = polygonize(i, j, k, xstep, ystep, xstep, time, isolevel, sampler);
 				if (result) {
 					vertices.push.apply(vertices, result.vertices);
 					normals.push.apply(normals, result.normals);
@@ -526,17 +631,19 @@ function compute(grid, time, isolevel, sampler, level, workers) {
 	};
 };
 
-onmessage = function(e) {
-  var data = e.data,
-      level = data.level,
-  		grid = data.grid,
-      time = data.time,
-      isolevel = data.isolevel,
-      body = data.body,
-      workers = data.workers,
-      sampler = new Function('x, y, z, t', body),
-      result = compute(grid, time, isolevel, sampler, level, workers);
-
-  postMessage(result);
-  //self.close();
-};
+function init(message) {
+  var level = message.level,
+      grid = message.grid,
+      time = message.time,
+      isolevel = message.isolevel,
+      body = message.body,
+      sampler = new Function('x, y, z, t', body);
+  
+  result = compute(grid, time, isolevel, sampler, level);
+  
+  return({
+    level: level,
+    vertices: result.vertices,
+    normals: result.normals
+  });
+}
