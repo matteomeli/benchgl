@@ -1,0 +1,27 @@
+body {
+	font-size: small;
+}
+
+#outer {
+  width: 100%;
+  text-align: center;
+}
+
+#inner {
+  display: inline-block;
+}
+
+#ui {
+	text-align: left;
+}
+
+#fps {
+	background-color: rgba(0, 0, 0, 0.2);
+	color: white;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 2;
+	border-radius: 10px;
+	padding: 10px;
+}

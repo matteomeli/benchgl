@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BenchGL Engine - Isosurfaces</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="../../build/benchgl.js"></script>
+<script type="text/javascript" src="index.js"></script>
+    
+</head>
+
+<body onload="start();">
+	<div id="title">
+		<h2>Isosurfaces viewer</h2>
+	</div>
+  <div id="outer">
+  	<div id="inner">
+  		<div id="fps">0 fps</div>
+	    <canvas id="surfaces-canvas" width="800" height="600"></canvas>
+			<div id="ui">
+				<table style="border: 0; padding: 10px; width: 100%">
+					<tr>
+						<td valign="top" class="controlbox">
+							<div class="controlbox-title">
+								Surface
+							</div>
+							<table width="100%">
+								<tr>
+									<td>Isolevel:</td>
+									<td>
+										<input id="isolevel" type="range" min="0" max="100" value="48" step="2" />
+									</td>
+								</tr>
+								<tr>
+									<td>Color:</td>
+									<td>
+										R 
+				            <select id="surfaceR">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option selected>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+				            G 
+				            <select id="surfaceG">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option selected>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+				            B
+				            <select id="surfaceB">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option selected>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td valign="top" class="controlbox">
+							<div class="controlbox-title">
+								Light
+							</div>
+							<table width="100%">
+								<tr>
+									<td>Color:</td>
+									<td>
+										R 
+				            <select id="lightR">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option selected>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+				            G 
+				            <select id="lightG">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option selected>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+				            B
+				            <select id="lightB">
+				              <option>0.0</option>
+				              <option>0.1</option>
+				              <option>0.2</option>
+				              <option>0.3</option>
+				              <option>0.4</option>
+				              <option>0.5</option>
+				              <option>0.6</option>
+				              <option>0.7</option>
+				              <option selected>0.8</option>
+				              <option>0.9</option>
+				              <option>1.0</option>
+				            </select>
+									</td>
+								</tr>
+								<tr>
+									<td>Position:</td>
+									<td>
+										X <input type="number" id="lightX" size="5" value="3" step="1" />
+										Y <input type="number" id="lightY" size="5" value="3" step="1" />
+										Z <input type="number" id="lightZ" size="5" value="3" step="1" />
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top" class="controlbox">
+							<div class="controlbox-title">
+								Timing
+							</div>
+							<table width="100%">
+								<tr>
+									<td>On/Off:</td>
+									<td><input type="checkbox" id="time" /></td>
+								</tr>
+								<tr>
+									<td>Loop:</td>
+									<td><input type="checkbox" id="loop" disabled /></td>
+								</tr>
+								<tr>
+									<td>Interval:</td>
+									<td>
+										From <input type="number" id="timeFrom" size="5" value="0" step="0.1" disabled />
+										To <input type="number" id="timeTo" size="5" value="1" step="0.1" disabled />
+									</td>
+								</tr>
+								<tr>
+									<td>Speed:</td>
+									<td>
+										<input id="speed" type="range" min="50" max="250" value="100" step="10" disabled />
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<input type="button" id="play" value="Play" disabled />
+										<input type="button" id="stop" value="Stop" disabled />									
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td valign="top" class="controlbox">
+							<div class="controlbox-title">
+								Sampling
+							</div>
+							<table width="100%">
+								<tr>
+									<td>Samplers:</td>
+									<td>
+										<select id="sampler">
+											<option value="0" selected>Sampler 1</option>
+											<option value="1">Sampler 2</option>
+											<option value="2">Sampler 3</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td>Workers:</td>
+									<td>
+				            <select id="workers">
+				              <option selected value="1">1</option>
+				              <option value="2">2</option>
+				              <option value="4">4</option>
+				              <option value="8">8</option>
+				            </select>									
+									</td>
+								</tr>
+								<tr>
+									<td>Sampling step (1/x):</td>
+									<td>
+										<input type="number" id="level" value="10" min="0" max="100" step="1" />
+										<input type="button" id="again" value="Sample" />
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+  </div>
+</body>
+
+</html>

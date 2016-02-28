@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BenchGL Engine - Example 12</title>
+<link rel="stylesheet" href="../../resources/example.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="../../build/benchgl.js"></script>
+<script type="text/javascript" src="index.js"></script>
+
+</head>
+
+<body onload="start();">
+	<div id="fps">0 fps</div>
+	<div id="outer">
+		<div id="inner">
+  		<canvas id="example-canvas" width="500" height="500"></canvas>
+  		
+  		<div id="ui">
+  			<input type="checkbox" id="lighting" checked /> Use lighting<br/>
+  			Use cursor keys to spin the box and <code>Page Up</code>/<code>Page Down</code> to zoom in/out
+		    <h2>Point light:</h2>
+		    <table style="border: 0; padding: 10px;">
+		        <tr>
+		            <td>
+		                <b>Position:</b>
+		            </td>
+		            <td>
+		                X: <input type="text" id="lightX" value="0.0" />
+		            </td>
+		            <td>
+		                Y: <input type="text" id="lightY" value="0.0" />
+		            </td>
+		            <td>
+		                Z: <input type="text" id="lightZ" value="-20.0" />
+		            </td>
+		        </tr>
+		        <tr>
+		            <td>
+		                <b>Colour:</b>
+		            </td>
+		            <td>
+		                R: <input type="text" id="lightR" value="0.8" />
+		            </td>
+		            <td>
+		                G: <input type="text" id="lightG" value="0.8" />
+		            </td>
+		            <td>
+		                B: <input type="text" id="lightB" value="0.8" />
+		            </td>
+		        </tr>
+		    </table>
+				<h2>Ambient light:</h2>
+		    <table style="border: 0; padding: 10px;">
+		        <tr>
+		            <td>
+		                <b>Colour:</b>
+		            </td>
+		            <td>
+		                R: <input type="text" id="ambientR" value="0.2" />
+		            </td>
+		            <td>
+		                G: <input type="text" id="ambientG" value="0.2" />
+		            </td>
+		            <td>
+		                B: <input type="text" id="ambientB" value="0.2" />
+		            </td>
+		        </tr>
+		    </table>
+	    </div>
+  	</div>
+  </div>
+</body>
+
+</html>
